@@ -1,8 +1,47 @@
-import QtQuick
-import QtQuick.Window
+//@ pragma UseQApplication
 import Quickshell
-import Quickshell.Io
+import Quickshell.Wayland
+import Quickshell.Io  
+import QtQuick        
+import qs.Modules.Bar
+import qs.Modules.DynamicIsland
+import qs.config
+import qs.Modules.Launcher
+
 ShellRoot {
-	Wallpaper{}
 	Bar {}
+	Variants {
+	model: Quickshell.screens
+	}
+
+    // ================= 锁屏管理器 =================
+    Loader {
+        id: lockLoader
+        active: false 
+        
+        source: "Modules/Lock/Lock.qml"
+        
+        Connections {
+            target: lockLoader.item 
+            ignoreUnknownSignals: true
+            
+            function onUnlocked() {
+                lockLoader.active = false
+            }
+        }
+    }
+    LauncherWindow {
+	    id: rofiLauncher
+    }
+    IpcHandler {
+        target: "lock" 
+        
+        function open() {
+            if (!lockLoader.active) {
+                lockLoader.active = true
+                return "LOCKED"
+            }
+            return "ALREADY_LOCKED"
+        }
+    }
 }
