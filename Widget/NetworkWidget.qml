@@ -17,8 +17,6 @@ SlideWindow {
     id: root
     title: "网络配置"
     icon: "\uf1eb"
-    width: 500
-    windowHeight: 460
     onIsOpenChanged: {
         WidgetState.networkOpen = isOpen;
     }
@@ -58,13 +56,13 @@ SlideWindow {
         }
 
         Item {
-            width: 10
+            implicitWidth: 10
         }
         Rectangle {
             id: wifiSwitch
             Layout.fillWidth: false // 通常开关不 fillWidth，除非你想要一个长条开关
-            width: 40
-            height: 22
+            implicitWidth: 40
+            implicitHeight: 22
             radius: 11
 
             // --- 核心逻辑 ---

@@ -28,7 +28,7 @@ SlideWindow {
         MouseArea { 
             anchors.fill: parent
             cursorShape: Qt.PointingHandCursor
-            onClicked: Quickshell.execDetached(["pavucontrol"])
+            onClicked: Quickshell.execDetached([""])
         }
     }
 
@@ -49,7 +49,7 @@ SlideWindow {
     // 1. 主音量卡片
     Rectangle {
         Layout.fillWidth: true
-        height: 90
+        implicitHeight: 90
         color: theme.surface
         radius: theme.radius
         border.width: 1
@@ -114,8 +114,8 @@ SlideWindow {
             required property PwLinkGroup modelData
             property var appNode: modelData.source
 
-            width: ListView.view.width
-            height: 50
+            implicitWidth: ListView.view.implicitWidth
+            implicitHeight: 50
             radius: 8
             color: "transparent"
             border.width: 1
@@ -188,7 +188,7 @@ SlideWindow {
                     // 迷你音量条
                     Rectangle {
                         Layout.fillWidth: true
-                        height: 6
+                        implicitHeight: 6
                         radius: 3
                         // 使用 itemTheme
                         color: Qt.rgba(itemTheme.text.r, itemTheme.text.g, itemTheme.text.b, 0.1)
