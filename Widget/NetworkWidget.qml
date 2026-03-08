@@ -22,6 +22,9 @@ SlideWindow {
     onIsOpenChanged: {
         WidgetState.networkOpen = isOpen;
     }
+    function getWifiDevice() {
+	    return [...Networking.devices.values].find(d => d.type === DeviceType.Wifi);
+    }
     headerTools: RowLayout {
         Theme {
             id: headerTheme
@@ -30,18 +33,19 @@ SlideWindow {
         // 刷新按钮
         Text {
             id: boolscan
-            property bool scannerEnabled: true
+            property var wifiDev: root.getWifiDevice()
+	    opacity: (wifiDev && wifiDev.scannerEnabled) ? 0.5 : 1.0
 
             text: "\uf021"
             font.family: "Font Awesome 6 Free Solid"
             font.pixelSize: 16
             color: headerTheme.subtext
-            opacity: root.scannerEnabled ? 0.5 : 1
             MouseArea {
                 anchors.fill: parent
                 cursorShape: Qt.PointingHandCursor
                 onClicked: {
-                    boolscan.scannerEnabled = true;
+			let dev = root.getWifiDevice();
+			if (dev) dev.scannerEnabled = true;;
                 }
             }
             RotationAnimation on rotation {
@@ -167,23 +171,6 @@ SlideWindow {
                                     onClicked: mainColumn.currentTab = "ethernet"
                                 }
                             }
-                        }
-                    }
-                    CheckBox {
-                        text: "Scanner"
-                        checked: modelData.scannerEnabled
-                        onClicked: modelData.scannerEnabled = !modelData.scannerEnabled
-                        visible: modelData.type === DeviceType.Wifi
-                    }
-                    Item {
-                        Binding {
-                            property: "scannerEnabled"
-                            value: boolscan.scannerEnabled // 源是外部属性
-                        }
-                        Binding {
-                            target: boolscan       // 目标是模型
-                            property: "scannerEnabled"
-                            value: scannerEnabled
                         }
                     }
 
