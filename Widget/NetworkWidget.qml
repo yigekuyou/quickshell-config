@@ -17,8 +17,8 @@ SlideWindow {
     id: root
     title: "网络配置"
     icon: "\uf1eb"
-    width: 60+ mainContent.implicitWidit
-    windowHeight: mainContent.implicitHeight + 60
+    width: 500
+    windowHeight: 460
     onIsOpenChanged: {
         WidgetState.networkOpen = isOpen;
     }
