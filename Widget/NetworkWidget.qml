@@ -2,364 +2,347 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
 import Quickshell
+import qs.Services
 import Quickshell.Io
 import qs.config
 import qs.Widget.common
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Layouts
+import Quickshell
+import Quickshell.Widgets
+import Quickshell.Networking
 
 SlideWindow {
     id: root
     title: "网络配置"
     icon: "\uf1eb"
-    windowHeight: 420
-    
+    width: 60+ mainContent.implicitWidit
+    windowHeight: mainContent.implicitHeight + 60
     onIsOpenChanged: {
-        WidgetState.networkOpen = isOpen
-        // 窗口打开时强制刷新一次，并启动监控
-        if (isOpen) {
-            scanWifi.running = true
-            networkMonitor.running = true
-        } else {
-            networkMonitor.running = false
-        }
+        WidgetState.networkOpen = isOpen;
     }
-
-    // --- 顶部工具栏 ---
     headerTools: RowLayout {
-        Theme { id: headerTheme }
-        
+        Theme {
+            id: headerTheme
+        }
+
         // 刷新按钮
         Text {
+            id: boolscan
+            property bool scannerEnabled: true
+
             text: "\uf021"
             font.family: "Font Awesome 6 Free Solid"
             font.pixelSize: 16
             color: headerTheme.subtext
-            opacity: scanWifi.running ? 0.5 : 1
-            MouseArea { 
-                anchors.fill: parent
-                cursorShape: Qt.PointingHandCursor
-                onClicked: { 
-                    wifiModel.clear();
-                    scanWifi.running = true 
-                } 
-            }
-            RotationAnimation on rotation { 
-                running: scanWifi.running;
-                from: 0; to: 360; loops: Animation.Infinite; duration: 1000 
-            }
-        }
-        
-        Item { width: 10 }
-        
-        // Wi-Fi 开关
-        Rectangle {
-            width: 40; height: 22; radius: 11
-            // 直接绑定 root.wifiEnabled，配合 onClicked 实现瞬间变色
-            color: root.wifiEnabled ? headerTheme.primary : headerTheme.outline
-            
-            Rectangle { 
-                x: root.wifiEnabled ? 20 : 2; y: 2
-                width: 18; height: 18; radius: 9; color: "white"
-                Behavior on x { NumberAnimation { duration: 200 } } 
-            }
-            
-            MouseArea { 
+            opacity: root.scannerEnabled ? 0.5 : 1
+            MouseArea {
                 anchors.fill: parent
                 cursorShape: Qt.PointingHandCursor
                 onClicked: {
-                    // 1. 【乐观更新】立即切换状态，不等待后台
-                    root.wifiEnabled = !root.wifiEnabled
-                    
-                    // 2. 根据新状态立即处理 UI
-                    if (!root.wifiEnabled) {
-                        wifiModel.clear()      // 关：立刻清空列表
-                        scanWifi.running = false
-                    } else {
-                        scanWifi.running = true // 开：立刻显示加载动画
+                    boolscan.scannerEnabled = true;
+                }
+            }
+            RotationAnimation on rotation {
+                running: scanWifi.running
+                from: 0
+                to: 360
+                loops: Animation.Infinite
+                duration: 1000
+            }
+        }
+
+        Item {
+            width: 10
+        }
+        Rectangle {
+            id: wifiSwitch
+            Layout.fillWidth: false // 通常开关不 fillWidth，除非你想要一个长条开关
+            width: 40
+            height: 22
+            radius: 11
+
+            // --- 核心逻辑 ---
+            // 1. 只有硬件开关开启时，这个 UI 才是可用的
+            enabled: Networking.wifiHardwareEnabled
+
+            // 2. 状态颜色：如果硬件禁用，显示灰色；如果开启，根据软件开关状态显示颜色
+            color: !enabled ? "#A0A0A0" : (Networking.wifiEnabled ? headerTheme.primary : headerTheme.outline)
+            // 3. 视觉反馈：变灰/半透明
+            opacity: enabled ? 1.0 : 0.5
+            // 开关滑块
+            Rectangle {
+                x: (Networking.wifiEnabled && Networking.wifiHardwareEnabled) ? 20 : 2
+                y: 2
+                width: 18
+                height: 18
+                radius: 9
+                color: "white"
+                Behavior on x {
+                    NumberAnimation {
+                        duration: 200
+                    }
+                }
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                cursorShape: parent.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                onClicked: {
+                    // 只有在硬件允许的情况下才切换软件开关
+                    Networking.wifiEnabled = !Networking.wifiEnabled;
+                }
+            }
+        }
+    }
+
+    ColumnLayout {
+        anchors.fill: parent
+        anchors.margins: 5
+        ListView {
+            clip: true
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            model: Networking.devices
+            delegate: Item {
+                width: parent.width
+                height: mainColumn.implicitHeight // 确保 delegate 有高度
+                ColumnLayout {
+                    id: mainColumn
+                    property string currentTab: "wifi"
+                    anchors.fill: parent
+                    spacing: 10
+                    Rectangle {
+                        Theme {
+                            id: tabTheme
+                        }
+                        Layout.fillWidth: true
+                        height: 36
+                        color: tabTheme.surface
+                        radius: 8
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.margins: 4
+                            spacing: 0
+                            Rectangle {
+                                Layout.fillWidth: true
+                                Layout.fillHeight: true
+                                color: mainColumn.currentTab === "wifi" ? tabTheme.primary : "transparent"
+                                radius: 6
+                                Behavior on color {
+                                    ColorAnimation {
+                                        duration: 150
+                                    }
+                                }
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: "Wi-Fi"
+                                    font.bold: true
+                                    color: mainColumn.currentTab === "wifi" ? tabTheme.text : tabTheme.subtext
+                                }
+                                MouseArea {
+                                    anchors.fill: parent
+                                    onClicked: mainColumn.currentTab = "wifi"
+                                }
+                            }
+                            Rectangle {
+                                Layout.fillWidth: true
+                                Layout.fillHeight: true
+                                color: mainColumn.currentTab === "ethernet" ? tabTheme.primary : "transparent"
+                                radius: 6
+                                Behavior on color {
+                                    ColorAnimation {
+                                        duration: 150
+                                    }
+                                }
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: "以太网"
+                                    font.bold: true
+                                    color: mainColumn.currentTab === "ethernet" ? tabTheme.text : tabTheme.subtext
+                                }
+                                MouseArea {
+                                    anchors.fill: parent
+                                    onClicked: mainColumn.currentTab = "ethernet"
+                                }
+                            }
+                        }
+                    }
+                    CheckBox {
+                        text: "Scanner"
+                        checked: modelData.scannerEnabled
+                        onClicked: modelData.scannerEnabled = !modelData.scannerEnabled
+                        visible: modelData.type === DeviceType.Wifi
+                    }
+                    Item {
+                        Binding {
+                            property: "scannerEnabled"
+                            value: boolscan.scannerEnabled // 源是外部属性
+                        }
+                        Binding {
+                            target: boolscan       // 目标是模型
+                            property: "scannerEnabled"
+                            value: scannerEnabled
+                        }
                     }
 
-                    // 3. 最后在后台执行命令
-                    toggleWifiProc.running = true 
-                }
-            }
-        }
-    }
+                    // 2. 内容切换区
+                    StackLayout {
+                        currentIndex: mainColumn.currentTab === "wifi" ? 0 : 1
 
-    // 默认值设为 true，但启动时 checkWifiStatus 会修正它
-    property bool wifiEnabled: true
-    property string currentTab: "wifi"
-
-    // --- 界面内容 ---
-    Rectangle {
-        Theme { id: tabTheme }
-        Layout.fillWidth: true
-        height: 36
-        color: tabTheme.surface
-        radius: 8
-        RowLayout {
-            anchors.fill: parent; anchors.margins: 4; spacing: 0
-            Rectangle {
-                Layout.fillWidth: true; Layout.fillHeight: true
-                color: root.currentTab === "wifi" ? tabTheme.primary : "transparent"
-                radius: 6
-                Behavior on color { ColorAnimation { duration: 150 } }
-                Text { 
-                    anchors.centerIn: parent; text: "Wi-Fi"; font.bold: true
-                    color: root.currentTab === "wifi" ? tabTheme.text : tabTheme.subtext 
-                }
-                MouseArea { anchors.fill: parent; onClicked: root.currentTab = "wifi" }
-            }
-            Rectangle {
-                Layout.fillWidth: true; Layout.fillHeight: true
-                color: root.currentTab === "ethernet" ? tabTheme.primary : "transparent"
-                radius: 6
-                Behavior on color { ColorAnimation { duration: 150 } }
-                Text { 
-                    anchors.centerIn: parent; text: "以太网"; font.bold: true
-                    color: root.currentTab === "ethernet" ? tabTheme.text : tabTheme.subtext 
-                }
-                MouseArea { anchors.fill: parent; onClicked: root.currentTab = "ethernet" }
-            }
-        }
-    }
-
-    StackLayout {
-        Layout.fillWidth: true; Layout.fillHeight: true
-        currentIndex: root.currentTab === "wifi" ? 0 : 1
-        
-        // === 页面 1: Wi-Fi 列表 ===
-        ColumnLayout {
-            spacing: 6
-            Theme { id: contentTheme }
-            Text { 
-                text: "网络列表"; color: contentTheme.subtext; font.pixelSize: 12
-                font.bold: true; Layout.topMargin: 4 
-            }
-
-            ListView {
-                Layout.fillWidth: true; Layout.fillHeight: true
-                clip: true; spacing: 6
-                model: wifiModel
-                
-                delegate: Rectangle {
-                    Theme { id: itemTheme }
-                    height: 54; width: ListView.view.width
-                    radius: 8; color: "transparent"
-                    border.width: 1
-                    border.color: ma.containsMouse ? itemTheme.primary : "transparent"
-                    Behavior on border.color { ColorAnimation { duration: 150 } }
-
-                    MouseArea { id: ma; anchors.fill: parent; hoverEnabled: true }
-
-                    RowLayout {
-                        anchors.fill: parent; anchors.margins: 12; spacing: 12
-                        Text {
-                            text: "\uf1eb"; font.family: "Font Awesome 6 Free Solid"; font.pixelSize: 16
-                            color: model.connected ? itemTheme.primary : itemTheme.subtext
-                            opacity: model.connected ? 1 : (model.signal / 100)
-                        }
                         ColumnLayout {
-                            spacing: 2; Layout.alignment: Qt.AlignVCenter
-                            Text { 
-                                text: model.ssid; font.bold: true
-                                color: model.connected ? itemTheme.primary : itemTheme.text 
+                            spacing: 6
+                            Theme {
+                                id: contentTheme
                             }
-                            RowLayout {
-                                spacing: 4
-                                Text { 
-                                    text: model.connected ? "\uf00c" : "\uf023"
-                                    font.family: "Font Awesome 6 Free Solid"; font.pixelSize: 10
-                                    color: model.connected ? itemTheme.primary : itemTheme.subtext 
-                                }
-                                Text { 
-                                    text: model.connected ? "已连接" : (model.security === "" ? "Open" : model.security)
-                                    font.pixelSize: 11; color: model.connected ? itemTheme.primary : itemTheme.subtext 
-                                }
+                            Text {
+                                text: "网络列表"
+                                color: contentTheme.subtext
+                                font.pixelSize: 12
+                                font.bold: true
+                                Layout.topMargin: 4
                             }
-                        }
-                        Item { Layout.fillWidth: true }
-                        
-                        // 连接/断开 按钮
-                        Rectangle {
-                            visible: ma.containsMouse || model.connected
-                            width: model.connected ? 50 : 46; height: 26; radius: 4
-                            color: model.connected ? Qt.rgba(itemTheme.error.r, itemTheme.error.g, itemTheme.error.b, 0.15) : Qt.rgba(itemTheme.primary.r, itemTheme.primary.g, itemTheme.primary.b, 0.15)
+                            ColumnLayout {
+                                Repeater {
+                                    Layout.fillWidth: true
+                                    model: {
+                                        if (modelData.type !== DeviceType.Wifi)
+                                            return [];
+                                        return [...modelData.networks.values].sort((a, b) => {
+                                            if (a.connected !== b.connected) {
+                                                return b.connected - a.connected;
+                                            }
+                                            return b.signalStrength - a.signalStrength;
+                                        });
+                                    }
 
-                            Text { 
-                                anchors.centerIn: parent
-                                text: model.connected ? "断开" : "连接"
-                                color: model.connected ? itemTheme.error : itemTheme.primary
-                                font.pixelSize: 11; font.bold: true 
-                            }
-                            MouseArea {
-                                anchors.fill: parent; cursorShape: Qt.PointingHandCursor
-                                onClicked: {
-                                    if (model.connected) {
-                                        disconnectProc.targetSsid = model.ssid
-                                        disconnectProc.running = true
-                                        // 视觉反馈：手动置为未连接，等待 Monitor 最终确认
-                                        wifiModel.setProperty(index, "connected", false)
-                                    } else {
-                                        connectProc.targetSsid = model.ssid
-                                        connectProc.running = true
+                                    StackLayout {
+                                        Layout.fillWidth: true
+
+                                        RowLayout {
+                                            ColumnLayout {
+                                                Layout.fillWidth: true
+                                                RowLayout {
+                                                    Label {
+                                                        text: modelData.name
+                                                        font.bold: true
+                                                    }
+                                                    Label {
+                                                        text: modelData.known ? "Known" : ""
+                                                        color: palette.placeholderText
+                                                    }
+                                                }
+                                                RowLayout {
+                                                    Label {
+                                                        text: `${WifiSecurityType.toString(modelData.security)}`
+                                                        color: palette.placeholderText
+                                                    }
+                                                    Label {
+                                                        text: ` ${Math.round(modelData.signalStrength * 100)}%`
+                                                        color: palette.placeholderText
+                                                    }
+                                                }
+                                                Label {
+                                                    visible: Networking.backend == NetworkBackendType.NetworkManager && (modelData.nmReason != NMConnectionStateReason.Unknown && modelData.nmReason != NMConnectionStateReason.None)
+                                                    text: `Connection change reason: ${NMConnectionStateReason.toString(modelData.nmReason)}`
+                                                }
+                                            }
+                                            Item {
+                                                Layout.fillWidth: true
+                                            }
+
+                                            Rectangle {
+                                                visible: !modelData.connected
+                                                width: 46
+                                                height: 26
+                                                radius: 4
+                                                color: Qt.rgba(itemTheme.primary.r, itemTheme.primary.g, itemTheme.primary.b, 0.15)
+
+                                                Text {
+                                                    anchors.centerIn: parent
+                                                    text: "连接"
+                                                    color: itemTheme.primary
+                                                    font.pixelSize: 11
+                                                    font.bold: true
+                                                }
+                                                MouseArea {
+                                                    anchors.fill: parent
+                                                    cursorShape: Qt.PointingHandCursor
+                                                    onClicked: modelData.connect()
+                                                }
+                                            }
+                                            Rectangle {
+                                                visible: modelData.connected
+                                                width: 50
+                                                height: 26
+                                                radius: 4
+                                                color: Qt.rgba(itemTheme.error.r, itemTheme.error.g, itemTheme.error.b, 0.15)
+
+                                                Text {
+                                                    anchors.centerIn: parent
+                                                    text: "断开"
+                                                    color: itemTheme.error
+                                                    font.pixelSize: 11
+                                                    font.bold: true
+                                                }
+                                                MouseArea {
+                                                    anchors.fill: parent
+                                                    cursorShape: Qt.PointingHandCursor
+                                                    onClicked: {
+                                                        onClicked: modelData.disconnect();
+                                                    }
+                                                }
+					    }Rectangle {
+						    visible: modelData.forget
+						    width: 50
+						    height: 26
+						    radius: 4
+						    color: Qt.rgba(itemTheme.error.r, itemTheme.error.g, itemTheme.error.b, 0.15)
+
+						    Text {
+							    anchors.centerIn: parent
+							    text: "忘记"
+							    color: itemTheme.error
+							    font.pixelSize: 11
+							    font.bold: true
+						    }
+						    MouseArea {
+							    anchors.fill: parent
+							    cursorShape: Qt.PointingHandCursor
+							    onClicked: {
+								    modelData.forget();
+							    }
+						    }
+					    }
+                                        }
                                     }
                                 }
                             }
                         }
+                        Item {
+                            Theme {
+                                id: ethTheme
+                            }
+                            ColumnLayout {
+                                anchors.centerIn: parent
+                                spacing: 10
+                                Text {
+                                    text: "\uf796"
+                                    font.family: "Font Awesome 6 Free Solid"
+                                    font.pixelSize: 40
+                                    color: ethTheme.outline
+                                    Layout.alignment: Qt.AlignHCenter
+                                }
+                                Text {
+                                    text: "以太网设置暂不可用"
+                                    color: ethTheme.subtext
+                                }
+                            }
+                        }
                     }
+
                 }
-            }
-        }
-
-        // === 页面 2: 以太网 ===
-        Item {
-            Theme { id: ethTheme }
-            ColumnLayout {
-                anchors.centerIn: parent; spacing: 10
-                Text { 
-                    text: "\uf796"; font.family: "Font Awesome 6 Free Solid"; font.pixelSize: 40
-                    color: ethTheme.outline; Layout.alignment: Qt.AlignHCenter
-                }
-                Text { text: "以太网设置暂不可用"; color: ethTheme.subtext }
-            }
-        }
-    }
-
-    // --- 后台逻辑 ---
-
-    ListModel { id: wifiModel }
-
-    // 【核心组件】网络状态监听器
-    Process {
-        id: networkMonitor
-        command: ["nmcli", "monitor"]
-        // 只在窗口打开时运行
-        running: root.isOpen
-        stdout: SplitParser {
-            onRead: (data) => {
-                const str = data.toLowerCase();
-                // 监听连接、断开、以及不可用状态
-                if (str.includes("connected") || 
-                    str.includes("disconnected") || 
-                    str.includes("unavailable") ||
-                    str.includes("using connection")) {
-                    
-                    // 如果网络是开启状态，才去扫描
-                    if (root.wifiEnabled) {
-                        scanWifi.running = true
-                    }
-                }
-            }
-        }
-    }
-
-    // 初始化状态检查
-    Process {
-        id: checkWifiStatus
-        command: ["nmcli", "radio", "wifi"]
-        running: root.isOpen
-        stdout: SplitParser {
-            onRead: (data) => {
-                // 这里只在组件打开的瞬间同步一次真实状态
-                // 之后的切换完全由 Toggle 按钮的乐观逻辑控制
-                let status = (data.trim() === "enabled")
-                root.wifiEnabled = status
-                if (status && wifiModel.count === 0) scanWifi.running = true
-            }
-        }
-    }
-
-    Process {
-        id: scanWifi
-        command: ["nmcli", "-t", "-f", "SSID,SIGNAL,SECURITY,IN-USE", "device", "wifi", "list"]
-        stdout: SplitParser {
-            splitMarker: "\n"
-            onRead: (data) => parseWifiData(data)
-        }
-    }
-
-    Process { 
-        id: toggleWifiProc
-        // 直接使用 root.wifiEnabled，因为点击时我们已经改过这个值了
-        // 如果现在是 true，意味着用户想开，我们就发 'on'
-        command: ["nmcli", "radio", "wifi", root.wifiEnabled ? "on" : "off"]
-        
-        onExited: (code) => { 
-            // 乐观更新后，这里主要是兜底
-            // 如果开启了，确保扫描一次
-            if (root.wifiEnabled) {
-                scanWifi.running = true
-            }
-        } 
-    }
-    
-    Process { 
-        id: connectProc
-        property string targetSsid: ""
-        command: ["nmcli", "device", "wifi", "connect", targetSsid]
-    }
-    
-    Process { 
-        id: disconnectProc
-        property string targetSsid: ""
-        command: ["nmcli", "connection", "down", targetSsid]
-    }
-
-    function parseWifiData(line) {
-        // 【关键保护】如果网络已关闭，不再处理任何扫描数据
-        // 这防止了后台残留的扫描结果突然蹦出来
-        if (!root.wifiEnabled) return;
-
-        if (line.trim() === "") return;
-        let lastColon = line.lastIndexOf(":")
-        let inUse = line.substring(lastColon + 1)
-        
-        let temp1 = line.substring(0, lastColon)
-        let secondLastColon = temp1.lastIndexOf(":")
-        let security = temp1.substring(secondLastColon + 1)
-        
-        let temp2 = temp1.substring(0, secondLastColon)
-        let thirdLastColon = temp2.lastIndexOf(":")
-        let signal = parseInt(temp2.substring(thirdLastColon + 1))
-        
-        let ssid = temp2.substring(0, thirdLastColon).replace(/\\:/g, ":")
-
-        if (ssid === "") return;
-
-        let isConnected = (inUse === "*");
-        if (isConnected) {
-            for(let i = 0; i < wifiModel.count; i++) {
-                if (wifiModel.get(i).connected) {
-                    wifiModel.setProperty(i, "connected", false);
-                }
-            }
-        }
-
-        let existingIndex = -1;
-        for(let i = 0; i < wifiModel.count; i++) {
-            if (wifiModel.get(i).ssid === ssid) {
-                existingIndex = i;
-                break;
-            }
-        }
-
-        if (existingIndex !== -1) {
-            wifiModel.setProperty(existingIndex, "signal", signal);
-            wifiModel.setProperty(existingIndex, "connected", isConnected);
-            if (isConnected) {
-                wifiModel.move(existingIndex, 0, 1); 
-            }
-        } else {
-            let item = { 
-                ssid: ssid, 
-                signal: signal, 
-                security: security === "" ? "Open" : security, 
-                connected: isConnected 
-            };
-            
-            if (isConnected) {
-                wifiModel.insert(0, item);
-            } else {
-                wifiModel.append(item);
             }
         }
     }
