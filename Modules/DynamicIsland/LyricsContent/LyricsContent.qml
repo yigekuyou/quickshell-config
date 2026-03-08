@@ -7,9 +7,12 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Services.Mpris
 import qs.config
+import qs.Modules.DynamicIsland.LyricsContent
 
 Item {
     id: root
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
     required property var player
     property bool active: false
     readonly property string trackTitle: player ? player.trackTitle : ""
@@ -108,24 +111,23 @@ Item {
             anchors.top: parent.top
             anchors.bottom: parent.bottom
 
-            // 将 ListView 的右边界与 iconsContainer 的左边界对齐
             anchors.verticalCenter: parent.verticalCenter
             clip: true
             flickableDirection: Flickable.AutoFlickDirection
             orientation: ListView.Horizontal // 设置为水平滚动
             cacheBuffer: Lyrics.lyricsWTimes.count
             model: Lyrics.lyricsWTimes
-            anchors.verticalCenterOffset: 20
-
+            spacing: width
             // 歌词条目的委托
-            delegate: Label{
-		    Layout.preferredWidth: implicitWidth
-		    text: model.lyric
-		    horizontalAlignment: Text.AlignRight
+            delegate: Label {
+                height: lyricListView.height
+                Layout.preferredWidth: implicitWidth
+                text: model.lyric
+                horizontalAlignment: Text.AlignRight
+                verticalAlignment: Text.AlignVCenter
                 font.pixelSize: 14
-                anchors.verticalCenterOffset: 20
                 color: "#80ffffff"
-	}
+            }
             onCurrentIndexChanged: {
                 if (Lyrics.lyricsWTimes.count > 0 && currentIndex >= 0) {
                     lyricListView.positionViewAtIndex(currentIndex, ListView.Right);
@@ -133,7 +135,7 @@ Item {
                     lyricMetrics.text = Lyrics.lyricsWTimes.get(currentIndex).lyric;
                     if (lyricMetrics.advanceWidth > width) {
                         if (currentIndex + 2 < Lyrics.lyricsWTimes.count) {
-                            lyricScrollAnimation.duration = (Lyrics.lyricsWTimes.get(currentIndex + 1).time - mprisCurrentPlayingSongTimeMS) / 1000; //这是从计算器里验证的ms
+                            lyricScrollAnimation.duration =Math.max(0,(Lyrics.lyricsWTimes.get(currentIndex + 1).time - mprisCurrentPlayingSongTimeMS) / 1000); //这是从计算器里验证的ms
                         }
                         if (currentIndex + 1 === Lyrics.lyricsWTimes.count) {
                             lyricScrollAnimation.duration = (Lyrics.lyricsWTimes.length - mprisCurrentPlayingSongTimeMS) / 1000;
@@ -158,7 +160,7 @@ Item {
         }
         TextMetrics {
             id: lyricMetrics
-            font.pixelSize:14
+            font.pixelSize: 14
         }
     }
 }
