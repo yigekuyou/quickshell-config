@@ -66,8 +66,8 @@ PanelWindow {
     // 计算最终停靠的位置 X
     // 容器宽(400) - 内容宽(340) - 右边距(10) = 50
     // 这意味着当 x=50 时，窗口视觉上距离屏幕右边缘正好 10px
-    readonly property int targetX: 400 - 340 - 10
-    readonly property int offScreenX: 400
+    readonly property int targetX: 10
+    readonly property int offScreenX: root.implicitWidth
 
     // ================= 动画修改区域 =================
     
@@ -101,8 +101,7 @@ PanelWindow {
 
     Rectangle {
         id: bg
-        width: 340
-        height: root.implicitHeight
+        anchors.fill:parent
         color: theme.background
         radius: theme.radius
         
@@ -118,9 +117,9 @@ PanelWindow {
             spacing: 12
 
             RowLayout {
-                Layout.fillWidth: true
-                Text { text: root.icon; font.family: "Font Awesome 6 Free Solid"; font.pixelSize: 20; color: theme.primary }
-                Text { text: root.title; font.bold: true; font.pixelSize: 18; color: theme.text; Layout.fillWidth: true; Layout.leftMargin: 8 }
+		    anchors{top : parent.top ; left: parent.left;right:parent.right}
+		    Text { anchors{top : parent.top ; left: parent.left;right:parent.right}text: root.icon; font.family: "Font Awesome 6 Free Solid"; font.pixelSize: 20; color: theme.primary }
+		    Text { anchors{top : parent.top ; left: parent.left;right:parent.right}text: root.title; font.bold: true; font.pixelSize: 18; color: theme.text; Layout.fillWidth: true; Layout.leftMargin: 8 }
                 RowLayout { id: headerToolsLayout }
                 Item { width: 10 }
                 Text {
@@ -132,8 +131,6 @@ PanelWindow {
 
             ColumnLayout {
                 id: contentLayout
-                Layout.fillWidth: true
-                Layout.fillHeight: true
             }
         }
     }
