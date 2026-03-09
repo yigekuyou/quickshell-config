@@ -109,7 +109,17 @@ Rectangle {
 		Behavior on opacity { NumberAnimation { duration: 250; easing.type: Easing.OutQuad } }
 		Behavior on scale { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
 	}
-
+	MouseArea {
+		anchors.fill: parent; cursorShape: Qt.PointingHandCursor; enabled: !isNotifMode; acceptedButtons: Qt.LeftButton | Qt.MiddleButton
+		onClicked: (mouse) => {
+			if (mouse.button === Qt.MiddleButton) {
+				if (root.showDashboard) root.showDashboard = false; else
+					root.showLyrics = !root.showLyrics; if (root.showLyrics) root.expanded = false;
+			} else {
+				if (root.showDashboard) root.showDashboard = false; else if (root.showLyrics) root.showLyrics = false; else root.expanded = !root.expanded;
+			}
+		}
+	}
 	Item {
 		id: contentContainer
 		anchors.fill: parent
@@ -157,17 +167,6 @@ Rectangle {
 			if (players.length === 0) { root.currentPlayer = null; return; }
 			let playing = players.find(p => p.isPlaying);
 			root.currentPlayer = playing ? playing : players[0];
-		}
-	}
-	MouseArea {
-		anchors.fill: parent; cursorShape: Qt.PointingHandCursor; enabled: !isNotifMode; acceptedButtons: Qt.LeftButton | Qt.MiddleButton
-		onClicked: (mouse) => {
-			if (mouse.button === Qt.MiddleButton) {
-				if (root.showDashboard) root.showDashboard = false; else
-				root.showLyrics = !root.showLyrics; if (root.showLyrics) root.expanded = false;
-			} else {
-				if (root.showDashboard) root.showDashboard = false; else if (root.showLyrics) root.showLyrics = false; else root.expanded = !root.expanded;
-			}
 		}
 	}
 
