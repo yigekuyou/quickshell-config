@@ -12,7 +12,6 @@ import qs.Modules.DynamicIsland.MediaContent
 import qs.Modules.DynamicIsland.NotificationContent
 import qs.Modules.DynamicIsland.VolumeContent
 import qs.Modules.DynamicIsland.LauncherContent
-import qs.Modules.DynamicIsland.WallpaperContent
 import qs.Modules.DynamicIsland.DashboardContent
 import qs.Modules.DynamicIsland.LyricsContent
 
@@ -100,7 +99,6 @@ Rectangle {
 	}
 
 	// ================= 内部内容包装器 =================
-	// 解决 ClockContent 等组件没有 active 属性的问题 [cite: 72-75]
 	component IslandContent : Item {
 		property bool active: false
 		anchors.fill: parent
@@ -136,17 +134,6 @@ Rectangle {
 			active: root.state === "EXPANDED"
 			MediaContent { anchors.fill: parent; anchors.margins: 20; player: root.currentPlayer }
 		}
-
-		IslandContent {
-			active: root.state === "LAUNCHER"
-			LauncherContent { anchors.fill: parent; onLaunchRequested: root.showLauncher = false }
-		}
-
-		IslandContent {
-			active: root.state === "WALLPAPER"
-			WallpaperContent { anchors.fill: parent; onWallpaperChanged: root.showWallpaper = false }
-		}
-
 		IslandContent {
 			active: root.state === "DASHBOARD"
 			DashboardContent { anchors.fill: parent }
@@ -172,20 +159,16 @@ Rectangle {
 			root.currentPlayer = playing ? playing : players[0];
 		}
 	}
-
 	MouseArea {
-		anchors.fill: parent
-		cursorShape: Qt.PointingHandCursor
-		onClicked: mouse => {
+		anchors.fill: parent; cursorShape: Qt.PointingHandCursor; enabled: !isNotifMode; acceptedButtons: Qt.LeftButton | Qt.MiddleButton
+		onClicked: (mouse) => {
 			if (mouse.button === Qt.MiddleButton) {
-				root.showLyrics = !root.showLyrics;
+				if (root.showDashboard) root.showDashboard = false; else
+				root.showLyrics = !root.showLyrics; if (root.showLyrics) root.expanded = false;
 			} else {
-				if (showDashboard || showWallpaper || showLauncher) {
-					showDashboard = false; showWallpaper = false; showLauncher = false;
-				} else {
-					expanded = !expanded;
-				}
+				if (root.showDashboard) root.showDashboard = false; else if (root.showLyrics) root.showLyrics = false; else root.expanded = !root.expanded;
 			}
 		}
 	}
+
 }
