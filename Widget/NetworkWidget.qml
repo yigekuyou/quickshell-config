@@ -20,6 +20,7 @@ SlideWindow {
     onIsOpenChanged: {
         WidgetState.networkOpen = isOpen;
     }
+    property var wifiDev: getWifiDevice()
     function getWifiDevice() {
 	    return [...Networking.devices.values].find(d => d.type === DeviceType.Wifi);
     }
@@ -31,7 +32,6 @@ SlideWindow {
         // 刷新按钮
         Text {
             id: boolscan
-            property var wifiDev: root.getWifiDevice()
 	    opacity: (wifiDev && wifiDev.scannerEnabled) ? 0.5 : 1.0
 
             text: "\uf021"
@@ -42,12 +42,11 @@ SlideWindow {
                 anchors.fill: parent
                 cursorShape: Qt.PointingHandCursor
                 onClicked: {
-			let dev = root.getWifiDevice();
-			if (dev) dev.scannerEnabled = !dev.scannerEnabled;;
+			if (wifiDev) wifiDev.scannerEnabled = !wifiDev.scannerEnabled;;
                 }
             }
             RotationAnimation on rotation {
-                running: boolscan.wifiDev.scannerEnabled
+                running: wifiDev.scannerEnabled
                 from: 0
                 to: 360
                 loops: Animation.Infinite
@@ -75,7 +74,7 @@ SlideWindow {
             opacity: enabled ? 1.0 : 0.5
             // 开关滑块
             Rectangle {
-                x: (Networking.wifiEnabled && Networking.wifiHardwareEnabled) ? 20 : 2
+                x: ((wifiDev)&&wifiDev.wifiEnabled && wifiDev.wifiHardwareEnabled) ? 20 : 2
                 y: 2
                 width: 18
                 height: 18
@@ -92,15 +91,13 @@ SlideWindow {
                 anchors.fill: parent
                 cursorShape: parent.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
                 onClicked: {
-                    // 只有在硬件允许的情况下才切换软件开关
-                    Networking.wifiEnabled = !Networking.wifiEnabled;
+                    wifiDev.wifiEnabled = !wifiDev.wifiEnabled;
                 }
             }
         }
     }
 
     ColumnLayout {
-        anchors.fill: parent
         anchors.margins: 5
         ListView {
             clip: true
