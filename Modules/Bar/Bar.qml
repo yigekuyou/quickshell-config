@@ -35,12 +35,11 @@ Variants {
         color: "transparent"
         implicitHeight: Sizes.barHeight
         PopupWindow {
-		screen:modelData
 		anchor.window: barWindow
-		anchor.rect.x: parentWindow.width/2  - width / 2
-		anchor.rect.y: 0
+		anchor.rect.x:Math.round( parentWindow.width/2  - width / 2)
+		anchor.rect.y:Math.round(parentWindow.height - parentWindow.extraTopMargin)| 0
 		visible: true
-		implicitHeight: Math.max(Sizes.barHeight, island.height + island.anchors.topMargin + 5)
+		implicitHeight: Math.round((Math.max(Sizes.barHeight, island.height + island.anchors.topMargin + 5)))
 		implicitWidth: island.width + island.anchors.rightMargin + 5
 		color: "transparent"
 		Item {

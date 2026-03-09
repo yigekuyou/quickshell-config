@@ -11,6 +11,7 @@ Rectangle {
     radius: Sizes.cornerRadius
 
     // 高度固定为 40
+    implicitHeight: Sizes.barHeight
 
     // 宽度 = 图标总宽 + 左右各 12px 的留白 (共 24px)
     // 这样当没有托盘图标时，宽度会自动收缩，有图标时自动撑开

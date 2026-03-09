@@ -3,7 +3,10 @@ import QtQuick.Layouts
 import QtQuick.Controls
 import Quickshell
 import qs.config
+import qs.Services
 import qs.Widget.common // 假设这是你 SlideWindow 所在的位置
+import qs.Services
+import Quickshell.Services.Notifications
 
 SlideWindow {
     id: root
@@ -23,27 +26,27 @@ SlideWindow {
         font.pixelSize: 18
         
         // 引用全局 Store
-        color: NotificationStore.model.count > 0 ? theme.error : theme.subtext
-        opacity: NotificationStore.model.count > 0 ? 1 : 0.5
+        color: NotificationManager.temporaryNotifications.count > 0 ? theme.error : theme.subtext
+        opacity: NotificationManager.temporaryNotifications.count > 0 ? 1 : 0.5
         
         MouseArea { 
             anchors.fill: parent
             cursorShape: Qt.PointingHandCursor
-            onClicked: NotificationStore.clear()
+            onClicked: NotificationManager.dismissAll()
         }
     }
 
     // --- 界面内容 ---
     Text {
         Theme { id: bgTheme }
-     
+
         // 【已修复】：去掉 anchors，改用 Layout 填充并让文本居中对齐
         Layout.fillWidth: true
         Layout.fillHeight: true
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
-        
-        visible: NotificationStore.model.count === 0
+
+        visible: NotificationManager.temporaryNotifications.count === 0
         text: "没有新通知"
         color: bgTheme.subtext
         font.pixelSize: 14
@@ -54,9 +57,9 @@ SlideWindow {
         Layout.fillHeight: true
         clip: true
         spacing: 8
-        
+
         // 【核心】引用全局单例
-        model: NotificationStore.model
+        model: NotificationManager.temporaryNotifications
 
         delegate: Rectangle {
             Theme { id: itemTheme }
@@ -65,7 +68,7 @@ SlideWindow {
             height: Math.max(60, contentLayout.height + 20)
             radius: 8
             color: "transparent"
-            
+
             border.width: 1
             border.color: ma.containsMouse ? itemTheme.primary : "transparent"
             Behavior on border.color { ColorAnimation { duration: 150 } }
@@ -83,7 +86,7 @@ SlideWindow {
                     width: 40; height: 40
                     radius: 8
                     color: Qt.rgba(itemTheme.text.r, itemTheme.text.g, itemTheme.text.b, 0.1)
-                    
+
                     Image {
                         id: img
                         anchors.fill: parent
@@ -92,11 +95,11 @@ SlideWindow {
                         fillMode: Image.PreserveAspectFit
                         visible: model.imagePath !== "" && status === Image.Ready
                     }
-                
+
                     Text {
                         anchors.centerIn: parent
                         visible: model.imagePath === "" || img.status === Image.Error
-                        text: "\uf0e5" 
+                        text: "\uf0e5"
                         font.family: "Font Awesome 6 Free Solid"
                         font.pixelSize: 20
                         color: itemTheme.subtext
@@ -108,17 +111,17 @@ SlideWindow {
                     id: contentLayout
                     Layout.fillWidth: true
                     spacing: 2
-                    
+
                     RowLayout {
                         Layout.fillWidth: true
-                        Text { 
+                        Text {
                             text: model.appName
                             font.bold: true
                             font.pixelSize: 11
                             color: itemTheme.primary
                         }
                         Item { Layout.fillWidth: true }
-                        Text { 
+                        Text {
                             text: model.time
                             font.pixelSize: 10
                             color: itemTheme.subtext
@@ -144,7 +147,7 @@ SlideWindow {
                         Layout.fillWidth: true
                     }
                 }
-                
+
                 // 删除按钮
                 Text {
                     visible: ma.containsMouse
@@ -152,12 +155,12 @@ SlideWindow {
                     font.family: "Font Awesome 6 Free Solid"
                     color: itemTheme.subtext
                     Layout.alignment: Qt.AlignTop
-                    
+
                     MouseArea {
                         anchors.fill: parent
                         cursorShape: Qt.PointingHandCursor
                         // 调用全局删除
-                        onClicked: NotificationStore.remove(index)
+                        onClicked: NotificationManager.dismissAll()
                     }
                 }
             }

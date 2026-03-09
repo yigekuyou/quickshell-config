@@ -1,8 +1,9 @@
 import QtQuick
 import Quickshell
-import Quickshell.Io  
+import Quickshell.Io
 import Quickshell.Services.Mpris
 import Quickshell.Services.Pipewire
+import Quickshell.Services.Notifications
 import qs.Services
 import qs.config
 import qs.Modules.DynamicIsland.ClockContent
@@ -12,7 +13,7 @@ import qs.Modules.DynamicIsland.VolumeContent
 import qs.Modules.DynamicIsland.LauncherContent
 import qs.Modules.DynamicIsland.WallpaperContent
 import qs.Modules.DynamicIsland.DashboardContent
-import qs.Modules.DynamicIsland.LyricsContent 
+import qs.Modules.DynamicIsland.LyricsContent
 
 Rectangle {
     id: root
@@ -21,40 +22,40 @@ Rectangle {
     property bool showDashboard: false
     property bool showWallpaper: false
     property bool showLauncher: false
-    property bool showLyrics: true
+    property bool showLyrics: player.isPlaying
     property bool expanded: false
-    property bool showVolume: true
+    property bool showVolume: false
 
     property bool isDashboardMode: showDashboard
     property bool isWallpaperMode: showWallpaper && !showDashboard
     property bool isLyricsMode: showLyrics && !showDashboard && !showWallpaper
     property bool isLauncherMode: showLauncher && !showWallpaper && !showDashboard && !isLyricsMode
     property bool isVolumeMode: showVolume && !expanded && !showLauncher && !showWallpaper && !showDashboard && !isLyricsMode
-    property bool isNotifMode: notifManager.hasNotifs && !expanded && !showVolume && !showLauncher && !showWallpaper && !showDashboard && !isLyricsMode
+    property bool isNotifMode:  NotificationManager.isNotifMode && !expanded && !showVolume && !showLauncher && !showWallpaper && !showDashboard && !isLyricsMode
 
     // ================= 尺寸定义 =================
     property int dashW: 810
     property int dashH: 420
-    
+
     property int wallW: 810
     property int wallH: 180
     property int launchW: 400
-    property int launchH: 420 
+    property int launchH: 420
     property int lyricsW: 480
-    property int lyricsH: 42 
+    property int lyricsH: 42
     property int expandedW: 420
     property int expandedH: 180
     property int collapsedW: 220
     property int collapsedH: 32
     property int notifW: 380
-    property int notifH: (notifManager.model.count * 70) + 20
+    property int notifH:90
     property int volW: 220
     property int volH: 40
-    
+
     color: "#80" + Colorscheme.background.toString().substring(1)
     clip: true
     z: 100
-    
+
     radius: (expanded || isNotifMode || isVolumeMode || isLauncherMode || isWallpaperMode || isDashboardMode || isLyricsMode) ?
     24 : height / 2
 
@@ -96,7 +97,7 @@ Rectangle {
 
     Timer { id: volHideTimer; interval: 2000; onTriggered: root.showVolume = false }
     Connections {
-        target: root.audioNode 
+        target: root.audioNode
         ignoreUnknownSignals: true
         function onVolumeChanged() { triggerVolumeOSD() }
         function onMutedChanged() { triggerVolumeOSD() }
@@ -106,8 +107,6 @@ Rectangle {
         root.showVolume = true; volHideTimer.restart();
     }
 
-    NotificationManager { id: notifManager }
-    
     property var currentPlayer: null
 
     Timer {
@@ -142,7 +141,7 @@ Rectangle {
         anchors.fill: parent
         ClockContent { anchors.fill: parent; player: root.currentPlayer; opacity: (!root.expanded && !root.isNotifMode && !root.isVolumeMode && !root.isLauncherMode && !root.isWallpaperMode && !root.isDashboardMode && !root.isLyricsMode) ? 1 : 0; visible: opacity > 0; Behavior on opacity { NumberAnimation { duration: 200 } } }
         VolumeContent { anchors.fill: parent; audioNode: root.audioNode; opacity: root.isVolumeMode ? 1 : 0; visible: opacity > 0; Behavior on opacity { NumberAnimation { duration: 200 } } }
-        NotificationContent { anchors.fill: parent; anchors.margins: 10; manager: notifManager; opacity: root.isNotifMode ? 1 : 0; visible: opacity > 0; Behavior on opacity { NumberAnimation { duration: 200 } } }
+        NotificationContent { anchors.fill: parent; anchors.margins: 10; opacity: root.isNotifMode ? 1 : 0; visible: opacity > 0; Behavior on opacity { NumberAnimation { duration: 200 } } }
         LyricsContent { anchors.fill: parent; player: root.currentPlayer; active: root.isLyricsMode; opacity: root.isLyricsMode ? 1 : 0; visible: opacity > 0; Behavior on opacity { NumberAnimation { duration: 200 } } }
         MediaContent { anchors.fill: parent; anchors.margins: 20; player: root.expanded ? root.currentPlayer : null; opacity: (root.expanded && !root.isLyricsMode) ? 1 : 0; visible: opacity > 0; Behavior on opacity { NumberAnimation { duration: 200 } } }
         LauncherContent { anchors.fill: parent; onLaunchRequested: root.showLauncher = false; opacity: root.isLauncherMode ? 1 : 0; visible: opacity > 0; Behavior on opacity { NumberAnimation { duration: 200 } } }

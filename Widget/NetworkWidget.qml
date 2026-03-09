@@ -43,11 +43,11 @@ SlideWindow {
                 cursorShape: Qt.PointingHandCursor
                 onClicked: {
 			let dev = root.getWifiDevice();
-			if (dev) dev.scannerEnabled = true;;
+			if (dev) dev.scannerEnabled = !dev.scannerEnabled;;
                 }
             }
             RotationAnimation on rotation {
-                running: scanWifi.running
+                running: boolscan.wifiDev.scannerEnabled
                 from: 0
                 to: 360
                 loops: Animation.Infinite

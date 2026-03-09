@@ -101,7 +101,7 @@ Item {
                     color: "white"
 
                     width: {
-		    if (player.canSeek){
+		    if (player.canSeeK){
                         if (seekMa.pressed) {
                             let w = seekMa.mouseX;
                             if (w < 0) return 0;

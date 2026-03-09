@@ -4,15 +4,28 @@ import QtQuick.Controls
 import Quickshell
 import qs.Services
 import qs.config
+import Quickshell.Networking
 
-// 【1】 导入你的组件路径
-// 如果 NetworkWidget.qml 在上一级的 Widget 文件夹里：
 import qs.Widget 
 // 或者如果它就在旁边，直接用 import "." 即可
 
 Rectangle {
+property var net : {
+		const wifi = [...Networking.devices.values].find(d => d.type === DeviceType.Wifi);
+		let sortedNetworks = [...wifi.networks.values].sort((a, b) => {
+			if (a.connected !== b.connected) {
+				return b.connected - a.connected; // 已连接优先
+			}
+			return b.signalStrength - a.signalStrength; // 信号强优先
+		});
+		let topNetwork = sortedNetworks.length > 0 ? sortedNetworks[0] : null;
+		return {
+			"isOnline": wifi ? (wifi.connected) : false,
+			"name": wifi ? (topNetwork.name) : "未连接",
+			"type": "WIFI"
+		};
+}
     id: root
-    
     // --- 胶囊样式 ---
     color: "#80" + Colorscheme.background.toString().substring(1)
     radius: Sizes.cornerRadius
@@ -53,11 +66,11 @@ Rectangle {
             font.pixelSize: 16
             
             // 颜色：连上是青色，断开是红色
-            color: Network.connected ? Colorscheme.on_tertiary_container : "#ff5555"
+            color: net.isOnline ? Colorscheme.on_tertiary_container : "#ff5555"
             
             text: {
-                if (Network.activeConnectionType === "WIFI") return ""
-                if (Network.activeConnectionType === "ETHERNET") return ""
+                if (net.type === "WIFI") return ""
+                if (net.type === "ETHERNET") return ""
                 return "⚠"
             }
         }
@@ -67,7 +80,7 @@ Rectangle {
             font.pixelSize: 14
             color: Colorscheme.on_primary_container
             // 直接读取 Service 数据
-            text: Network.activeConnection
+            text: net.name
         }
     }
 }

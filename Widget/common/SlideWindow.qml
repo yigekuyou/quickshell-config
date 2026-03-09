@@ -101,28 +101,28 @@ PanelWindow {
 
     Rectangle {
         id: bg
-        anchors.fill:parent
-        color: theme.background
+	anchors.fill: parent
+	color: theme.background
         radius: theme.radius
         
-        border.width: 1
         border.color: Qt.rgba(0,0,0,0.1)
         
         // 初始位置设为屏幕外
         x: offScreenX
 
         ColumnLayout {
-            anchors.fill: parent
-            anchors.margins: theme.padding
+		anchors.fill: parent
+		anchors.margins: theme.padding
             spacing: 12
-
-            RowLayout {
-		    anchors{top : parent.top ; left: parent.left;right:parent.right}
-		    Text { anchors{top : parent.top ; left: parent.left;right:parent.right}text: root.icon; font.family: "Font Awesome 6 Free Solid"; font.pixelSize: 20; color: theme.primary }
-		    Text { anchors{top : parent.top ; left: parent.left;right:parent.right}text: root.title; font.bold: true; font.pixelSize: 18; color: theme.text; Layout.fillWidth: true; Layout.leftMargin: 8 }
+		Layout.fillWidth: true
+		RowLayout {
+			Layout.fillWidth: true
+		    Text { text: root.icon; font.family: "Font Awesome 6 Free Solid"; font.pixelSize: 20; color: theme.primary }
+		    Text { text: root.title; font.bold: true; font.pixelSize: 18; color: theme.text; Layout.fillWidth: true; Layout.leftMargin: 8 }
                 RowLayout { id: headerToolsLayout }
                 Item { width: 10 }
                 Text {
+			Layout.fillWidth: true
                     text: "\uf00d"
                     font.family: "Font Awesome 6 Free Solid"; font.pixelSize: 18; color: theme.subtext
                     MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: root.isOpen = false }
@@ -130,6 +130,7 @@ PanelWindow {
             }
 
             ColumnLayout {
+		    Layout.fillWidth: true
                 id: contentLayout
             }
         }

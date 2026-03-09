@@ -1,85 +1,86 @@
-import QtQuick
+pragma Singleton
 import Quickshell
 import Quickshell.Services.Notifications
+import QtQuick
 
-Item {
+Singleton {
     id: root
+    property list<Notification> mergedNotifications: notificationsServer.trackedNotifications.values
+    readonly property bool isNotifMode: NotificationManager.temporaryNotifications.length > 0
+    property list<Notification> temporaryNotifications: []
+    property list<Notification> sortedTemopraryNotifications: sortNotifications(temporaryNotifications)
+    property bool dnd: false
 
-    property alias model: notifModel
-    property bool hasNotifs: notifModel.count > 0
-
-    ListModel { id: notifModel }
-
-    NotificationServer {
-        id: server
-        
-        onNotification: (n) => {
-            // 1. 过滤播放器
-            if (n.desktopEntry === "spotify" || n.desktopEntry.includes("player")) return;
-
-            // 2. 队列管理
-            if (notifModel.count >= 2) notifModel.remove(0);
-
-            // ====================================================
-            // 3. 【智能图标策略】
-            // ====================================================
-            
-            // 定义“强制使用图标”的黑名单
-            // 这些 App 的头像往往显示效果不好，我们强制它们显示 App Logo
-            const forceIconApps = [
-                "qq", "com.tencent.qq", "linuxqq",
-                "wechat", "com.tencent.wechat", "electronic-wechat",
-                "telegram", "org.telegram.desktop", "telegram-desktop"
-            ];
-            
-            // 判断当前通知是否来自黑名单 App
-            const shouldForceIcon = forceIconApps.includes(n.desktopEntry.toLowerCase());
-
-            let finalImage = "";
-
-            // --- 分支 A: 允许显示图片 (截图工具走这里) ---
-            // 条件：不在黑名单里，且通知真的带了图片路径
-            if (!shouldForceIcon && n.image && (n.image.startsWith("/") || n.image.startsWith("file://"))) {
-                 finalImage = n.image.startsWith("/") ? "file://" + n.image : n.image;
-            }
-            // --- 分支 B: 强制/兜底显示 App 图标 (QQ走这里) ---
-            else {
-                // 依次尝试获取图标名
-                let iconName = n.appIcon || n.desktopEntry || n.icon || "";
-                
-                if (iconName !== "") {
-                    if (iconName.startsWith("/") || iconName.startsWith("file://")) {
-                        finalImage = iconName.startsWith("/") ? "file://" + iconName : iconName;
-                    } else {
-                        // 标准系统图标
-                        finalImage = "icon:" + iconName;
-                    }
-                }
-            }
-
-            // 4. 添加到模型
-            notifModel.append({
-                "id": n.id,
-                "summary": n.summary,
-                "body": n.body,
-                "imagePath": finalImage
-            });
-
-            // 5. 计时器
-            dismissTimer.restart();
+    onDndChanged: {
+        if (dnd) {
+            root.temporaryNotifications = [];
         }
     }
 
-    Timer {
-        id: dismissTimer
-        interval: 3000
-        repeat: false
-        onTriggered: notifModel.clear()
+    function sortNotifications(notifications) {
+        notifications = notifications.slice().filter(item => item != null);
+
+        return notifications.sort((a, b) => {
+            if ((a.urgency == NotificationUrgency.Critical) != (b.urgency == NotificationUrgency.Critical)) {
+                return a.urgency == NotificationUrgency.Critical ? 1 : -1;
+            }
+
+            return a.id - b.id;
+        });
     }
 
-    function remove(index) {
-        if (index >= 0 && index < notifModel.count) notifModel.remove(index);
-        if (notifModel.count > 0) dismissTimer.restart();
-        else dismissTimer.stop();
+    function dismiss(notification, parmanent = false) {
+        const index = root.temporaryNotifications.indexOf(notification);
+
+        if (index !== -1) {
+            root.temporaryNotifications.splice(index, 1);
+        }
+
+        if (parmanent) {
+            notification.dismiss();
+        }
+    }
+
+    function dismissAll() {
+        temporaryNotifications = [];
+
+        const notifications = [...notificationsServer.trackedNotifications.values];
+
+        notifications.forEach(n => {
+            n.dismiss();
+        });
+    }
+
+    ElapsedTimer {
+        id: elapsedTimer
+    }
+
+    NotificationServer {
+        id: notificationsServer
+        actionsSupported: true
+        bodyHyperlinksSupported: false
+        actionIconsSupported: true
+        persistenceSupported: false
+        bodyImagesSupported: true
+        bodySupported: true
+        bodyMarkupSupported: false
+        imageSupported: true
+        keepOnReload: true
+
+        onNotification: function (notification) {
+            notification.tracked = true;
+
+            if (elapsedTimer.elapsed() >= 0.1 && !root.dnd && notification.urgency != NotificationUrgency.Critical) {
+                root.temporaryNotifications.push(notification);
+
+                var timer = Qt.createQmlObject('import QtQuick; Timer { interval: 10000; repeat: false; }', root) as Timer;
+                timer.onTriggered.connect(function () { // qmllint disable missing-property
+                    root.dismiss(notification, false);
+                });
+                timer.start();
+            } else if (notification.urgency == NotificationUrgency.Critical) {
+                root.temporaryNotifications.push(notification);
+            }
+        }
     }
 }
