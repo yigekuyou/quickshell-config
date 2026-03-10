@@ -18,6 +18,7 @@ import qs.Modules.DynamicIsland.LyricsContent
 Rectangle {
 	id: root
 	anchors.horizontalCenter: parent.horizontalCenter
+	transformOrigin: Item.Center
 	color: "#cc" + Colorscheme.background.toString().substring(1)
 	// ================= MD3 视觉优化 =================
 	layer.enabled: true
