@@ -26,15 +26,8 @@ Item {
                 anchors.fill: parent
                 cursorShape: Qt.PointingHandCursor
                 onClicked: {
-                    if (modelData.length > 0 && delegateItem.modelData.actions[0].identifier == "default") { // qmllint disable unresolved-type
-                        modelData[0].invoke(); // qmllint disable unresolved-type
-
-                        const index = ToplevelManager.toplevels.values.findIndex(item => item.appId == modelData.appName);
-
-                        if (index != -1) {
-                            PanelStateService.notificationsPanelVisible = false;
-                            ToplevelManager.toplevels.values[index].activate();
-                        }
+                    if (modelData.actions.identifier == "default") {
+                        modelData.actions.invoke();
                     }
                 }
             }
@@ -69,6 +62,7 @@ Item {
                     readonly property string iconSource: getIcon(modelData.appIcon, modelData.image, modelData.appName.toLowerCase())
                     clip: true // 这一步很关键，切圆角
                     IconImage {
+			    id:icond
                         anchors.fill: parent
                         visible: iconContainer.iconSource
                         source: iconContainer.iconSource
@@ -81,7 +75,7 @@ Item {
                             id: fallbackIcon
                             anchors.centerIn: parent
                             text: "💬"
-                            visible: parent.cleanPath === "" // 默认不可见
+                            visible: !icond.visible  // 默认不可见
                             font.pixelSize: 20
                         }
                     }

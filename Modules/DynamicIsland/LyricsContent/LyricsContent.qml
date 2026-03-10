@@ -7,6 +7,7 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Services.Mpris
 import qs.config
+import qs.Services
 import qs.Modules.DynamicIsland.LyricsContent
 
 Item {
@@ -115,6 +116,7 @@ Item {
             clip: true
             flickableDirection: Flickable.AutoFlickDirection
             orientation: ListView.Horizontal // 设置为水平滚动
+            snapMode: ListView.SnapOneItem
             cacheBuffer: Lyrics.lyricsWTimes.count
             model: Lyrics.lyricsWTimes
             spacing: width

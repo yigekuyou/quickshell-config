@@ -4,7 +4,7 @@ import QtQuick.Controls
 import Quickshell
 import qs.config
 import qs.Services
-import qs.Widget.common // 假设这是你 SlideWindow 所在的位置
+import qs.Widget.common
 import qs.Services
 import Quickshell.Services.Notifications
 
@@ -16,7 +16,6 @@ SlideWindow {
     
     extraTopMargin: (WidgetState.networkOpen ? 430 : 0) + (WidgetState.audioOpen ? 370 : 0)
     onIsOpenChanged: WidgetState.notifOpen = isOpen
-
     // --- 顶部工具栏 ---
     headerTools: Text {
         Theme { id: theme }
@@ -59,26 +58,50 @@ SlideWindow {
         spacing: 8
 
         // 【核心】引用全局单例
-        model: NotificationManager.temporaryNotifications
+        model: NotificationManager.mergedNotifications
 
         delegate: Rectangle {
             Theme { id: itemTheme }
-
+            id: iconContainer
             width: ListView.view.width
             height: Math.max(60, contentLayout.height + 20)
             radius: 8
             color: "transparent"
-
+	    function getIcon(appIcon, image, appName) {
+		    if (image && image !== "") {
+			    return image;
+		    }
+		    if (appIcon && appIcon !== "") {
+			    // 检查 Quickshell 是否能找到该图标路径
+			    if (Quickshell.iconPath(appIcon, true)) {
+				    return Quickshell.iconPath(appIcon);
+			    }
+		    }			    if (appName && appName !== "") {
+			    let name = appName.toLowerCase();
+			    if (Quickshell.iconPath(name, true)) {
+				    return Quickshell.iconPath(name);
+			    }
+		    }
+		    return ""; // 全都没找到则返回空
+	    }
+	    readonly property string iconSource: getIcon(modelData.appIcon, modelData.image, modelData.appName.toLowerCase())
             border.width: 1
             border.color: ma.containsMouse ? itemTheme.primary : "transparent"
             Behavior on border.color { ColorAnimation { duration: 150 } }
 
-            MouseArea { id: ma; anchors.fill: parent; hoverEnabled: true }
+            MouseArea { id: ma; anchors.fill: parent; hoverEnabled: true
+		    onClicked: {
+			    if (modelData.actions.identifier == "default") {
+			    modelData.actions.invoke();
+		    }
+	    }
+	}
 
             RowLayout {
                 anchors.fill: parent
                 anchors.margins: 10
                 spacing: 12
+
 
                 // 图标
                 Rectangle {
@@ -91,14 +114,14 @@ SlideWindow {
                         id: img
                         anchors.fill: parent
                         anchors.margins: 4
-                        source: model.imagePath
+                        source: iconContainer.iconSource
                         fillMode: Image.PreserveAspectFit
-                        visible: model.imagePath !== "" && status === Image.Ready
+                        visible: iconContainer.iconSource !== "" && status === Image.Ready
                     }
 
                     Text {
                         anchors.centerIn: parent
-                        visible: model.imagePath === "" || img.status === Image.Error
+                        visible: iconContainer.iconSource === "" || img.status === Image.Error
                         text: "\uf0e5"
                         font.family: "Font Awesome 6 Free Solid"
                         font.pixelSize: 20
@@ -122,7 +145,7 @@ SlideWindow {
                         }
                         Item { Layout.fillWidth: true }
                         Text {
-                            text: model.time
+                            text: model.time ?model.time :0
                             font.pixelSize: 10
                             color: itemTheme.subtext
                         }
@@ -160,7 +183,7 @@ SlideWindow {
                         anchors.fill: parent
                         cursorShape: Qt.PointingHandCursor
                         // 调用全局删除
-                        onClicked: NotificationManager.dismissAll()
+                        onClicked: NotificationManager.dismiss(modelData, true)
                     }
                 }
             }

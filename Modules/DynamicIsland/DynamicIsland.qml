@@ -36,7 +36,7 @@ Rectangle {
 	// 简化后的逻辑判定
 	property bool isDashboardMode: showDashboard
 	property bool isWallpaperMode: !showDashboard
-	property bool isLyricsMode: showLyrics && !showDashboard && !showWallpaper
+	property bool isLyricsMode: showLyrics && !showDashboard
 	property bool isLauncherMode: !showDashboard && !isLyricsMode
 	property bool isVolumeMode: showVolume && !expanded && !showDashboard && !isLyricsMode
 	property bool isNotifMode:  NotificationManager.isNotifMode && !expanded && !showDashboard && !isLyricsMode
@@ -112,7 +112,7 @@ Rectangle {
 		onClicked: (mouse) => {
 			if (mouse.button === Qt.MiddleButton) {
 				if (root.showDashboard) root.showDashboard = false; else
-					root.showLyrics = !root.showLyrics; if (root.showLyrics) root.expanded = false;
+				if (currentPlayer) root.showLyrics = !root.showLyrics; if (root.showLyrics) root.expanded = false;
 			} else {
 				if (root.showDashboard) root.showDashboard = false; else if (root.showLyrics) root.showLyrics = false; else root.expanded = !root.expanded;
 			}
