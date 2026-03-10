@@ -45,6 +45,7 @@ Variants {
 		implicitHeight: Math.max(Sizes.barHeight, island.height + 15)
 		color: "transparent"
 		Item {
+			transformOrigin: Item.Center
 			anchors { top: parent.top; left: parent.left; right: parent.right }
 			DynamicIsland {
 				id: island
