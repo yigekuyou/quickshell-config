@@ -8,6 +8,7 @@ import qs.Modules.Bar.Clock
 import qs.Modules.Bar.Tray
 import qs.Modules.Bar.Cava
 import qs.Modules.Bar.Network
+import qs.Modules.Bar.Bluetooth
 import qs.Modules.Bar.Volume
 import qs.Modules.Bar.PowerButton
 import qs.Modules.Bar.PowerProfile
@@ -94,6 +95,7 @@ Variants {
                 PowerProfile {
                     Layout.alignment: Qt.AlignVCenter
                 }
+                Bluetooth{}
                 Network {}
                 Volume {}
                 NotificationButton {
