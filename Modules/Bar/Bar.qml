@@ -22,7 +22,7 @@ Variants {
     PanelWindow {
         id: barWindow
         WlrLayershell.layer: WlrLayer.Top
-        WlrLayershell.keyboardFocus: (island.showLauncher || island.showWallpaper || island.showDashboard)
+        WlrLayershell.keyboardFocus: (island.showDashboard)
 	? WlrKeyboardFocus.Exclusive
 	: WlrKeyboardFocus.None
         required property var modelData
@@ -36,11 +36,13 @@ Variants {
         implicitHeight: Sizes.barHeight
         PopupWindow {
 		anchor.window: barWindow
-		anchor.rect.x:Math.round( parentWindow.width/2  - width / 2)
-		anchor.rect.y:Math.round(parentWindow.height - parentWindow.extraTopMargin)| 0
+		anchor.edges: Edges.Top
+		anchor.gravity: Edges.Bottom
+		anchor.rect.x: Math.round(parentWindow.width / 2)
+		anchor.rect.y: Math.round(parentWindow.height - parentWindow.extraTopMargin)
 		visible: true
-		implicitHeight: Math.round((Math.max(Sizes.barHeight, island.height + island.anchors.topMargin + 5)))
-		implicitWidth: island.width + island.anchors.rightMargin + 5
+		implicitWidth: island.width + 10
+		implicitHeight: Math.max(Sizes.barHeight, island.height + 15)
 		color: "transparent"
 		Item {
 			anchors { top: parent.top; left: parent.left; right: parent.right }
@@ -48,6 +50,7 @@ Variants {
 				id: island
 				anchors.horizontalCenter: parent.horizontalCenter
 				anchors.top: parent.top
+				anchors.topMargin: 5
 
 			}}
 

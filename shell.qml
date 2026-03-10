@@ -30,9 +30,6 @@ ShellRoot {
             }
         }
     }
-    LauncherWindow {
-	    id: rofiLauncher
-    }
     IpcHandler {
         target: "lock" 
         

@@ -24,7 +24,7 @@ Rectangle {
 
 		width: root.activeItem ? root.activeItem.width : 0
 
-		radius: 14
+		radius: Sizes.cornerRadius
 
 		// 之前修改的高亮色
 		color: Colorscheme.on_primary_container

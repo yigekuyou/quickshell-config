@@ -2,7 +2,7 @@ import Quickshell
 import QtQuick
 import com.github.catsout.wallpaperEngineKde
 import Quickshell.Wayland
-
+import qs.config
 
 PanelWindow {
 	aboveWindows: false
@@ -21,11 +21,11 @@ PanelWindow {
 	SceneViewer {
 	anchors.fill: parent
 	id: renderer					// 核心属性
-	source: sceneSource
-	assets: assetsPath
-	fps: 60
-	speed: 1.0
-	muted: true
+	source: WallpaperPath.sceneSource
+	assets: WallpaperPath.assetsPath
+	fps: WallpaperPath.fps
+	speed: WallpaperPath.speed
+	muted: WallpaperPath.muted
 	Component.onCompleted: {
 		renderer.setAcceptMouse(false);
 		renderer.setAcceptHover(false);

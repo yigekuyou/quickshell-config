@@ -49,6 +49,7 @@ SlideWindow {
     // 1. 主音量卡片
     Rectangle {
         Layout.fillWidth: true
+        implicitWidth: ListView.view.width
         implicitHeight: 90
         color: theme.surface
         radius: theme.radius

@@ -74,7 +74,7 @@ SlideWindow {
             opacity: enabled ? 1.0 : 0.5
             // 开关滑块
             Rectangle {
-                x: ((wifiDev)&&wifiDev.wifiEnabled && wifiDev.wifiHardwareEnabled) ? 20 : 2
+                x: ((wifiDev)&&Networking.wifiEnabled && Networking.wifiHardwareEnabled) ? 20 : 2
                 y: 2
                 width: 18
                 height: 18
@@ -91,7 +91,7 @@ SlideWindow {
                 anchors.fill: parent
                 cursorShape: parent.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
                 onClicked: {
-                    wifiDev.wifiEnabled = !wifiDev.wifiEnabled;
+                    Networking.wifiEnabled = !Networking.wifiEnabled;
                 }
             }
         }

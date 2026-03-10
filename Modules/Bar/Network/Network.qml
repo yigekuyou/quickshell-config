@@ -13,8 +13,8 @@ Rectangle {
     id: root
     // --- 胶囊样式 ---
     radius: Sizes.cornerRadius
-    implicitWidth: layout.width + 24
     implicitHeight: Sizes.barHeight
+    implicitWidth: layout.implicitWidth + 24
     color: "#80" + Colorscheme.background.toString().substring(1)
 
     // --- 【2】 实例化网络面板 ---
@@ -40,9 +40,9 @@ Rectangle {
         }
     }
     ColumnLayout {
-        id: layout
-        anchors.fill: parent
+    id: layout
 
+        anchors.fill: parent
         RowLayout {
             Layout.fillWidth: true
             Layout.preferredHeight: 80
@@ -50,13 +50,13 @@ Rectangle {
 
             Repeater {
                 model: Networking.devices
-                delegate: Rectangle {
+                delegate: Item {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    radius: 4
-                    color: modelData.connected ? "#80" + Colorscheme.background.toString().substring(1)  : "#ff5555"
-
+                    implicitWidth: innerRow.implicitWidth
+                    implicitHeight: Sizes.barHeight
                     Row {
+			    id: innerRow
                         spacing: 10
                         layoutDirection: Qt.LeftToRight
                         anchors.centerIn: parent
@@ -67,15 +67,13 @@ Rectangle {
                             color: modelData.connected ? Colorscheme.on_tertiary_container : "#ff5555"
                         }
                         Text {
-                            text: {
-                                if (modelData.type === DeviceType.Wifi) {
-                                    let sortedNetworks = [...modelData.networks.values].filter(d => d.connected === true).sort((a, b) => {
-                                        return b.signalStrength - a.signalStrength;
-                                    }) || {};
-                                    let topNetwork = sortedNetworks.length > 0 ? sortedNetworks[0] : null;
-                                    return topNetwork.name;
-                                }
-                            }
+				text: {
+					if (modelData.type !== DeviceType.Wifi) return "Ethernet";
+					const connectedList = Array.from(modelData.networks.values || [])
+					.filter(net => net.connected);
+					connectedList.sort((a, b) => b.signalStrength - a.signalStrength);
+					return connectedList[0]?.name ?? "未连接";
+				}
                             font.bold: true
                             anchors.verticalCenter: parent.verticalCenter
                             color: modelData.connected ? Colorscheme.on_tertiary_container : "#ff5555"
