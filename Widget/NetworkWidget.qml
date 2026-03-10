@@ -32,9 +32,7 @@ SlideWindow {
         // 刷新按钮
         Text {
             id: boolscan
-	    opacity: (wifiDev && wifiDev.scannerEnabled) ? 0.5 : 1.0
-
-            text: "\uf021"
+            text: wifiDev.scannerEnabled? "" : ""
             font.family: "Font Awesome 6 Free Solid"
             font.pixelSize: 16
             color: headerTheme.subtext
@@ -49,6 +47,11 @@ SlideWindow {
                 running: wifiDev.scannerEnabled
                 from: 0
                 to: 360
+                onRunningChanged: {
+			if (!running) {
+				boolscan.rotation = 0;
+			}
+		}
                 loops: Animation.Infinite
                 duration: 1000
             }

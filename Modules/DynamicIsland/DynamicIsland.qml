@@ -39,7 +39,6 @@ Rectangle {
 	property bool isWallpaperMode: !showDashboard
 	property bool isLyricsMode: showLyrics && !showDashboard
 	property bool isLauncherMode: !showDashboard && !isLyricsMode
-	property bool isVolumeMode: showVolume && !expanded && !showDashboard && !isLyricsMode
 	property bool isNotifMode:  NotificationManager.isNotifMode && !expanded && !showDashboard && !isLyricsMode
 
 	// ================= 状态机定义 (MD3 核心) =================
@@ -48,16 +47,6 @@ Rectangle {
 			name: "DASHBOARD"
 			when: showDashboard
 			PropertyChanges { target: root; width: 810; height: 420; radius: 28 }
-		},
-		State {
-			name: "WALLPAPER"
-			when: showWallpaper
-			PropertyChanges { target: root; width: 810; height: 180; radius: 28 }
-		},
-		State {
-			name: "LAUNCHER"
-			when: showLauncher
-			PropertyChanges { target: root; width: 400; height: 420; radius: 28 }
 		},
 		State {
 			name: "NOTIF"
