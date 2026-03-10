@@ -35,11 +35,9 @@ Singleton {
 		reset()
 		if (player){
 			if (lyricSource.asText === ""){
-				if (lyricSource.asText === ""){
-					// Use metadata title if lyrics are missing
-					let title = player.metadata["xesam:title"] || "Unknown Track"
-					lyricsWTimes.append({time: 0, lyric: title})
-				}
+				// Use metadata title if lyrics are missing
+				let title = player.metadata["xesam:title"] || "Unknown Track"
+				lyricsWTimes.append({time: 0, lyric: title})
 			}parseLyric(lyricSource.asText)
 		}
 	}

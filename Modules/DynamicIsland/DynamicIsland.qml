@@ -30,18 +30,16 @@ Rectangle {
 
 	// ================= 状态控制变量 =================
 	property bool showDashboard: false
-	property bool showWallpaper: false
-	property bool showLauncher: false
 	property bool expanded: false
 	property bool showLyrics: currentPlayer && currentPlayer.isPlaying
 
 	// 简化后的逻辑判定
 	property bool isDashboardMode: showDashboard
-	property bool isWallpaperMode: showWallpaper && !showDashboard
+	property bool isWallpaperMode: !showDashboard
 	property bool isLyricsMode: showLyrics && !showDashboard && !showWallpaper
-	property bool isLauncherMode: showLauncher && !showWallpaper && !showDashboard && !isLyricsMode
-	property bool isVolumeMode: showVolume && !expanded && !showLauncher && !showWallpaper && !showDashboard && !isLyricsMode
-	property bool isNotifMode:  NotificationManager.isNotifMode && !expanded && !showVolume && !showLauncher && !showWallpaper && !showDashboard && !isLyricsMode
+	property bool isLauncherMode: !showDashboard && !isLyricsMode
+	property bool isVolumeMode: showVolume && !expanded && !showDashboard && !isLyricsMode
+	property bool isNotifMode:  NotificationManager.isNotifMode && !expanded && !showDashboard && !isLyricsMode
 
 	// ================= 状态机定义 (MD3 核心) =================
 	states: [
