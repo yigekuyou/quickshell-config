@@ -12,7 +12,7 @@ Item {
     ListView {
         id: delegateItem
         anchors.fill: parent
-        model: NotificationManager.temporaryNotifications
+        model: NotificationManager.sortedTemopraryNotifications
         spacing: 10
         clip: true
         interactive: false
