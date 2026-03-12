@@ -12,7 +12,7 @@ import QtQuick
 	]
         // 3. 设置环境变量
         environment: ({
-		"DRI_PRIME": "pci-0000_03_00_0",
+		"DRI_PRIME": "1",
 		"QSG_RHI_BACKEND": "opengl"
 	})
 
