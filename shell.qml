@@ -1,4 +1,4 @@
-//@ pragma UseQApplication
+ //@ pragma UseQApplication
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Io  
@@ -7,13 +7,13 @@ import qs.Modules.Bar
 import qs.Modules.DynamicIsland
 import qs.config
 import qs.Modules.Launcher
-
+import qs.Wallpaper
 ShellRoot {
 	Bar {}
 	Variants {
 	model: Quickshell.screens
 	}
-
+	LoadWall{}
     // ================= 锁屏管理器 =================
     Loader {
         id: lockLoader

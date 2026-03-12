@@ -39,8 +39,8 @@ Variants {
 		anchor.window: barWindow
 		anchor.edges: Edges.Top
 		anchor.gravity: Edges.Bottom
-		anchor.rect.x: Math.round(parentWindow.width / 2)
-		anchor.rect.y: Math.round(parentWindow.height - parentWindow.extraTopMargin)
+		anchor.rect.x: Math.round(modelData.width / 2)
+		anchor.rect.y: Math.round(0)
 		visible: true
 		implicitWidth: island.width + 10
 		implicitHeight: Math.max(Sizes.barHeight, island.height + 15)
@@ -53,9 +53,8 @@ Variants {
 				anchors.horizontalCenter: parent.horizontalCenter
 				anchors.top: parent.top
 				anchors.topMargin: 5
-
-			}}
-
+			}
+		}
 	}
         Item {
             id: barContent
