@@ -6,7 +6,6 @@ import qs.config
 
 PanelWindow {
     id: root
-    
     // --- 开放给外部的属性 ---
     property bool isOpen: false
     property string title: ""
@@ -46,7 +45,6 @@ PanelWindow {
 
     visible: false
     color: "transparent"
-
     onIsOpenChanged: {
         if (isOpen) {
             if (exitAnim.running) exitAnim.stop()
@@ -57,11 +55,10 @@ PanelWindow {
             exitAnim.start()
         }
     }
-
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "qs-widget"
     WlrLayershell.exclusionMode: ExclusionMode.Ignore
-    WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+    WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
 
     // 计算最终停靠的位置 X
     // 容器宽(400) - 内容宽(340) - 右边距(10) = 50

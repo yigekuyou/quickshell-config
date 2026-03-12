@@ -8,7 +8,7 @@ import QtQuick
         command: [
 		"qs",
 		"--path",
-		Quickshell.env("XDG_CONFIG_HOME") + "/quickshell/Wall.qml"
+		Quickshell.env("XDG_CONFIG_HOME") + "/quickshell/Wallpaper/Wall.qml"
 	]
         // 3. 设置环境变量
         environment: ({

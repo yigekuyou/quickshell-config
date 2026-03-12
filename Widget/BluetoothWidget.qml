@@ -14,7 +14,7 @@ SlideWindow { //qmllint disable uncreatable-type
     title: "蓝牙配置"
     icon: ""
     onIsOpenChanged: {
-	    WidgetState.networkOpen = isOpen;
+	    WidgetState.bluetoothOpen = isOpen;
     }
 
     property list<BluetoothDevice> devices: filterDevices(Bluetooth.defaultAdapter.devices.values) // qmllint disable unresolved-type
