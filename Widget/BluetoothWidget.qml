@@ -13,10 +13,6 @@ SlideWindow { //qmllint disable uncreatable-type
     id: bluetooth
     title: "蓝牙配置"
     icon: ""
-    onIsOpenChanged: {
-	    WidgetState.bluetoothOpen = isOpen;
-    }
-
     property list<BluetoothDevice> devices: filterDevices(Bluetooth.defaultAdapter.devices.values) // qmllint disable unresolved-type
 
     function filterDevices(devices) {
@@ -37,9 +33,6 @@ SlideWindow { //qmllint disable uncreatable-type
         }
 
         // 刷新按钮
-        RowLayout {
-		anchors.centerIn: parent
-		spacing: 10
         Text {
 		text: "\uf06e" // FontAwesome 'eye' 图标
 		font.family: "Font Awesome 6 Free Solid"
@@ -53,6 +46,10 @@ SlideWindow { //qmllint disable uncreatable-type
 				Bluetooth.defaultAdapter.discoverable = !Bluetooth.defaultAdapter.discoverable;
 			}
 		}
+	}
+
+	Item {
+		implicitWidth: 10
 	}
         Text {
             id: boolscan
@@ -80,6 +77,9 @@ SlideWindow { //qmllint disable uncreatable-type
                 duration: 1000
             }
         }
+        Item {
+		implicitWidth: 10
+	}
         Rectangle {
             id: blueSwitch
             Layout.fillWidth: false // 通常开关不 fillWidth，除非你想要一个长条开关
@@ -114,15 +114,13 @@ SlideWindow { //qmllint disable uncreatable-type
             }
         }
     }
-
-    }
     ColumnLayout {
 	    anchors.margins: 5
 	    Theme {
 		    id: contentTheme
 	    }
 	    Text {
-		    text: "网络列表"
+		    text: "蓝牙列表"
 		    color: contentTheme.subtext
 		    font.pixelSize: 12
 		    font.bold: true
