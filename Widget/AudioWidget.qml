@@ -109,6 +109,7 @@ SlideWindow {
         model: appTracker.linkGroups
 
         delegate: Rectangle {
+		anchors.fill: parent
             // 【修复2】这里必须实例化 Theme，否则下面的颜色找不到 theme 对象
             Theme { id: itemTheme }
 
@@ -119,7 +120,6 @@ SlideWindow {
             implicitHeight: 50
             radius: 8
             color: "transparent"
-            border.width: 1
             // 使用 itemTheme
             border.color: ma.containsMouse ? itemTheme.primary : "transparent"
             Behavior on border.color { ColorAnimation { duration: 150 } }
@@ -127,10 +127,10 @@ SlideWindow {
             PwObjectTracker { objects: [ appNode ] }
 
             MouseArea { id: ma; anchors.fill: parent; hoverEnabled: true }
-
+            ColumnLayout {
+		    anchors.fill: parent
             RowLayout {
                 anchors.fill: parent
-                anchors.margins: 10
                 spacing: 12
 
                 // 应用图标
@@ -220,5 +220,6 @@ SlideWindow {
                 }
             }
         }
+	}
     }
 }
