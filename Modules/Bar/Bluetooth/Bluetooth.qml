@@ -21,7 +21,7 @@ Rectangle {
     BluetoothWidget {
         id: bluetoothPanel
         // 默认是关闭的
-        isOpen: false
+        visible: false
 
         // 如果你想让面板的配色跟随全局 Colorscheme，可以在这里覆盖内部属性
         // (前提是 NetworkWidget 内部没有把这些属性写死，而是开放了别名或者属性)
@@ -36,7 +36,7 @@ Rectangle {
         // --- 【3】 修改点击逻辑 ---
         onClicked: {
             // 切换面板的开关状态
-            bluetoothPanel.isOpen = !bluetoothPanel.isOpen;
+            bluetoothPanel.visible = !bluetoothPanel.visible;
         }
     }
     ColumnLayout {

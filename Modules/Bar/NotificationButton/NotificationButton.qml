@@ -18,7 +18,7 @@ Rectangle {
     // --- 交互区域 ---
     NotificationWidget {
         id: notifPanel
-        isOpen: false
+        visible: false
     }
 
     MouseArea {
@@ -27,7 +27,7 @@ Rectangle {
         
         // 3. 点击切换开关
         onClicked: {
-            notifPanel.isOpen = !notifPanel.isOpen
+            notifPanel.visible = !notifPanel.visible
         }
     }
 

@@ -13,9 +13,6 @@ SlideWindow {
     title: "通知中心"
     icon: "\uf0f3" 
     windowHeight: 560
-    
-    extraTopMargin: (WidgetState.networkOpen ? 430 : 0) + (WidgetState.audioOpen ? 370 : 0)
-    onIsOpenChanged: WidgetState.notifOpen = isOpen
     // --- 顶部工具栏 ---
     headerTools: Text {
         Theme { id: theme }

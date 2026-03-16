@@ -35,6 +35,8 @@ Variants {
         }
         color: "transparent"
         implicitHeight: Sizes.barHeight
+	LazyLoader {
+		loading: true
         PopupWindow {
 		anchor.window: barWindow
 		anchor.edges: Edges.Top
@@ -56,6 +58,7 @@ Variants {
 			}
 		}
 	}
+	    }
         Item {
             id: barContent
 

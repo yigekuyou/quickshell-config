@@ -5,13 +5,13 @@ import Quickshell.Wayland
 import qs.config
 
 PopupWindow {
+	id:popudroot
 	anchor.window: barWindow
 	anchor.edges: Edges.Top
 	anchor.gravity: Edges.Bottom
 	anchor.rect.x: Math.round(modelData.width)
 	anchor.rect.y: Math.round(parentWindow.height)
     // --- 开放给外部的属性 ---
-    property bool isOpen: false
     property string title: ""
     property string icon: ""
     property int windowHeight: 420
@@ -37,8 +37,7 @@ PopupWindow {
     
 
     implicitWidth: 400
-    implicitHeight: windowHeight
-    visible :isOpen
+    implicitHeight: popudroot.windowHeight
     color: "transparent"
     Rectangle {
         id: bg
@@ -55,15 +54,15 @@ PopupWindow {
 		Layout.fillWidth: true
 		RowLayout {
 			Layout.fillWidth: true
-		    Text { text: icon; font.family: "Font Awesome 6 Free Solid"; font.pixelSize: 20; color: theme.primary }
-		    Text { text: title; font.bold: true; font.pixelSize: 18; color: theme.text; Layout.fillWidth: true; Layout.leftMargin: 8 }
+		    Text { text: popudroot.icon; font.family: "Font Awesome 6 Free Solid"; font.pixelSize: 20; color: theme.primary }
+		    Text { text: popudroot.title; font.bold: true; font.pixelSize: 18; color: theme.text; Layout.fillWidth: true; Layout.leftMargin: 8 }
                 RowLayout { id: headerToolsLayout }
                 Item { width: 10 }
                 Text {
 			Layout.fillWidth: true
                     text: "\uf00d"
                     font.family: "Font Awesome 6 Free Solid"; font.pixelSize: 18; color: theme.subtext
-                    MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: isOpen = false }
+                    MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: popudroot.visible = false }
                 }
             }
 
