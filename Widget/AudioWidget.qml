@@ -169,7 +169,7 @@ SlideWindow {
                             Layout.fillWidth: true
                         }
                         Text {
-                            text: Math.round(appNode.audio.volume * 100) + "%"
+                            text:  `${Math.floor(appNode.audio.volume * 100)}%`
                             font.pixelSize: 10
                             // 使用 itemTheme
                             color: itemTheme.subtext
