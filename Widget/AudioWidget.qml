@@ -155,7 +155,12 @@ SlideWindow {
                     RowLayout {
                         Layout.fillWidth: true
                         Text {
-                            text: appNode.properties["application.name"] || appNode.name
+				text: {
+					// application.name -> description -> name
+					const app = appNode.properties["application.name"] ?? (appNode.description != "" ? appNode.description : appNode.name);
+					const media = appNode.properties["media.name"];
+					return media != undefined ? `${app} - ${media}` : app;
+				}
                             font.bold: true
                             font.pixelSize: 12
                             // 使用 itemTheme
