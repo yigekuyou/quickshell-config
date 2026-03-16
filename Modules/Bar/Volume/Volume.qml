@@ -19,7 +19,7 @@ Rectangle {
     // 2. 实例化混音器小组件
     AudioWidget {
         id: audioPanel
-        isOpen: false // 默认关闭
+        visible: false // 默认关闭
     }
 
     // --- 交互区域 ---
@@ -42,7 +42,7 @@ Rectangle {
         onClicked: {
             // 原来是: Quickshell.execDetached(["pavucontrol"])
             // 现在改为:
-            audioPanel.isOpen = !audioPanel.isOpen
+            audioPanel.visible = !audioPanel.visible
         }
     }
 

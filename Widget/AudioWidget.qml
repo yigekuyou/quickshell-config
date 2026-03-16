@@ -13,10 +13,6 @@ SlideWindow {
     
     windowHeight: 360
     
-    extraTopMargin: WidgetState.networkOpen ? (420 + 10) : 0
-    
-    onIsOpenChanged: WidgetState.audioOpen = isOpen
-
     headerTools: Text {
         // 【修复1】这里需要 Theme 实例，因为 headerTools 是动态加载的
         Theme { id: theme }
@@ -126,7 +122,6 @@ SlideWindow {
 
             PwObjectTracker { objects: [ appNode ] }
 
-            MouseArea { id: ma; anchors.fill: parent; hoverEnabled: true }
             ColumnLayout {
 		    anchors.fill: parent
             RowLayout {
@@ -138,21 +133,11 @@ SlideWindow {
                     Layout.preferredWidth: 24
                     Layout.preferredHeight: 24
                     visible: source != ""
-                    
-                    // 【修改逻辑】将所有 Chromium 相关的图标强制映射为 google-chrome
-                    source: {
-                        const iconProperty = appNode.properties["application.icon-name"] || "";
-                        const binaryName = appNode.properties["application.process.binary"] || "";
-                        
-                        // 检查属性或二进制名称中是否包含 chromium
-                        if (iconProperty.includes("chromium") || binaryName.includes("chromium")) {
-                            return "image://icon/google-chrome";
-                        }
-                        
-                        // 其他应用保持原有逻辑
-                        let finalIcon = iconProperty || binaryName || "audio-card";
-                        return `image://icon/${finalIcon}`;
-                    }
+		    source: {
+			    const icon = appNode.properties["application.icon-name"] ?? "audio-volume-high-symbolic";
+			    return `image://icon/${icon}`;
+		    }
+
 
                     // 容错处理：如果图标加载失败，回退到通用音频图标
                     onStatusChanged: {
@@ -169,20 +154,20 @@ SlideWindow {
 
                     RowLayout {
                         Layout.fillWidth: true
-                        Text { 
+                        Text {
                             text: appNode.properties["application.name"] || appNode.name
                             font.bold: true
                             font.pixelSize: 12
                             // 使用 itemTheme
                             color: itemTheme.text
                             elide: Text.ElideRight
-                            Layout.fillWidth: true 
+                            Layout.fillWidth: true
                         }
-                        Text { 
+                        Text {
                             text: Math.round(appNode.audio.volume * 100) + "%"
                             font.pixelSize: 10
                             // 使用 itemTheme
-                            color: itemTheme.subtext 
+                            color: itemTheme.subtext
                         }
                     }
 
@@ -201,7 +186,7 @@ SlideWindow {
                             // 【关键修复】这里之前是白色，现在使用了 itemTheme.primary
                             color: itemTheme.primary
                         }
-                        
+
                         MouseArea {
                             anchors.fill: parent
                             cursorShape: Qt.PointingHandCursor
@@ -218,6 +203,22 @@ SlideWindow {
                         }
                     }
                 }
+                Rectangle {
+			width: 46
+			height: 26
+			radius: 4
+			color: Qt.rgba(itemTheme.primary.r, itemTheme.primary.g, itemTheme.primary.b, 0.15)
+                Text {
+			anchors.centerIn: parent
+			text: appNode.audio.muted ? "恢复" : "静音"
+			color: itemTheme.primary
+			font.pixelSize: 11
+			font.bold: true
+		}MouseArea {
+			anchors.fill: parent
+			cursorShape: Qt.PointingHandCursor
+			onClicked: appNode.audio.muted = !appNode.audio.muted
+		}}
             }
         }
 	}
