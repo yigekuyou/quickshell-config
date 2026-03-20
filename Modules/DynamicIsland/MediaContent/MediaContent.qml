@@ -1,21 +1,20 @@
 import QtQuick
 import QtQuick.Layouts
-import Qt5Compat.GraphicalEffects
 import Quickshell
 import Quickshell.Services.Mpris
 import qs.config
-import org.kde.kirigami 2.15 as Kirigami
-Item {
+import org.kde.kirigami as Kirigami
+Kirigami.ShadowedRectangle {
     id: root
-    
+
     required property var player
-    
+
     readonly property bool isActive: root.visible && root.player
 
     property string artUrl: (isActive && player.trackArtUrl) ? player.trackArtUrl : ""
     property string title: (isActive && player.trackTitle) ? player.trackTitle : "No Media"
     property string artist: (isActive && player.trackArtist) ? player.trackArtist : ""
-    
+
     // 进度百分比 (0.0 ~ 1.0)
     property double progress: (isActive && player.length > 0) ? (player.position / player.length) : 0
 
@@ -30,13 +29,13 @@ Item {
             spacing: 15
 
             // 专辑封面
-            Rectangle {
+            Kirigami.ShadowedRectangle {
                 Layout.preferredWidth: 60
                 Layout.preferredHeight: 60
                 radius: 12
                 color: Colorscheme.background
                 clip: true
-                
+
                 Image {
                     anchors.fill: parent
                     source: root.artUrl
@@ -44,15 +43,14 @@ Item {
                     asynchronous: true
                     visible: root.artUrl !== "" && status === Image.Ready
                 }
-                
+
                 // 没封面时显示的图标
-                Text {
-                    anchors.centerIn: parent
-                    text: "♫"
-                    color: "#555"
-                    font.pixelSize: 28
-                    visible: root.artUrl === ""
-                }
+                Kirigami.Icon {
+			anchors.centerIn: parent
+			width: 32; height: 32
+			source: "audio-x-generic"
+			visible: root.artUrl === ""
+		}
             }
 
             // 文本信息
@@ -60,19 +58,18 @@ Item {
                 Layout.fillWidth: true
                 Layout.alignment: Qt.AlignVCenter
                 spacing: 4
-                
-                Text {
-                    text: root.title
-                    color: "white"
-                    font.bold: true
-                    font.pixelSize: 16
-                    Layout.fillWidth: true
-                    elide: Text.ElideRight
-                }
+
+                Kirigami.Heading {
+			text: root.title
+			level: 3
+			Layout.fillWidth: true
+			elide: Text.ElideRight
+			type: Kirigami.Heading.Type.Primary
+		}
                 Text {
                     text: root.artist
                     color: "#aaa"
-                    font.pixelSize: 13
+                    font.pointSize: Kirigami.Theme.smallFont.pointSize
                     Layout.fillWidth: true
                     elide: Text.ElideRight
                 }
@@ -101,7 +98,7 @@ Item {
                     color: "white"
 
                     width: {
-		    if (player.canSeeK){
+		    if (player.canSeek){
                         if (seekMa.pressed) {
                             let w = seekMa.mouseX;
                             if (w < 0) return 0;
@@ -135,9 +132,9 @@ Item {
                     id: seekMa
                     anchors.fill: parent
                     // 上下扩大点击范围，不用瞄准那6像素
-                    anchors.margins: -6 
+                    anchors.margins: -6
                     cursorShape: Qt.PointingHandCursor
-                    
+
                     // 【核心修改 3】只在松开鼠标时发送指令，防止音频鬼畜
                     onReleased: (mouse) => {
 			    if (player.canSeek){
@@ -147,13 +144,13 @@ Item {
                         let val = mouse.x;
                         if (val < 0) val = 0;
                         if (val > trackBg.width) val = trackBg.width;
-                        
+
                         // 计算并跳转
                         let percent = val / trackBg.width;
 			    root.player.position = percent * root.player.length;
 		    }
                     }
-                    
+
                     // 注意：这里不需要 onClicked 或 onPositionChanged
                     // onReleased 完美覆盖了点击跳转和拖拽跳转两种情况
                 }
@@ -164,18 +161,18 @@ Item {
         Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            
+
             RowLayout {
                 anchors.centerIn: parent
-                spacing: 45 
-                
+                spacing: 45
+
                 // 1. 上一曲
                 MouseArea {
                     Layout.preferredWidth: 40
                     Layout.preferredHeight: 40
                     cursorShape: Qt.PointingHandCursor
                     onClicked: if(root.player) root.player.previous()
-                    
+
                     Kirigami.Icon {
                         id: prevIcon
                         anchors.centerIn: parent
@@ -185,11 +182,6 @@ Item {
                         smooth: true
                         visible: false
                     }
-                    ColorOverlay {
-                        anchors.fill: prevIcon
-                        source: prevIcon
-                        color: "white"
-                    }
                 }
 
                 // 2. 播放/暂停
@@ -198,7 +190,7 @@ Item {
                     Layout.preferredHeight: 40
                     cursorShape: Qt.PointingHandCursor
                     onClicked: if(root.player) root.player.togglePlaying()
-                    
+
                     Kirigami.Icon {
                         id: playPauseIcon
                         anchors.centerIn: parent
@@ -208,11 +200,6 @@ Item {
                         smooth: true
                         visible: false
                     }
-                    ColorOverlay {
-                        anchors.fill: playPauseIcon
-                        source: playPauseIcon
-                        color: "white"
-                    }
                 }
 
                 // 3. 下一曲
@@ -221,7 +208,7 @@ Item {
                     Layout.preferredHeight: 40
                     cursorShape: Qt.PointingHandCursor
                     onClicked: if(root.player) root.player.next()
-                    
+
                     Kirigami.Icon {
                         id: nextIcon
                         anchors.centerIn: parent
@@ -230,11 +217,6 @@ Item {
                         source:  "media-skip-forward-symbolic"
                         smooth: true
                         visible: false
-                    }
-                    ColorOverlay {
-                        anchors.fill: nextIcon
-                        source: nextIcon
-                        color: "white"
                     }
                 }
             }

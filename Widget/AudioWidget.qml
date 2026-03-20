@@ -1,4 +1,5 @@
 import QtQuick
+import org.kde.kirigami as Kirigami
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Services.Pipewire
@@ -129,22 +130,15 @@ SlideWindow {
                 spacing: 12
 
                 // 应用图标
-                Image {
+                Kirigami.Icon {
                     Layout.preferredWidth: 24
                     Layout.preferredHeight: 24
                     visible: source != ""
 		    source: {
-			    const icon = appNode.properties["application.icon-name"] ?? "audio-volume-high-symbolic";
-			    return `image://icon/${icon}`;
-		    }
-
-
-                    // 容错处理：如果图标加载失败，回退到通用音频图标
-                    onStatusChanged: {
-                        if (status === Image.Error) {
-                            source = "image://icon/audio-card";
-                        }
-                    }
+			    // 逻辑：优先取 icon-name，其次取节点名，最后保底
+			    return (appNode.properties && appNode.properties["application.icon-name"])
+			    || appNode.name }
+			    fallback: "audio-volume-high-symbolic"
                 }
 
                 // 应用名称 + 音量条
