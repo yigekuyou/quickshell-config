@@ -84,7 +84,7 @@ Item {
         ListView {
             id: lyricListView
             preferredHighlightBegin: 0
-            preferredHighlightEnd: 42
+            preferredHighlightEnd: width
             anchors.left: albumCoverContainer.right
             anchors.right: parent.right
             anchors.top: parent.top
@@ -101,14 +101,12 @@ Item {
             spacing: width
             // 歌词条目的委托
             delegate: Kirigami.Heading {
-		    level: 2
+		level: 2
                 height: lyricListView.height
-                width: lyricListView.width
                 Layout.preferredWidth: implicitWidth
                 text: model.lyric
                 horizontalAlignment: Text.AlignRight
                 verticalAlignment: Text.AlignVCenter
-                elide: Text.ElideRight
                 color: Kirigami.Theme.textColor
             }
             onCurrentIndexChanged: {
@@ -126,7 +124,11 @@ Item {
                         lyricScrollAnimation.from = contentX - width;
                         lyricScrollAnimation.to = contentX - width + lyricMetrics.advanceWidth;
                         lyricScrollAnimation.start();
-                    }
+                    }else {
+			    lyricScrollAnimation.from = contentX - width + lyricMetrics.advanceWidth;
+			    lyricScrollAnimation.to = contentX - width + lyricMetrics.advanceWidth;
+			    lyricScrollAnimation.start();
+		}
                 }
             }
         }
@@ -137,7 +139,7 @@ Item {
 	}
         TextMetrics {
 		id: lyricMetrics
-		font.pixelSize: dummyHeading.font.pointSize
+		font: dummyHeading.font
 	}
         Binding {
             target: lyricListView
