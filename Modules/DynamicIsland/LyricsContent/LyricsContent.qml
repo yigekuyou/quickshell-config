@@ -114,7 +114,7 @@ Item {
                     lyricListView.positionViewAtIndex(currentIndex, ListView.Right);
                     lyricScrollAnimation.stop();
                     lyricMetrics.text = Lyrics.lyricsWTimes.get(currentIndex).lyric;
-                    if (lyricMetrics.advanceWidth > width) {
+                    if (lyricMetrics.advanceWidth+Kirigami.Units.smallSpacing > width) {
                         if (currentIndex + 2 < Lyrics.lyricsWTimes.count) {
                             lyricScrollAnimation.duration =Math.max(0,(Lyrics.lyricsWTimes.get(currentIndex + 1).time - mprisCurrentPlayingSongTimeMS) / 1000); //这是从计算器里验证的ms
                         }
@@ -125,8 +125,8 @@ Item {
                         lyricScrollAnimation.to = contentX - width + lyricMetrics.advanceWidth;
                         lyricScrollAnimation.start();
                     }else {
-			    lyricScrollAnimation.from = contentX - width + lyricMetrics.advanceWidth;
-			    lyricScrollAnimation.to = contentX - width + lyricMetrics.advanceWidth;
+			    lyricScrollAnimation.from = contentX - width + lyricMetrics.advanceWidth +Kirigami.Units.smallSpacing ;
+			    lyricScrollAnimation.to = contentX - width + lyricMetrics.advanceWidth +Kirigami.Units.smallSpacing ;
 			    lyricScrollAnimation.start();
 		}
                 }
