@@ -56,13 +56,7 @@ PopupWindow {
 		    Text { text: popudroot.icon; font.family: "Font Awesome 6 Free Solid"; font.pixelSize: 20; color: theme.primary }
 		    Text { text: popudroot.title; font.bold: true; font.pixelSize: 18; color: theme.text; Layout.fillWidth: true; Layout.leftMargin: 8 }
                 RowLayout { id: headerToolsLayout }
-                Item { width: 10 }
-                Text {
-			Layout.fillWidth: true
-                    text: "\uf00d"
-                    font.family: "Font Awesome 6 Free Solid"; font.pixelSize: 18; color: theme.subtext
-                    MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: popudroot.visible = false }
-                }
+
             }
 
             ColumnLayout {
