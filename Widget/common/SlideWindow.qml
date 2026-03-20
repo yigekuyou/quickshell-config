@@ -17,10 +17,9 @@ PopupWindow {
     property string icon: ""
     property int windowHeight: 420
     property int extraTopMargin: 0 
-    
     property alias headerTools: headerToolsLayout.data 
     default property alias content: contentLayout.data
-
+	    grabFocus: true
     // --- 内部通用逻辑 ---
     QtObject {
         id: theme
@@ -35,7 +34,6 @@ PopupWindow {
         property int padding: 16
     }
 
-    
 
     implicitWidth: 400
     implicitHeight: popudroot.windowHeight
