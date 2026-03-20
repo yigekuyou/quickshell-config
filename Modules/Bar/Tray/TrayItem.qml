@@ -3,7 +3,6 @@ import Quickshell
 import Quickshell.Services.SystemTray
 import Quickshell.Widgets // 包含 PopupWindow
 import qs.config
-
 MouseArea {
 	id: root
 	required property var modelData
@@ -20,14 +19,14 @@ MouseArea {
 	onClicked: (event) => {
 		if (event.button === Qt.LeftButton) {
 			modelData.activate();
-			popup.visible = false;
 		} else if (event.button === Qt.RightButton) {
 			// 切换窗口显示状态
-			modelData.secondaryActivate();
-			popup.visible = !popup.visible;
+			if(modelData.hasMenu){
+				var pos = root.mapToItem(barWindow.contentItem, 0, root.height);
+				modelData.display(barWindow, pos.x, pos.y)
+			}
 		}
 	}
-
 	Image {
 		id: content
 		anchors.fill: parent
