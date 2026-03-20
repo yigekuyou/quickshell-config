@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Effects
 import Quickshell
 import Quickshell.Io
 import Quickshell.Services.Mpris
@@ -14,21 +13,24 @@ import qs.Modules.DynamicIsland.VolumeContent
 import qs.Modules.DynamicIsland.LauncherContent
 import qs.Modules.DynamicIsland.DashboardContent
 import qs.Modules.DynamicIsland.LyricsContent
+import org.kde.kirigami as Kirigami
 
-Rectangle {
+Kirigami.ShadowedRectangle {
 	id: root
 	anchors.horizontalCenter: parent.horizontalCenter
 	transformOrigin: Item.Center
-	color: "#cc" + Colorscheme.background.toString().substring(1)
-	// ================= MD3 视觉优化 =================
-	layer.enabled: true
-	layer.effect: MultiEffect {
-		antialiasing: true
-		shadowEnabled: true
-		shadowColor: "#40000000"
-		shadowBlur: 0.8
-	}
+	color: Kirigami.Theme.backgroundColor
+	opacity: 0.8
+	// MD3 风格的圆角和阴影
+	radius: Kirigami.Units.gridUnit // 默认圆角
+	shadow.color: Qt.rgba(0, 0, 0, 0.3)
+	shadow.size: 20
+	shadow.yOffset: 4
 
+	// 边框处理（MD3 典型特征）
+	border.width: 1
+	border.color: Kirigami.Theme.highlightColor
+	readonly property real unit: Kirigami.Units.gridUnit
 	// ================= 状态控制变量 =================
 	property bool showDashboard: false
 	property bool expanded: false
@@ -46,46 +48,38 @@ Rectangle {
 		State {
 			name: "DASHBOARD"
 			when: showDashboard
-			PropertyChanges { target: root; width: 810; height: 420; radius: 28 }
+			PropertyChanges { target: root; width: unit * 45; height: unit * 24; radius: unit * 1.5 }
 		},
 		State {
 			name: "NOTIF"
 			when: isNotifMode
-			PropertyChanges { target: root; width: 380; height: 90; radius: 24 }
+			PropertyChanges { target: root; width: unit * 22; height: unit * 5; radius: unit * 1.2 }
 		},
 		State {
 			name: "EXPANDED"
 			when: expanded
-			PropertyChanges { target: root; width: 420; height: 180; radius: 28 }
+			PropertyChanges { target: root; width: unit * 24; height: unit * 10; radius: unit * 1.5 }
 		},
 		State {
 			name: "LYRICS"
-			when: isLyricsMode
-			PropertyChanges { target: root; width: 480; height: 42; radius: 20 }
+			when: showLyrics && !showDashboard
+			PropertyChanges { target: root; width: unit * 28; height: unit * 2.5; radius: unit }
 		},
 		State {
 			name: "COLLAPSED"
 			when: true
-			PropertyChanges { target: root; width: 220; height: 32; radius: 16 }
+			PropertyChanges { target: root; width: unit * 12; height: unit * 2; radius: unit * 0.8 }
 		}
 	]
 
-	// ================= MD3 过渡动画 (修复闪烁) =================
 	transitions: Transition {
 		from: "*"; to: "*"
-		ParallelAnimation {
-			// 使用标准的 OutCubic 替代 OutBack，解决边界裁剪闪烁
-			NumberAnimation {
-				properties: "width,height,radius"
-				duration: 400
-				easing.type: Easing.OutCubic
-			}
-
-			// 动画执行期间临时关闭 clip，确保回弹或变形过程边缘平滑 [cite: 21]
-			PropertyAction { target: root; property: "clip"; value: false }
+		NumberAnimation {
+			properties: "width,height,radius"
+			duration: Kirigami.Units.longDuration
+			easing.type: Easing.OutCubic
 		}
 	}
-
 	// ================= 内部内容包装器 =================
 	component IslandContent : Item {
 		property bool active: false
@@ -115,12 +109,15 @@ Rectangle {
 
 		IslandContent {
 			active: root.state === "COLLAPSED"
+			anchors.leftMargin: Kirigami.Units.largeSpacing
+			anchors.rightMargin: Kirigami.Units.largeSpacing
 			ClockContent { anchors.fill: parent; player: root.currentPlayer }
 		}
 
 		IslandContent {
 			active: root.state === "NOTIF"
-			NotificationContent { anchors.fill: parent; anchors.margins: 10 }
+		NotificationContent { anchors.fill: parent; anchors.margins: Kirigami.Units.mediumSpacing }
+
 		}
 
 		IslandContent {

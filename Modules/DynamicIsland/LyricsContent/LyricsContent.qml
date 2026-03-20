@@ -9,7 +9,7 @@ import Quickshell.Services.Mpris
 import qs.config
 import qs.Services
 import qs.Modules.DynamicIsland.LyricsContent
-
+import org.kde.kirigami as Kirigami
 Item {
     id: root
     anchors.top: parent.top
@@ -127,8 +127,8 @@ Item {
                 text: model.lyric
                 horizontalAlignment: Text.AlignRight
                 verticalAlignment: Text.AlignVCenter
-                font.pixelSize: 14
-                color: "#80ffffff"
+                font.pointSize: Kirigami.Theme.pointSize
+                color: Kirigami.Theme.textColor
             }
             onCurrentIndexChanged: {
                 if (Lyrics.lyricsWTimes.count > 0 && currentIndex >= 0) {
