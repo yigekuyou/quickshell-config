@@ -3,7 +3,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Services.Mpris as QMpris
-import io.github.lyric // 保持原有 C++ 扩展导入
+import com.github.yigekuyou.lyrics  // 保持原有 C++ 扩展导入
 
 Singleton {
 	id: root
