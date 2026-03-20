@@ -9,7 +9,8 @@ PopupWindow {
 	anchor.window: barWindow
 	anchor.edges: Edges.Top
 	anchor.gravity: Edges.Bottom
-	anchor.rect.x: Math.round(modelData.width)
+	property var pos : mapToItem(parentWindow.contentItem, 0, parentWindow.height);
+	anchor.rect.x: Math.round(pos.x)
 	anchor.rect.y: Math.round(parentWindow.height)
     // --- 开放给外部的属性 ---
     property string title: ""
