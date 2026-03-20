@@ -11,7 +11,7 @@ PopupWindow {
 	anchor.gravity: Edges.Bottom
 	property var pos : mapToItem(parentWindow.contentItem, 0, parentWindow.height);
 	anchor.rect.x: Math.round(pos.x)
-	anchor.rect.y: Math.round(parentWindow.height)
+	anchor.rect.y: Math.round(pos.y)
     // --- 开放给外部的属性 ---
     property string title: ""
     property string icon: ""
