@@ -22,13 +22,7 @@ Item {
     readonly property string artUrl: player ? (player.trackArtUrl || "") : ""
     readonly property string position: player ? (player.position * 1000 * 1000 || "") : ""
     property int currentLyricIndex: 0
-    property int mprisCurrentPlayingSongTimeMS: {
-        if (position == 0) {
-            return -1;
-        } else {
-            return position;
-        }
-    }
+    property int mprisCurrentPlayingSongTimeMS: position > 0 ? position : -1
     Timer {
         id: positionTimer
         interval: 200
@@ -53,7 +47,8 @@ Item {
                     }
                 }
             }
-        }
+		    console.log("DEBUG: Time Match! Current Time:", mprisCurrentPlayingSongTimeMS)
+	}
     }
     Binding {
         target: lyricListView
@@ -72,47 +67,31 @@ Item {
             width: 26
             height: 26
 
-            Image {
+            Kirigami.ShadowedImage {
                 id: coverImg
                 anchors.fill: parent
                 source: root.artUrl
                 visible: root.artUrl !== ""
                 fillMode: Image.PreserveAspectCrop
-                layer.enabled: true
-                layer.effect: MultiEffect {
-                    maskEnabled: true
-                    maskSource: ShaderEffectSource {
-                        sourceItem: Rectangle {
-                            width: coverImg.width
-                            height: coverImg.height
-                            radius: 5
-                            color: "black"
-                        }
-                    }
-                }
-            }
-            Text {
-                visible: root.artUrl === ""
-                anchors.centerIn: parent
-                text: "\uf001"
-                font.family: "Symbols Nerd Font Mono"
-                font.pixelSize: 14
-                color: "#80ffffff"
-            }
-        }
+                radius: Kirigami.Units.smallSpacing
+                shadow.size: Kirigami.Units.smallSpacing
+                shadow.xOffset: 0
+                shadow.yOffset: 2
+                shadow.color: Qt.rgba(0, 0, 0, 0.3)
+		}
+	}
         // 歌词列表
         ListView {
             id: lyricListView
             preferredHighlightBegin: 0
             preferredHighlightEnd: 42
             anchors.left: albumCoverContainer.right
-            anchors.leftMargin: 12
             anchors.right: parent.right
-            anchors.rightMargin: 15
             anchors.top: parent.top
             anchors.bottom: parent.bottom
-
-            anchors.verticalCenter: parent.verticalCenter
+            anchors.leftMargin: Kirigami.Units.largeSpacing
+            anchors.rightMargin: Kirigami.Units.largeSpacing
+            interactive: false
             clip: true
             flickableDirection: Flickable.AutoFlickDirection
             orientation: ListView.Horizontal // 设置为水平滚动
@@ -121,13 +100,15 @@ Item {
             model: Lyrics.lyricsWTimes
             spacing: width
             // 歌词条目的委托
-            delegate: Label {
+            delegate: Kirigami.Heading {
+		    level: 2
                 height: lyricListView.height
+                width: lyricListView.width
                 Layout.preferredWidth: implicitWidth
                 text: model.lyric
                 horizontalAlignment: Text.AlignRight
                 verticalAlignment: Text.AlignVCenter
-                font.pointSize: Kirigami.Theme.pointSize
+                elide: Text.ElideRight
                 color: Kirigami.Theme.textColor
             }
             onCurrentIndexChanged: {
@@ -149,6 +130,15 @@ Item {
                 }
             }
         }
+        Kirigami.Heading {
+		id: dummyHeading
+		level: 2
+		visible: false // 不显示，只为了拿数据
+	}
+        TextMetrics {
+		id: lyricMetrics
+		font.pixelSize: dummyHeading.font.pointSize
+	}
         Binding {
             target: lyricListView
             property: "currentIndex"
@@ -160,9 +150,6 @@ Item {
             property: "contentX"
             easing.type: Easing.Linear
         }
-        TextMetrics {
-            id: lyricMetrics
-            font.pixelSize: 14
-        }
+
     }
 }
