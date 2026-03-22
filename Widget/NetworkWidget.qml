@@ -16,7 +16,7 @@ import Quickshell.Networking
 SlideWindow {
     id: root
     title: "网络配置"
-    icon: "\uf1eb"
+    icon: "network-wireless"
     property var wifiDev: getWifiDevice()
     function getWifiDevice() {
 	    return [...Networking.devices.values].find(d => d.type === DeviceType.Wifi);

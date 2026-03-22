@@ -12,7 +12,7 @@ import qs.Widget.common
 SlideWindow { //qmllint disable uncreatable-type
     id: bluetooth
     title: "蓝牙配置"
-    icon: ""
+    icon: "preferences-system-bluetooth"
     property list<BluetoothDevice> devices: filterDevices(Bluetooth.defaultAdapter.devices.values) // qmllint disable unresolved-type
 
     function filterDevices(devices) {

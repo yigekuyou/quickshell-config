@@ -6,11 +6,17 @@ import Quickshell.Services.Pipewire
 import qs.Widget.common
 import qs.config
 import qs.Widget.audio
+import qs.Services
 
 SlideWindow {
     id: root
     title: "混音器"
-    icon: "\uf1de"
+    icon:{
+	    if (Volume.sinkVolume === 0 || Volume.sinkMuted) return "audio-volume-muted";
+	    if (Volume.sinkVolume < 0.33) return "audio-volume-low";
+	    if (Volume.sinkVolume < 0.66) return "audio-volume-medium";
+	    return "audio-volume-high";
+    }
     
     windowHeight: 360
     

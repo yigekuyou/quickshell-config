@@ -3,7 +3,8 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Wayland
 import qs.config
-
+import org.kde.kirigami as Kirigami
+import QtQuick.Controls
 PopupWindow {
 	id:popudroot
 	anchor.window: barWindow
@@ -19,42 +20,40 @@ PopupWindow {
     property int extraTopMargin: 0 
     property alias headerTools: headerToolsLayout.data 
     default property alias content: contentLayout.data
-	    grabFocus: true
-    // --- 内部通用逻辑 ---
-    QtObject {
-        id: theme
-        property color background: Colorscheme.background
-        property color surface: Colorscheme.surface
-        property color primary: Colorscheme.primary
-        property color error: Colorscheme.error
-        property color text: Colorscheme.on_background
-        property color subtext: Colorscheme.tertiary
-        property color outline: Colorscheme.outline
-        property int radius: 16
-        property int padding: 16
-    }
+	grabFocus: true
+	implicitWidth: 400
+	implicitHeight: popudroot.windowHeight
+	color: "transparent"
 
-
-    implicitWidth: 400
-    implicitHeight: popudroot.windowHeight
-    color: "transparent"
-    Rectangle {
+    Kirigami.ShadowedRectangle {
         id: bg
 	anchors.fill: parent
-	color: theme.background
-        radius: theme.radius
-        
-        border.color: Qt.rgba(0,0,0,0.1)
-        
+	color: Kirigami.Theme.backgroundColor
+	radius: Kirigami.Units.gridUnit * 0.8
+	border.width: 1
+	border.color: Qt.alpha(Kirigami.Theme.dividerColor, 0.3)
+	shadow.color: Qt.rgba(0, 0, 0, 0.25)
+	shadow.size: 15
+	shadow.yOffset: 4
         ColumnLayout {
 		anchors.fill: parent
-		anchors.margins: theme.padding
-            spacing: 12
+		anchors.margins: Kirigami.Units.largeSpacing
+		spacing: Kirigami.Units.mediumSpacing
 		Layout.fillWidth: true
 		RowLayout {
-			Layout.fillWidth: true
-		    Text { text: popudroot.icon; font.family: "Font Awesome 6 Free Solid"; font.pixelSize: 20; color: theme.primary }
-		    Text { text: popudroot.title; font.bold: true; font.pixelSize: 18; color: theme.text; Layout.fillWidth: true; Layout.leftMargin: 8 }
+			Kirigami.Icon {
+				source: popudroot.icon
+				implicitWidth: Kirigami.Units.gridUnit * 1.2
+				implicitHeight: Kirigami.Units.gridUnit * 1.2
+				color: Kirigami.Theme.activeTextColor
+			}
+			Label {
+				text: popudroot.title
+				font.bold: true
+				font.pointSize: 12
+				color: Kirigami.Theme.textColor
+				Layout.fillWidth: true
+			}
                 RowLayout { id: headerToolsLayout }
 
             }
