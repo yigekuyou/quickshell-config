@@ -6,17 +6,22 @@ import qs.Services
 import qs.config
 import qs.Widget
 import Quickshell.Bluetooth
+import org.kde.kirigami as Kirigami
 
-// 或者如果它就在旁边，直接用 import "." 即可
-
-Rectangle {
+Kirigami.ShadowedRectangle {
     id: root
-    // --- 胶囊样式 ---
-    radius: Sizes.cornerRadius
+    // --- 样式配置 ---
+    implicitWidth: layout.implicitWidth + Kirigami.Units.largeSpacing * 2
     implicitHeight: Sizes.barHeight
-    implicitWidth: layout.implicitWidth + 24
-    color: "#80" + Colorscheme.background.toString().substring(1)
 
+    // 使用 Kirigami 主题色配合半透明效果
+    color: Qt.alpha(Kirigami.Theme.backgroundColor, 0.5)
+    radius: Sizes.cornerRadius
+    shadow.color: Qt.rgba(0, 0, 0, 0.2)
+    shadow.size: 10
+    shadow.yOffset: 2
+    border.width: 1
+    border.color: Qt.alpha(Kirigami.Theme.dividerColor, 0.3)
     // --- 【2】 实例化网络面板 ---
     BluetoothWidget {
         id: bluetoothPanel
@@ -39,54 +44,43 @@ Rectangle {
             bluetoothPanel.visible = !bluetoothPanel.visible;
         }
     }
-    ColumnLayout {
-    id: layout
-
-        anchors.fill: parent
-        RowLayout {
+RowLayout {
+	id: layout
+	anchors.centerIn: parent
+	spacing: Kirigami.Units.smallSpacing
+	anchors.fill: parent
             Layout.fillWidth: true
             Layout.preferredHeight: 80
-            spacing: 5
+                        Kirigami.Icon {
+				Layout.preferredWidth: Kirigami.Units.gridUnit
+				Layout.preferredHeight: Kirigami.Units.gridUnit
 
-                 Item {
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    implicitWidth: innerRow.implicitWidth
-                    implicitHeight: Sizes.barHeight
-                    Row {
-			    id: innerRow
-                        spacing: 10
-                        layoutDirection: Qt.LeftToRight
-                        anchors.centerIn: parent
-                        Text {
-			text: ""
-                            font.pixelSize: 10
-                            anchors.verticalCenter: parent.verticalCenter
-                            color: (Bluetooth.defaultAdapter.state===BluetoothAdapterState.Enabled) ? Colorscheme.on_tertiary_container : "#ff5555"
-                        }
-                        Text {
+				// 使用系统标准蓝牙图标
+				source: "preferences-system-bluetooth"
+
+				// 颜色反馈：仅在 Enabled 状态下使用高亮色，其余使用负面或中性色
+				color: (Bluetooth.defaultAdapter.state === BluetoothAdapterState.Enabled)
+				? Kirigami.Theme.activeTextColor
+				: Kirigami.Theme.negativeTextColor
+			}
+			Label {
 				text: {
 					switch (Bluetooth.defaultAdapter.state) {
-						case BluetoothAdapterState.Enabled:
-							return "已开启";
-						case BluetoothAdapterState.Disabled:
-							return "已关闭";
-						case BluetoothAdapterState.Enabling:
-							return "打开中";
-						case BluetoothAdapterState.Disabling:
-							return "关闭中";
-						case BluetoothAdapterState.Blocked:
-							return "已禁用";
-						default:
-							return "默认值";
+						case BluetoothAdapterState.Enabled:   return "已开启";
+						case BluetoothAdapterState.Disabled:  return "已关闭";
+						case BluetoothAdapterState.Enabling:  return "打开中...";
+						case BluetoothAdapterState.Disabling: return "关闭中...";
+						case BluetoothAdapterState.Blocked:   return "已禁用";
+						default:                              return "未知状态";
 					}
 				}
-                            font.bold: true
-                            anchors.verticalCenter: parent.verticalCenter
-                            color: (Bluetooth.defaultAdapter.state===BluetoothAdapterState.Enabled) ? Colorscheme.on_tertiary_container : "#ff5555"
-                        }
+				font.bold: true
+				font.pixelSize: Kirigami.Units.gridUnit * 0.8
+
+				// 文字颜色同步图标颜色
+				color: (Bluetooth.defaultAdapter.state === BluetoothAdapterState.Enabled)
+				? Kirigami.Theme.activeTextColor
+				: Kirigami.Theme.negativeTextColor
                     }
                 }
-	    }
-    }
 }
