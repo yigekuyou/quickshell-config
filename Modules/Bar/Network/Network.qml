@@ -46,7 +46,6 @@ Kirigami.ShadowedRectangle {
     }
         RowLayout {
 		id: layout
-            anchors.centerIn: parent
             spacing: Kirigami.Units.mediumSpacing
 
             Repeater {
@@ -58,7 +57,6 @@ Kirigami.ShadowedRectangle {
 			? Kirigami.Theme.linkColor
 			: Kirigami.Theme.negativeTextColor
 
-                        anchors.centerIn: parent
                         Kirigami.Icon {
                             source: (DeviceType.Wifi === modelData.type) ?"network-wireless" : "network-wired"
 			    implicitWidth: Kirigami.Units.gridUnit
