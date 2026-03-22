@@ -4,9 +4,15 @@ import Quickshell
 import Quickshell.Services.Mpris
 import qs.config
 import org.kde.kirigami as Kirigami
-Kirigami.ShadowedRectangle {
+Kirigami.Card {
     id: root
+    background: Rectangle {
+	    color: Qt.rgba(0.1, 0.1, 0.1, 0.8) // 稍微带点深色的透明
+	    radius: 20 // 灵动岛风格的大圆角
 
+	    // 如果你希望完全透明，直接用 color: "transparent"
+	    // 如果你的组件在 Quickshell 里运行，配合系统的 Blur 特效会更好看
+    }
     required property var player
 
     readonly property bool isActive: root.visible && root.player
@@ -17,16 +23,16 @@ Kirigami.ShadowedRectangle {
 
     // 进度百分比 (0.0 ~ 1.0)
     property double progress: (isActive && player.length > 0) ? (player.position / player.length) : 0
-
-    ColumnLayout {
+    padding: Kirigami.Units.largeSpacing
+    contentItem: ColumnLayout {
         anchors.fill: parent
-        spacing: 15
+        spacing: Kirigami.Units.largeSpacing
 
         // --- 顶部信息栏 (封面 + 歌名) ---
         RowLayout {
             Layout.fillWidth: true
-            Layout.preferredHeight: 60
-            spacing: 15
+
+            spacing: Kirigami.Units.largeSpacing
 
             // 专辑封面
             Kirigami.ShadowedRectangle {
@@ -179,8 +185,7 @@ Kirigami.ShadowedRectangle {
                         width: 24
                         height: 24
                         source: "media-skip-backward-symbolic"
-                        smooth: true
-                        visible: false
+			color: Kirigami.Theme.textColor
                     }
                 }
 
@@ -197,8 +202,7 @@ Kirigami.ShadowedRectangle {
                         width: 32
                         height: 32
                         source: (root.player && root.player.isPlaying) ? "media-playback-pause-symbolic" : "media-playback-start-symbolic"
-                        smooth: true
-                        visible: false
+			color: Kirigami.Theme.textColor
                     }
                 }
 
@@ -214,9 +218,8 @@ Kirigami.ShadowedRectangle {
                         anchors.centerIn: parent
                         width: 24
                         height: 24
+                        color: Kirigami.Theme.textColor
                         source:  "media-skip-forward-symbolic"
-                        smooth: true
-                        visible: false
                     }
                 }
             }
