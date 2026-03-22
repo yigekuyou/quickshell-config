@@ -100,7 +100,7 @@ Kirigami.ShadowedRectangle {
 			active: root.state === "COLLAPSED"
 			anchors.leftMargin: Kirigami.Units.largeSpacing
 			anchors.rightMargin: Kirigami.Units.largeSpacing
-			ClockContent { anchors.fill: parent; player: root.currentPlayer }
+			ClockContent { anchors.fill: parent }
 		}
 
 
