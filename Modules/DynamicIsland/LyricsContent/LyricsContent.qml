@@ -41,17 +41,10 @@ Item {
 	    }
 }
     Timer {
-        id: positionTimer
-        interval: 200
-        running: true
-        repeat: true
-        onTriggered: {
-            if (position > 0) {
-                root.mprisCurrentPlayingSongTimeMS = position;
-
-            }
-		    console.log("DEBUG: Time Match! Current Time:", mprisCurrentPlayingSongTimeMS)
-	}
+	    running: root.activePlayer?.playbackState == MprisPlaybackState.Playing
+	    interval: 1000
+	    repeat: true
+	    onTriggered: root.activePlayer.positionChanged()
     }
     Binding {
         target: lyricListView
