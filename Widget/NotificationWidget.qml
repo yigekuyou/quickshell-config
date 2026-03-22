@@ -7,182 +7,112 @@ import qs.Services
 import qs.Widget.common
 import qs.Services
 import Quickshell.Services.Notifications
-
+import org.kde.kirigami as Kirigami
 SlideWindow {
     id: root
     title: "通知中心"
-    icon: "\uf0f3" 
+    icon: "notifications"
     windowHeight: 560
     // --- 顶部工具栏 ---
-    headerTools: Text {
-        Theme { id: theme }
-        
-        text: "\uf1f8" 
-        font.family: "Font Awesome 6 Free Solid"
-        font.pixelSize: 18
-        
+    headerTools: Button {
+	flat: true
+	ToolTip.visible: hovered
+	ToolTip.text: "清除所有通知"
+	    onClicked: NotificationManager.dismissAll()
         // 引用全局 Store
-        color: NotificationManager.temporaryNotifications.count > 0 ? theme.error : theme.subtext
-        opacity: NotificationManager.temporaryNotifications.count > 0 ? 1 : 0.5
-        
-        MouseArea { 
-            anchors.fill: parent
-            cursorShape: Qt.PointingHandCursor
-            onClicked: NotificationManager.dismissAll()
-        }
-    }
+	    contentItem: Kirigami.Icon {
+		    source: "edit-clear-all"
+		    color: parent.pressed ? Kirigami.Theme.highlightColor : Kirigami.Theme.negativeTextColor
+	    }
+}
 
     // --- 界面内容 ---
-    Text {
-        Theme { id: bgTheme }
-
-        // 【已修复】：去掉 anchors，改用 Layout 填充并让文本居中对齐
-        Layout.fillWidth: true
-        Layout.fillHeight: true
-        horizontalAlignment: Text.AlignHCenter
-        verticalAlignment: Text.AlignVCenter
-
-        visible: NotificationManager.temporaryNotifications.count === 0
-        text: "没有新通知"
-        color: bgTheme.subtext
-        font.pixelSize: 14
+    Kirigami.PlaceholderMessage {
+	    anchors.centerIn: parent
+	    visible: NotificationManager.temporaryNotifications.count === 0
+	    text: "没有新通知"
+	    icon.name: "notifications-none"
     }
 
     ListView {
         Layout.fillWidth: true
         Layout.fillHeight: true
         clip: true
-        spacing: 8
-
+        spacing: Kirigami.Units.smallSpacing
         // 【核心】引用全局单例
         model: NotificationManager.mergedNotifications
 
-        delegate: Rectangle {
+        delegate: ItemDelegate {
             Theme { id: itemTheme }
             id: iconContainer
             width: ListView.view.width
-            height: Math.max(60, contentLayout.height + 20)
-            radius: 8
-            color: "transparent"
-	    function getIcon(appIcon, image, appName) {
-		    if (image && image !== "") {
-			    return image;
-		    }
-		    if (appIcon && appIcon !== "") {
-			    // 检查 Quickshell 是否能找到该图标路径
-			    if (Quickshell.iconPath(appIcon, true)) {
-				    return Quickshell.iconPath(appIcon);
-			    }
-		    }			    if (appName && appName !== "") {
-			    let name = appName.toLowerCase();
-			    if (Quickshell.iconPath(name, true)) {
-				    return Quickshell.iconPath(name);
-			    }
-		    }
-		    return ""; // 全都没找到则返回空
-	    }
-	    readonly property string iconSource: getIcon(modelData.appIcon, modelData.image, modelData.appName.toLowerCase())
-            border.width: 1
-            border.color: ma.containsMouse ? itemTheme.primary : "transparent"
-            Behavior on border.color { ColorAnimation { duration: 150 } }
-
-            MouseArea { id: ma; anchors.fill: parent; hoverEnabled: true
-		    onClicked: {
-			    if (modelData.actions.identifier == "default") {
+	    topPadding: Kirigami.Units.mediumSpacing
+	    bottomPadding: Kirigami.Units.mediumSpacing
+	    leftPadding: Kirigami.Units.largeSpacing
+	    rightPadding: Kirigami.Units.largeSpacing
+	    onClicked: {
 			    modelData.actions.invoke();
-		    }
 	    }
-	}
-
-            RowLayout {
-                anchors.fill: parent
-                anchors.margins: 10
-                spacing: 12
-
-
+contentItem: RowLayout {
+                spacing: Kirigami.Units.largeSpacing
                 // 图标
-                Rectangle {
-                    Layout.alignment: Qt.AlignTop
-                    width: 40; height: 40
-                    radius: 8
-                    color: Qt.rgba(itemTheme.text.r, itemTheme.text.g, itemTheme.text.b, 0.1)
-
-                    Image {
-                        id: img
-                        anchors.fill: parent
-                        anchors.margins: 4
-                        source: iconContainer.iconSource
-                        fillMode: Image.PreserveAspectFit
-                        visible: iconContainer.iconSource !== "" && status === Image.Ready
-                    }
-
-                    Text {
-                        anchors.centerIn: parent
-                        visible: iconContainer.iconSource === "" || img.status === Image.Error
-                        text: "\uf0e5"
-                        font.family: "Font Awesome 6 Free Solid"
-                        font.pixelSize: 20
-                        color: itemTheme.subtext
-                    }
-                }
-
+                Kirigami.Icon {
+			Layout.alignment: Qt.AlignTop
+			Layout.preferredWidth: Kirigami.Units.iconSizes.medium
+			Layout.preferredHeight: Kirigami.Units.iconSizes.medium
+			// 自动处理 Image 路径或图标名
+			source: modelData.image || modelData.appIcon || modelData.appName.toLowerCase()
+		}
                 // 内容
                 ColumnLayout {
-                    id: contentLayout
                     Layout.fillWidth: true
-                    spacing: 2
-
+                    spacing: Kirigami.Units.smallSpacing
                     RowLayout {
-                        Layout.fillWidth: true
-                        Text {
-                            text: model.appName
-                            font.bold: true
-                            font.pixelSize: 11
-                            color: itemTheme.primary
-                        }
-                        Item { Layout.fillWidth: true }
-                        Text {
-                            text: model.time ?model.time :0
-                            font.pixelSize: 10
-                            color: itemTheme.subtext
-                        }
-                    }
+			    Label {
+				    text: modelData.appName
+				    font.bold: true
+				    font.pointSize: Kirigami.Theme.smallFont.pointSize
+				    color: Kirigami.Theme.highlightColor
+				    Layout.fillWidth: true
+				    elide: Text.ElideRight
+			    }
 
-                    Text {
-                        text: model.summary
-                        font.bold: true
-                        font.pixelSize: 13
-                        color: itemTheme.text
-                        elide: Text.ElideRight
-                        Layout.fillWidth: true
-                    }
-
-                    Text {
-                        text: model.body
-                        font.pixelSize: 12
-                        color: itemTheme.subtext
-                        wrapMode: Text.Wrap
-                        maximumLineCount: 3
-                        elide: Text.ElideRight
-                        Layout.fillWidth: true
-                    }
+			    Label {
+				    text: modelData.time || ""
+				    font: Kirigami.Theme.smallFont
+				    color: Kirigami.Theme.disabledTextColor
+			    }
+		    }
+		    // 摘要
+		    Label {
+			    text: modelData.summary
+			    font.weight: Font.Bold
+			    elide: Text.ElideRight
+			    Layout.fillWidth: true
+		    }
+		    // 正文
+		    Label {
+			    text: modelData.body
+			    wrapMode: Text.Wrap
+			    maximumLineCount: 3
+			    elide: Text.ElideRight
+			    Layout.fillWidth: true
+			    opacity: 0.7
+			    font.pointSize: Kirigami.Theme.defaultFont.pointSize - 1
+		    }
+		    // --- 动态 Action 按钮
                 }
 
                 // 删除按钮
-                Text {
-                    visible: ma.containsMouse
-                    text: "\uf00d"
-                    font.family: "Font Awesome 6 Free Solid"
-                    color: itemTheme.subtext
-                    Layout.alignment: Qt.AlignTop
-
-                    MouseArea {
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        // 调用全局删除
-                        onClicked: NotificationManager.dismiss(modelData, true)
-                    }
-                }
+                Button {
+			Layout.alignment: Qt.AlignTop
+			flat: true
+			icon.name: "window-close"
+			onClicked: NotificationManager.dismiss(modelData, true)
+			// 只有在悬停或触摸设备上显现
+			opacity: delegateItem.hovered ? 1 : 0
+			Behavior on opacity { NumberAnimation { duration: Kirigami.Units.shortDuration } }
+		}
             }
         }
     }
