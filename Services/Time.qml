@@ -4,28 +4,14 @@ import Quickshell
 import QtQuick
 
 Singleton {
-    id: root
-    readonly property string day: {
-	Qt.formatDateTime(clock.date, "dd");
-    }
-    readonly property string week:{
-	Qt.formatDateTime(clock.date, "dddd")
-    }
-    readonly property string month: {
-	Qt.formatDateTime(clock.date, "MMMM");
-    }
-    readonly property string year:{
-	Qt.formatDateTime(clock.date, "yyyy")
-    }
-    readonly property string hours: {
-	Qt.formatDateTime(clock.date, "hh");
-    }
-    readonly property string minutes: {
-	Qt.formatDateTime(clock.date, "mm");
-    }
-    readonly property string amPm:{
-	Qt.formatDateTime(clock.date, "AP")
-    }
+    property var locale: Qt.locale()
+    readonly property string day: clock.date.toLocaleString(locale, "dd")
+    readonly property string week: clock.date.toLocaleString(locale, "dddd")
+    readonly property string month: clock.date.toLocaleString(locale, "MMMM")
+    readonly property string year: clock.date.toLocaleString(locale, "yyyy")
+    readonly property string hours: clock.date.toLocaleString(locale, "hh")
+    readonly property string minutes: clock.date.toLocaleString(locale, "mm")
+    readonly property string amPm: clock.date.toLocaleString(locale, "AP")
     SystemClock {
 	id: clock
 	precision: SystemClock.Minutes
