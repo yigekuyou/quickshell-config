@@ -46,6 +46,7 @@ Kirigami.ShadowedRectangle {
     }
         RowLayout {
 		id: layout
+            anchors.centerIn: parent
             spacing: Kirigami.Units.mediumSpacing
 
             Repeater {
