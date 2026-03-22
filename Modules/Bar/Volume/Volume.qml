@@ -57,7 +57,7 @@ Kirigami.ShadowedRectangle {
     RowLayout {
         id: layout
         anchors.centerIn: parent
-        spacing: 8
+        spacing: Kirigami.Units.smallSpacing
 
         Kirigami.Icon {
 		Layout.preferredWidth: Kirigami.Units.gridUnit
