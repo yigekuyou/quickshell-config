@@ -22,7 +22,24 @@ Item {
     readonly property string artUrl: player ? (player.trackArtUrl || "") : ""
     readonly property string position: player ? (player.position * 1000 * 1000 || "") : ""
     property int currentLyricIndex: 0
-    property int mprisCurrentPlayingSongTimeMS: position > 0 ? position : -1
+    property int mprisCurrentPlayingSongTimeMS:0
+    onPositionChanged: {
+	    if (Lyrics.lyricsWTimes.count > 0 && player) {
+		    for (let i = 0; i < Lyrics.lyricsWTimes.count; i++) {
+			    if (Lyrics.lyricsWTimes.get(i).time >= mprisCurrentPlayingSongTimeMS) {
+				    root.currentLyricIndex = i > 0 ? i - 1 : 0;
+				    break;
+			    } else {
+				    if (!i) {
+					    continue;
+				    }
+				    if (i > currentLyricIndex) {
+					    root.currentLyricIndex = i;
+				    }
+			    }
+		    }
+	    }
+}
     Timer {
         id: positionTimer
         interval: 200
@@ -31,21 +48,7 @@ Item {
         onTriggered: {
             if (position > 0) {
                 root.mprisCurrentPlayingSongTimeMS = position;
-                if (Lyrics.lyricsWTimes.count > 0 && player) {
-                    for (let i = 0; i < Lyrics.lyricsWTimes.count; i++) {
-                        if (Lyrics.lyricsWTimes.get(i).time >= mprisCurrentPlayingSongTimeMS) {
-                            root.currentLyricIndex = i > 0 ? i - 1 : 0;
-                            break;
-                        } else {
-                            if (!i) {
-                                continue;
-                            }
-                            if (i > currentLyricIndex) {
-                                root.currentLyricIndex = i;
-                            }
-                        }
-                    }
-                }
+
             }
 		    console.log("DEBUG: Time Match! Current Time:", mprisCurrentPlayingSongTimeMS)
 	}
