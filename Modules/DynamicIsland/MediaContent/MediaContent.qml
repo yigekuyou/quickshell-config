@@ -82,14 +82,85 @@ Kirigami.Card {
                 }
             }
         }
-        ProgressBar {
+        Item {
+		id: progressBarContainer
 		Layout.fillWidth: true
-		value: (isActive && player.length > 0) ? (player.position / player.length) : 0
-		visible: isActive && player.length > 0
+		Layout.preferredHeight: 16 // 增加感应区域高度，方便手指/鼠标操作
+
+		Rectangle {
+			id: trackBg
+			anchors.left: parent.left
+			anchors.right: parent.right
+			anchors.verticalCenter: parent.verticalCenter
+			height: 6
+			color: Qt.rgba(1, 1, 1, 0.1) // 半透明深色背景
+			radius: height / 2
+
+			// 进度填充 (白色条)
+			Rectangle {
+				id: progressFill
+				height: parent.height
+				radius: parent.radius
+				color: "white"
+				width: {
+					if (seekMa.pressed && player.canSeek) {
+						// 拖动时：强制跟随鼠标，限制在 0 到 总宽 之间
+						return Math.min(Math.max(0, seekMa.mouseX), trackBg.width)
+					}
+					// 播放时：根据百分比计算宽度
+					return root.progress * trackBg.width
+				}
+			}
+
+			Rectangle {
+				x: progressFill.width - width / 2
+				anchors.verticalCenter: parent.verticalCenter
+				width: 12; height: 12
+				radius: 6
+				color: "white"
+				visible: seekMa.containsMouse || seekMa.pressed
+
+				// 给小圆点加个简单的阴影或缩放效果
+				scale: seekMa.pressed ? 1.2 : 1.0
+				Behavior on scale { NumberAnimation { duration: 100 } }
+			}
+		}
+
+		// 交互区域
+		MouseArea {
+			id: seekMa
+			anchors.fill: parent
+			hoverEnabled: true
+			cursorShape: player.canSeek ? Qt.PointingHandCursor : Qt.ArrowCursor
+
+			onClicked: {
+				if (player.canSeek) {
+					// 计算点击位置占总长的比例
+					let pos = Math.min(Math.max(0, mouseX / trackBg.width), 1.0)
+					// 执行跳转： player.length * 比例
+					player.position = pos * player.length
+				}
+			}
+
+			onPositionChanged: {
+				if (pressed && player.canSeek) {
+					// 实时拖动时不需要立即给 player 发送 position（防止性能损耗或爆音）
+					// 宽度会通过上面的 binding 自动更新
+				}
+			}
+
+			onReleased: {
+				if (player.canSeek) {
+					let pos = Math.min(Math.max(0, mouseX / trackBg.width), 1.0)
+					player.position = pos * player.length
+				}
+			}
+		}
 	}
         // --- 控制按钮 (上一曲/暂停/下一曲) ---
             RowLayout {
-                anchors.centerIn: parent
+		Layout.fillWidth: true
+		Layout.alignment: Qt.AlignHCenter
                 spacing: Kirigami.Units.gridUnit
                 Button {
 			flat: true
