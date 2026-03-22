@@ -20,10 +20,10 @@ Item {
     readonly property string trackArtist: player ? player.trackArtist : ""
     readonly property string playerName: player ? (player.identity || player.busName || "") : ""
     readonly property string artUrl: player ? (player.trackArtUrl || "") : ""
-    readonly property string position: player ? (player.position * 1000 * 1000 || "") : ""
+    readonly property var position: player ? (player.position * 1000 * 1000 || "") : ""
     property int currentLyricIndex: 0
     property int mprisCurrentPlayingSongTimeMS:0
-    onPositionChanged: {
+    onMprisCurrentPlayingSongTimeMSChanged: {
 	    if (Lyrics.lyricsWTimes.count > 0 && player) {
 		    for (let i = 0; i < Lyrics.lyricsWTimes.count; i++) {
 			    if (Lyrics.lyricsWTimes.get(i).time >= mprisCurrentPlayingSongTimeMS) {
@@ -40,9 +40,13 @@ Item {
 		    }
 	    }
 }
+onPositionChanged:{
+	root.mprisCurrentPlayingSongTimeMS = position
+
+}
     Timer {
-	    running: player?.playbackState == MprisPlaybackState.Playing
-	    interval: 1000
+	    running: player.playbackState == MprisPlaybackState.Playing
+	    interval: 200
 	    repeat: true
 	    onTriggered: player.positionChanged()
     }
