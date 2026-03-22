@@ -41,10 +41,10 @@ Item {
 	    }
 }
     Timer {
-	    running: root.activePlayer?.playbackState == MprisPlaybackState.Playing
+	    running: player?.playbackState == MprisPlaybackState.Playing
 	    interval: 1000
 	    repeat: true
-	    onTriggered: root.activePlayer.positionChanged()
+	    onTriggered: player.positionChanged()
     }
     Binding {
         target: lyricListView
