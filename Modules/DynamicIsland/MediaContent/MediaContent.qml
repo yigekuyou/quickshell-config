@@ -91,57 +91,36 @@ Kirigami.Card {
             RowLayout {
                 anchors.centerIn: parent
                 spacing: Kirigami.Units.gridUnit
+                Button {
+			flat: true
+			icon.name: "media-skip-backward-symbolic"
+			onClicked: if(root.player) root.player.previous()
+			display: AbstractButton.IconOnly
+			ToolTip.visible: hovered
+			ToolTip.text: "上一首"
+		}
 
-                // 1. 上一曲
-                MouseArea {
-                    Layout.preferredWidth: 40
-                    Layout.preferredHeight: 40
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: if(root.player) root.player.previous()
+		Button {
+			flat: true
+			// 增大播放按钮
+			icon.width: Kirigami.Units.gridUnit * 1.5
+			icon.height: Kirigami.Units.gridUnit * 1.5
+			icon.name: (root.player && root.player.isPlaying)
+			? "media-playback-pause-symbolic"
+			: "media-playback-start-symbolic"
+			onClicked: if(root.player) root.player.togglePlaying()
+			display: Controls.AbstractButton.IconOnly
+			ToolTip.text: (root.player && root.player.isPlaying) ? "暂停" : "播放"
+		}
 
-                    Kirigami.Icon {
-                        id: prevIcon
-                        anchors.centerIn: parent
-                        width: 24
-                        height: 24
-                        source: "media-skip-backward-symbolic"
-			color: Kirigami.Theme.textColor
-                    }
-                }
-
-                // 2. 播放/暂停
-                MouseArea {
-                    Layout.preferredWidth: 40
-                    Layout.preferredHeight: 40
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: if(root.player) root.player.togglePlaying()
-
-                    Kirigami.Icon {
-                        id: playPauseIcon
-                        anchors.centerIn: parent
-                        width: 32
-                        height: 32
-                        source: (root.player && root.player.isPlaying) ? "media-playback-pause-symbolic" : "media-playback-start-symbolic"
-			color: Kirigami.Theme.textColor
-                    }
-                }
-
-                // 3. 下一曲
-                MouseArea {
-                    Layout.preferredWidth: 40
-                    Layout.preferredHeight: 40
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: if(root.player) root.player.next()
-
-                    Kirigami.Icon {
-                        id: nextIcon
-                        anchors.centerIn: parent
-                        width: 24
-                        height: 24
-                        color: Kirigami.Theme.textColor
-                        source:  "media-skip-forward-symbolic"
-                    }
-                }
+		Button {
+			flat: true
+			icon.name: "media-skip-forward-symbolic"
+			onClicked: if(root.player) root.player.next()
+			display: AbstractButton.IconOnly
+			ToolTip.visible: hovered
+			ToolTip.text: "下一首"
+		}
             }
         }
 }
