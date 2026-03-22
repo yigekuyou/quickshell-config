@@ -186,7 +186,7 @@ Kirigami.Card {
 			? "media-playback-pause-symbolic"
 			: "media-playback-start-symbolic"
 			onClicked: if(root.player) root.player.togglePlaying()
-			display: Controls.AbstractButton.IconOnly
+			display: AbstractButton.IconOnly
 			ToolTip.visible: hovered
 			ToolTip.text: (root.player && root.player.isPlaying) ? "暂停" : "播放"
 		}

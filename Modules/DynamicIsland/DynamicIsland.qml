@@ -90,7 +90,6 @@ Kirigami.ShadowedRectangle {
 		anchors.fill: parent; cursorShape: Qt.PointingHandCursor; enabled: !isNotifMode; acceptedButtons: Qt.LeftButton | Qt.MiddleButton
 		onClicked: (mouse) => {
 			if (mouse.button === Qt.MiddleButton) {
-				if (root.showDashboard) root.showDashboard = false; else
 				if (currentPlayer) root.showLyrics = !root.showLyrics; if (root.showLyrics) root.expanded = false;
 			} else {
 				if (root.showDashboard) root.showDashboard = false; else if (root.showLyrics) root.showLyrics = false; else root.expanded = !root.expanded;
