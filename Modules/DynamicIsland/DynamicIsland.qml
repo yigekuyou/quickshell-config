@@ -14,23 +14,18 @@ import qs.Modules.DynamicIsland.LauncherContent
 import qs.Modules.DynamicIsland.DashboardContent
 import qs.Modules.DynamicIsland.LyricsContent
 import org.kde.kirigami as Kirigami
-
+import QtQuick.Effects
 Kirigami.ShadowedRectangle {
 	id: root
 	anchors.horizontalCenter: parent.horizontalCenter
 	transformOrigin: Item.Center
-	color: Kirigami.Theme.backgroundColor
-	opacity: 0.8
-	// MD3 风格的圆角和阴影
-	radius: Kirigami.Units.gridUnit // 默认圆角
-	shadow.color: Qt.rgba(0, 0, 0, 0.3)
-	shadow.size: 20
-	shadow.yOffset: 4
-
+	color: Qt.alpha(Kirigami.Theme.backgroundColor, 0.7)
+	radius: unit
 	// 边框处理（MD3 典型特征）
 	border.width: 1
-	border.color: Kirigami.Theme.highlightColor
+	border.color: Qt.alpha(Kirigami.Theme.dividerColor, 0.5) // 更细腻的边框
 	readonly property real unit: Kirigami.Units.gridUnit
+	layer.enabled: true
 	// ================= 状态控制变量 =================
 	property bool showDashboard: false
 	property bool expanded: false

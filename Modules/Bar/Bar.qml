@@ -44,19 +44,15 @@ Variants {
 		anchor.rect.x: Math.round(modelData.width / 2)
 		anchor.rect.y: Math.round(0)
 		visible: true
+		mask: null
 		implicitWidth: island.width + 10
 		implicitHeight: Math.max(Sizes.barHeight, island.height + 15)
 		color: "transparent"
-		Item {
-			transformOrigin: Item.Center
-			anchors { top: parent.top; left: parent.left; right: parent.right }
 			DynamicIsland {
 				id: island
 				anchors.horizontalCenter: parent.horizontalCenter
 				anchors.top: parent.top
-				anchors.topMargin: 5
 			}
-		}
 	}
 	    }
         Item {

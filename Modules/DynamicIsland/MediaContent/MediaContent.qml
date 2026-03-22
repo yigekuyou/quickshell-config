@@ -5,15 +5,17 @@ import Quickshell.Services.Mpris
 import qs.config
 import QtQuick.Controls
 import org.kde.kirigami as Kirigami
+import QtQuick.Effects
 Kirigami.Card {
     id: root
     background: Rectangle {
-	    color: Qt.rgba(0.1, 0.1, 0.1, 0.8) // 稍微带点深色的透明
+	    color: "transparent"
 	    radius: Kirigami.Units.gridUnit
 
 	    // 如果你希望完全透明，直接用 color: "transparent"
-	    // 如果你的组件在 Quickshell 里运行，配合系统的 Blur 特效会更好看
+
     }
+
     required property var player
 
     readonly property bool isActive: root.visible && root.player
@@ -161,8 +163,12 @@ Kirigami.Card {
             RowLayout {
 		Layout.fillWidth: true
 		Layout.alignment: Qt.AlignHCenter
-                spacing: Kirigami.Units.gridUnit
+                spacing: Kirigami.Units.gridUnit *2
                 Button {
+			implicitWidth: Kirigami.Units.gridUnit * 2
+			implicitHeight: Kirigami.Units.gridUnit * 2
+			icon.width: Kirigami.Units.gridUnit * 1.2
+			icon.height: Kirigami.Units.gridUnit * 1.2
 			flat: true
 			icon.name: "media-skip-backward-symbolic"
 			onClicked: if(root.player) root.player.previous()
@@ -174,17 +180,22 @@ Kirigami.Card {
 		Button {
 			flat: true
 			// 增大播放按钮
-			icon.width: Kirigami.Units.gridUnit * 1.5
-			icon.height: Kirigami.Units.gridUnit * 1.5
+			icon.width: Kirigami.Units.gridUnit * 2
+			icon.height: Kirigami.Units.gridUnit * 2
 			icon.name: (root.player && root.player.isPlaying)
 			? "media-playback-pause-symbolic"
 			: "media-playback-start-symbolic"
 			onClicked: if(root.player) root.player.togglePlaying()
 			display: Controls.AbstractButton.IconOnly
+			ToolTip.visible: hovered
 			ToolTip.text: (root.player && root.player.isPlaying) ? "暂停" : "播放"
 		}
 
 		Button {
+			implicitWidth: Kirigami.Units.gridUnit * 2
+			implicitHeight: Kirigami.Units.gridUnit * 2
+			icon.width: Kirigami.Units.gridUnit * 1.2
+			icon.height: Kirigami.Units.gridUnit * 1.2
 			flat: true
 			icon.name: "media-skip-forward-symbolic"
 			onClicked: if(root.player) root.player.next()
