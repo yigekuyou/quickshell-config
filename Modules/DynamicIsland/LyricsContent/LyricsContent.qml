@@ -42,11 +42,12 @@ Item {
 }
 onPositionChanged:{
 	root.mprisCurrentPlayingSongTimeMS = position
-
+	positionWatchdog.restart()
 }
     Timer {
+	    id: positionWatchdog
 	    running: player.playbackState == MprisPlaybackState.Playing
-	    interval: 200
+	    interval: 500
 	    repeat: true
 	    onTriggered: player.positionChanged()
     }
