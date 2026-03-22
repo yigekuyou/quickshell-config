@@ -47,7 +47,7 @@ onPositionChanged:{
     Timer {
 	    id: positionWatchdog
 	    running: player.playbackState == MprisPlaybackState.Playing
-	    interval: 500
+	    interval: 200
 	    repeat: true
 	    onTriggered: player.positionChanged()
     }

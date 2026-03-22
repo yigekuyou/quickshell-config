@@ -46,11 +46,6 @@ Kirigami.ShadowedRectangle {
 			PropertyChanges { target: root; width: unit * 45; height: unit * 24; radius: unit * 1.5 }
 		},
 		State {
-			name: "NOTIF"
-			when: isNotifMode
-			PropertyChanges { target: root; width: unit * 22; height: unit * 5; radius: unit * 1.2 }
-		},
-		State {
 			name: "EXPANDED"
 			when: expanded
 			PropertyChanges { target: root; width: unit * 24; height: unit * 10; radius: unit * 1.5 }
@@ -108,11 +103,6 @@ Kirigami.ShadowedRectangle {
 			ClockContent { anchors.fill: parent; player: root.currentPlayer }
 		}
 
-		IslandContent {
-			active: root.state === "NOTIF"
-		NotificationContent { anchors.fill: parent; anchors.margins: Kirigami.Units.mediumSpacing }
-
-		}
 
 		IslandContent {
 			active: root.state === "LYRICS"
