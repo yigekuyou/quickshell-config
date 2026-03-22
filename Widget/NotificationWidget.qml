@@ -110,7 +110,8 @@ contentItem: RowLayout {
 			icon.name: "window-close"
 			onClicked: NotificationManager.dismiss(modelData, true)
 			// 只有在悬停或触摸设备上显现
-			opacity: delegateItem.hovered ? 1 : 0
+			ToolTip.visible: hovered
+			ToolTip.text: "清除通知"
 			Behavior on opacity { NumberAnimation { duration: Kirigami.Units.shortDuration } }
 		}
             }

@@ -88,9 +88,4 @@ Item {
 			}
 		}
 	}
-
-	// 交互优化：悬停显示完整格式
-	ToolTip.visible: mouseArea.hovered
-	ToolTip.text: Qt.formatDateTime(new Date(), Qt.DefaultLocaleLongDate)
-
 }
