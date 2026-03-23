@@ -16,7 +16,7 @@ Kirigami.AbstractCard {
     // 动态宽度：展开显示全部，收起只显示 RAM
     implicitWidth: expanded ? contentLayout.implicitWidth + Kirigami.Units.largeSpacing * 2
     : ramGroup.implicitWidth + Kirigami.Units.largeSpacing * 2
-    implicitHeight: barHeight
+    implicitHeight: Kirigami.Units.gridUnit * 2
     padding: Kirigami.Units.smallSpacing
     background: Rectangle {
 	    color: Kirigami.Theme.backgroundColor
@@ -120,8 +120,6 @@ Kirigami.AbstractCard {
     // ================= 5. 布局内容 =================
     contentItem: RowLayout {
         id: contentLayout
-        Layout.fillHeight:true
-        Layout.fillWidth:true
         spacing: Kirigami.Units.largeSpacing  // 收起时去掉间距
         // 从右向左排：RAM 在最右边
         layoutDirection: Qt.RightToLeft
@@ -129,8 +127,6 @@ Kirigami.AbstractCard {
         // ---  RAM (常驻) ---
         RowLayout {
             id: ramGroup
-            Layout.fillHeight:true
-
             spacing: Kirigami.Units.smallSpacing
             Kirigami.Icon {
 		    source: "memory"
@@ -146,12 +142,12 @@ Kirigami.AbstractCard {
 
         // ---  Temp (展开显示) ---
         RowLayout {
-		Layout.fillHeight:true
 		visible: root.expanded //
 		spacing: Kirigami.Units.smallSpacing
 		Kirigami.Icon {
 			source: "temp-symbolic"
 			implicitWidth: Kirigami.Units.iconSizes.small
+			implicitHeight: Kirigami.Units.iconSizes.small
 			color: getStatusColor(root.tempValue, 70, 85)
 		}
 		Label { text: root.tempValue + "°C" }
@@ -159,12 +155,12 @@ Kirigami.AbstractCard {
 
         // --- CPU (展开显示) ---
         RowLayout {
-		Layout.fillHeight:true
 		visible: root.expanded //
 		spacing: Kirigami.Units.smallSpacing
 		Kirigami.Icon {
 			source: "cpu"
 			implicitWidth: Kirigami.Units.iconSizes.small
+			implicitHeight: Kirigami.Units.iconSizes.small
 			color: getStatusColor(root.cpuValue, 70, 90)
 		}
 		Label { text: root.cpuValue + "%" }
