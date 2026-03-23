@@ -220,7 +220,7 @@ SlideWindow {
 			flat: true
 			onClicked: appNode.audio.muted = !appNode.audio.muted
 			icon.color: node.audio.muted ? Kirigami.Theme.negativeTextColor : Kirigami.Theme.highlightColor
-
+			ToolTip.delay: Kirigami.Units.toolTipDelay
 			ToolTip.visible: hovered
 			ToolTip.text: appNode.audio.muted ? "解除静音" : "静音"
 		}
