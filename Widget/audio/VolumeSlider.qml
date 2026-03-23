@@ -10,19 +10,6 @@ RowLayout{
 	property var node
 	property bool isHeadphone: false
 	property var theme: Theme {}
-	Rectangle {
-		Layout.fillWidth: true
-		height: 28
-		color: Qt.rgba(theme.primary.r, theme.primary.g, theme.primary.b, 0.1)
-		radius: 14
-
-		Rectangle {
-			height: parent.height
-			width: node ? parent.width * node.audio.volume : 0
-			color: theme.primary
-			radius: 14
-
-		}
 		Kirigami.Icon {
 			anchors.left: parent.left
 			anchors.leftMargin: Kirigami.Units.mediumSpacing
@@ -32,24 +19,62 @@ RowLayout{
 			implicitHeight: Kirigami.Units.iconSizes.small
 			color: "white" // 进度条上的图标通常固定白色以保证对比度
 		}
+			// 进度填充
+			Rectangle {
+				Layout.fillWidth: true
+				implicitHeight: 6
+				color: Qt.rgba(1, 1, 1, 0.1) // 半透明深色背景
+				radius: height / 2
 
-		MouseArea {
-			anchors.fill: parent
-			cursorShape: Qt.PointingHandCursor
-			hoverEnabled: true
-			function setVol(mouse) {
-				if (!node) return
-					let v = mouse.x / width
-					if (v < 0) v = 0; if (v > 1) v = 1;
-					node.audio.volume = v
-					if (node.audio.muted) node.audio.muted = false
+
+			Rectangle {
+				id: progressFill
+				height: parent.height
+				width: node ? parent.width * (mouseArea.pressed ?
+				Math.min(Math.max(0, mouseArea.mouseX / parent.width), 1.0) :
+				node.audio.volume) : 0
+				color: Kirigami.Theme.highlightColor
+				radius: height / 2
+
+				// 渐变美化（可选）
+				opacity: node && node.audio.muted ? 0.5 : 1.0
+				Behavior on opacity { NumberAnimation { duration: Kirigami.Units.shortDuration } }
 			}
-			onPressed: (mouse) => setVol(mouse)
-			onPositionChanged: (mouse) => setVol(mouse)
+			Rectangle {
+				x: progressFill.width - width / 2
+				anchors.verticalCenter: parent.verticalCenter
+				width: 12; height: 12
+				radius: 6
+				color: "white"
+				visible: mouseArea.containsMouse || mouseArea.pressed
+
+				// 给小圆点加个简单的阴影或缩放效果
+				scale: mouseArea.pressed ? 1.2 : 1.0
+				Behavior on scale { NumberAnimation { duration: 100 } }
+			}
+
+			MouseArea {
+				id: mouseArea
+				hoverEnabled: true
+				anchors.fill: parent
+				cursorShape: Qt.PointingHandCursor
+				onPressed:{
+					let pos = Math.min(Math.max(0, mouse.x / parent.width), 1.0);
+					node.audio.volume = pos
+				}
+				onReleased: {
+					let pos = Math.min(Math.max(0, mouse.x / parent.width), 1.0);
+					node.audio.volume = pos
+				}
+				onPositionChanged: (mouse) => {
+					if (pressed) {
+						let pos = Math.min(Math.max(0, mouse.x / parent.width), 1.0);
+						node.audio.volume = pos
+					}
+				}
+			}
+
 		}
-
-
-	}
 	Button {
 		Layout.preferredWidth: Kirigami.Units.gridUnit * 2 // 使用网格单位替代固定像素
 		Layout.preferredHeight: Kirigami.Units.gridUnit * 2
