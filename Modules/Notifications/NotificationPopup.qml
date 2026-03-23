@@ -8,9 +8,9 @@ import qs.Services
 // 保持使用 PopupWindow 作为顶层容器
 PopupWindow {
 	id: popup
-	width: 350
+	implicitWidth: 350
 	property real targetYOffset: 0
-	height: contentLayout.implicitHeight + (Kirigami.Units.gridUnit * 2)
+	implicitHeight: contentLayout.implicitHeight + (Kirigami.Units.gridUnit * 2)
 	// --- 接口属性 ---
 	property int index
 	property var notificationData:NotificationManager.sortedTemopraryNotifications[index]// 对应 Quickshell 的 Notification 对象
@@ -47,7 +47,7 @@ PopupWindow {
 
 			// 设置卡片高亮样式（如果是紧急通知）
 			background: Rectangle {
-				color: Kirigami.Theme.backgroundColor
+				color:  Qt.alpha(Kirigami.Theme.backgroundColor, 0.35)
 				radius: Kirigami.Units.gridUnit / 3
 				border.color: notificationData.urgency === 2 ? Kirigami.Theme.negativeTextColor : "transparent"
 				border.width: 2

@@ -17,14 +17,14 @@ import qs.Modules.Bar.NotificationButton
 import qs.Modules.Bar.DayNightSwitch
 import qs.Modules.DynamicIsland
 import qs.config
+import qs.Services
+
 Variants {
     model: Quickshell.screens
     PanelWindow {
         id: barWindow
         WlrLayershell.layer: WlrLayer.Top
-        WlrLayershell.keyboardFocus: (island.showDashboard)
-	? WlrKeyboardFocus.Exclusive
-	: WlrKeyboardFocus.None
+        WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
         required property var modelData
         screen: modelData
         anchors {
@@ -42,6 +42,7 @@ Variants {
 		anchor.gravity: Edges.Bottom
 		anchor.rect.x: Math.round(modelData.width / 2)
 		anchor.rect.y: Math.round(0)
+
 		visible: true
 		mask: null
 		implicitWidth: island.width + 10
@@ -94,7 +95,7 @@ Variants {
                 }
                 Bluetooth{}
                 Network {}
-                Volume {}
+                VolumeBar {}
                 NotificationButton {
                     Layout.alignment: Qt.AlignVCenter
                 }

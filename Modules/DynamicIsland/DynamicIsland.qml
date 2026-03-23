@@ -12,11 +12,12 @@ import qs.Modules.DynamicIsland.VolumeContent
 import qs.Modules.DynamicIsland.LauncherContent
 import qs.Modules.DynamicIsland.DashboardContent
 import qs.Modules.DynamicIsland.LyricsContent
+import qs.Modules.PolkitAuth
 import org.kde.kirigami as Kirigami
 import QtQuick.Effects
-
 Kirigami.ShadowedRectangle {
     id: root
+    focus: true
     anchors.horizontalCenter: parent.horizontalCenter
     transformOrigin: Item.Center
     color: Qt.alpha(Kirigami.Theme.backgroundColor, 0.7)
@@ -36,10 +37,20 @@ Kirigami.ShadowedRectangle {
     property bool isWallpaperMode: !showDashboard
     property bool isLyricsMode: showLyrics && !showDashboard
     property bool isLauncherMode: !showDashboard && !isLyricsMode
-    property bool isNotifMode: NotificationManager.isNotifMode && !expanded && !showDashboard && !isLyricsMode
+    property bool isAuthMode: PolkitService.agent.flow
 
     // ================= 状态机定义 (MD3 核心) =================
     states: [
+	State {
+	    name: "AUTH"
+	    when: isAuthMode
+	    PropertyChanges {
+		    target: root
+		    width: unit * 30
+		    height: unit * 15
+		    radius: unit * 1.5
+	    }
+	    },
         State {
             name: "DASHBOARD"
             when: showDashboard
@@ -93,6 +104,7 @@ Kirigami.ShadowedRectangle {
     }
     // ================= 内部内容包装器 =================
     component IslandContent: Item {
+	    focus: true
         property bool active: false
         anchors.fill: parent
         opacity: active ? 1 : 0
@@ -115,7 +127,7 @@ Kirigami.ShadowedRectangle {
     MouseArea {
         anchors.fill: parent
         cursorShape: Qt.PointingHandCursor
-        enabled: !isNotifMode
+        enabled: !isAuthMode && !isNotifMode
         acceptedButtons: Qt.LeftButton | Qt.MiddleButton
         onClicked: mouse => {
             if (mouse.button === Qt.MiddleButton) {
@@ -137,7 +149,7 @@ Kirigami.ShadowedRectangle {
         id: contentContainer
         anchors.fill: parent
         clip: true
-
+        focus: true
         IslandContent {
             active: root.state === "COLLAPSED"
             anchors.leftMargin: Kirigami.Units.largeSpacing
@@ -155,7 +167,14 @@ Kirigami.ShadowedRectangle {
                 active: true
             }
         }
-
+        IslandContent {
+		active: root.state === "AUTH"
+		PolkitAuthPopupManager{
+			focus: true
+		anchors.fill: parent
+			anchors.margins: 20
+		}
+	}
         IslandContent {
             active: root.state === "EXPANDED"
             MediaContent {

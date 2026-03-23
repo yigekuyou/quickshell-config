@@ -11,9 +11,7 @@ import qs.Wallpaper
 
 ShellRoot {
 	Bar {}
-	Variants {
-	model: Quickshell.screens
-	}
+	Variants {model: Quickshell.screens}
 	LoadWall{}
     // ================= 锁屏管理器 =================
     Loader {

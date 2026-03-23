@@ -15,7 +15,7 @@ Item {
     anchors.top: parent.top
     anchors.bottom: parent.bottom
     required property var player
-    property bool active: false
+    property bool active: player.Playing
     readonly property string trackTitle: player ? player.trackTitle : ""
     readonly property string trackArtist: player ? player.trackArtist : ""
     readonly property string playerName: player ? (player.identity || player.busName || "") : ""
@@ -49,7 +49,7 @@ onPositionChanged:{
 	    running: player.playbackState == MprisPlaybackState.Playing
 	    interval: 200
 	    repeat: true
-	    onTriggered: player.positionChanged()
+	    onTriggered: if (root.active == MprisPlaybackState.Playing){player.positionChanged()}
     }
     Binding {
         target: lyricListView
