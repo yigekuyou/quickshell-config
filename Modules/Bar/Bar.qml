@@ -23,7 +23,7 @@ Variants {
     model: Quickshell.screens
     PanelWindow {
         id: barWindow
-        WlrLayershell.layer: WlrLayer.Top
+        WlrLayershell.layer: WlrLayer.Bottom
         WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
         required property var modelData
         screen: modelData
@@ -32,9 +32,6 @@ Variants {
             top: true
             right: true
         }
-        mask: Region {
-		item: island
-	}
         color: "transparent"
         implicitHeight: Sizes.barHeight
 	LazyLoader {
@@ -49,7 +46,7 @@ Variants {
 		visible: true
 		mask: null
 		implicitWidth: island.width + 10
-		implicitHeight: Math.max(Sizes.barHeight, island.height + 15)
+		implicitHeight: Math.max(Sizes.barHeight, island.height )
 		color: "transparent"
 			DynamicIsland {
 				id: island
