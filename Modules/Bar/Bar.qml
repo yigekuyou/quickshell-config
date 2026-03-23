@@ -17,7 +17,6 @@ import qs.Modules.Bar.NotificationButton
 import qs.Modules.Bar.DayNightSwitch
 import qs.Modules.DynamicIsland
 import qs.config
-
 Variants {
     model: Quickshell.screens
     PanelWindow {
@@ -99,6 +98,7 @@ Variants {
                 NotificationButton {
                     Layout.alignment: Qt.AlignVCenter
                 }
+
             }
         }
     }

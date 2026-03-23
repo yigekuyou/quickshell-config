@@ -22,10 +22,11 @@ Singleton {
 
         return notifications.sort((a, b) => {
             if ((a.urgency == NotificationUrgency.Critical) != (b.urgency == NotificationUrgency.Critical)) {
-                return a.urgency == NotificationUrgency.Critical ? 1 : -1;
+                return a.urgency == NotificationUrgency.Critical ? -1 : 1;
             }
-
-            return a.id - b.id;
+            if (b.id > a.id) return 1;
+	    if (b.id < a.id) return -1;
+	    return 0;
         });
     }
 

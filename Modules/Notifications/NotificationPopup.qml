@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import QtQuick.Controls
 import org.kde.kirigami as Kirigami
 import Quickshell
+import qs.Services
 
 // 保持使用 PopupWindow 作为顶层容器
 PopupWindow {
@@ -11,7 +12,8 @@ PopupWindow {
 	property real targetYOffset: 0
 	height: contentLayout.implicitHeight + (Kirigami.Units.gridUnit * 2)
 	// --- 接口属性 ---
-	property var notificationData // 对应 Quickshell 的 Notification 对象
+	property int index
+	property var notificationData:NotificationManager.sortedTemopraryNotifications[index]// 对应 Quickshell 的 Notification 对象
 	visible: true
 	mask: null
 	color: "transparent"

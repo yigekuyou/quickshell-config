@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import qs.config
 import qs.Widget
+import qs.Modules.Notifications
 
 Rectangle {
     id: root
@@ -20,7 +21,9 @@ Rectangle {
         id: notifPanel
         visible: false
     }
-
+    NotificationPopupManager {
+	    id: notificationManager
+    }
     MouseArea {
         anchors.fill: parent
         cursorShape: Qt.PointingHandCursor
