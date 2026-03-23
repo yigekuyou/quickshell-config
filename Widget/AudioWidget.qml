@@ -1,5 +1,6 @@
 import QtQuick
 import org.kde.kirigami as Kirigami
+import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Services.Pipewire
@@ -50,40 +51,33 @@ SlideWindow {
     // --- 界面内容 ---
     
     // 1. 主音量卡片
-    Rectangle {
+    Kirigami.Card {
         Layout.fillWidth: true
+        contentItem: ColumnLayout {
+		spacing: Kirigami.Units.gridUnit
         implicitWidth: ListView.view.width
-        implicitHeight: 90
-        color: theme.surface
-        radius: theme.radius
-        border.width: 1
-        border.color: Qt.rgba(0,0,0,0.05)
-
-        ColumnLayout {
             anchors.fill: parent
             anchors.margins: 12
-            spacing: 8
 
             RowLayout {
                 Layout.fillWidth: true
-                Text { 
-                    text: isHeadphone(root.defaultSink) ? "\uf025" : "\uf028"
-                    font.family: "Font Awesome 6 Free Solid"
-                    font.pixelSize: 16
-                    color: theme.primary 
-                }
-                Text { 
-                    text: root.defaultSink ? (root.defaultSink.description || root.defaultSink.name) : "未找到设备"
-                    font.bold: true
-                    color: theme.text
-                    elide: Text.ElideRight
-                    Layout.fillWidth: true 
-                }
-                Text { 
-                    text: root.defaultSink ? Math.round(root.defaultSink.audio.volume * 100) + "%" : "0%"
-                    font.bold: true
-                    color: theme.primary 
-                }
+                Kirigami.Icon {
+			source: isHeadphone(root.defaultSink) ? "audio-headphones" : "audio-speakers"
+			implicitWidth: Kirigami.Units.iconSizes.smallMedium
+			implicitHeight: Kirigami.Units.iconSizes.smallMedium
+			color: Kirigami.Theme.highlightColor
+		}
+		Kirigami.Heading {
+			level: 4
+			text: root.defaultSink ? (root.defaultSink.description || root.defaultSink.name) : "未找到设备"
+			Layout.fillWidth: true
+			elide: Text.ElideRight
+		}
+		Label {
+			text: root.defaultSink ? Math.round(root.defaultSink.audio.volume * 100) + "%" : "0%"
+			font.bold: true
+			color: Kirigami.Theme.highlightColor
+		}
             }
 
             // 复用 VolumeSlider
@@ -95,12 +89,15 @@ SlideWindow {
     }
 
     // 2. 应用程序列表
-    Text { 
-        text: "应用程序"
-        font.pixelSize: 12
-        color: theme.subtext
-        font.bold: true
-        Layout.topMargin: 4 
+    Kirigami.Separator {
+	    Layout.fillWidth: true
+	    visible: appTracker.linkGroups.length > 0
+    }
+    Label {
+	    text: "正在播放的程序"
+	    font: Kirigami.Theme.smallFont
+	    opacity: 0.7
+	    visible: appTracker.linkGroups.length > 0
     }
 
     ListView {
@@ -150,82 +147,93 @@ SlideWindow {
                 // 应用名称 + 音量条
                 ColumnLayout {
                     Layout.fillWidth: true
-                    spacing: 4
-
                     RowLayout {
                         Layout.fillWidth: true
-                        Text {
+                        Label {
 				text: {
-					// application.name -> description -> name
-					const app = appNode.properties["application.name"] ?? (appNode.description != "" ? appNode.description : appNode.name);
+					const app = appNode.properties["application.name"] ?? (appNode.description || appNode.name);
 					const media = appNode.properties["media.name"];
-					return media != undefined ? `${app} - ${media}` : app;
+					return media ? `${app} - ${media}` : app;
 				}
-                            font.bold: true
-                            font.pixelSize: 12
-                            // 使用 itemTheme
-                            color: itemTheme.text
-                            elide: Text.ElideRight
-                            Layout.fillWidth: true
-                        }
-                        Text {
-                            text:  `${Math.floor(appNode.audio.volume * 100)}%`
-                            font.pixelSize: 10
-                            // 使用 itemTheme
-                            color: itemTheme.subtext
-                        }
+				elide: Text.ElideRight
+				Layout.fillWidth: true
+				font.bold: true
+			}
+			Label {
+				text: `${Math.floor(appNode.audio.volume * 100)}%`
+				font: Kirigami.Theme.smallFont
+			}
                     }
 
                     // 迷你音量条
                     Rectangle {
                         Layout.fillWidth: true
                         implicitHeight: 6
-                        radius: 3
-                        // 使用 itemTheme
-                        color: Qt.rgba(itemTheme.text.r, itemTheme.text.g, itemTheme.text.b, 0.1)
+                        color: Qt.rgba(1, 1, 1, 0.1) // 半透明深色背景
+			radius: height / 2
 
                         Rectangle {
+				id:progressFill
                             height: parent.height
-                            width: parent.width * appNode.audio.volume
-                            radius: 3
-                            // 【关键修复】这里之前是白色，现在使用了 itemTheme.primary
-                            color: itemTheme.primary
+                            width: seekMa.pressed
+                            ? Math.min(Math.max(0, seekMa.mouseX), parent.width)
+			    : parent.width * appNode.audio.volume
+                        radius: parent.radius
+
+                        // 【关键修复】这里之前是白色，现在使用了 itemTheme.primary
+                            color: Kirigami.Theme.highlightColor
                         }
+                        Rectangle {
+				x: progressFill.width - width / 2
+				anchors.verticalCenter: parent.verticalCenter
+				width: 12; height: 12
+				radius: 6
+				color: "white"
+				visible: seekMa.containsMouse || seekMa.pressed
+
+				// 给小圆点加个简单的阴影或缩放效果
+				scale: seekMa.pressed ? 1.2 : 1.0
+				Behavior on scale { NumberAnimation { duration: 100 } }
+			}
 
                         MouseArea {
+				id:seekMa
+				hoverEnabled: true
                             anchors.fill: parent
                             cursorShape: Qt.PointingHandCursor
-                            onPressed: (mouse) => {
-                                let v = mouse.x / width
-                                if (v < 0) v = 0; if (v > 1) v = 1;
-                                appNode.audio.volume = v
-                            }
-                            onPositionChanged: (mouse) => {
-                                let v = mouse.x / width
-                                if (v < 0) v = 0; if (v > 1) v = 1;
-                                appNode.audio.volume = v
-                            }
+                            onPressed:{
+				    let pos = Math.min(Math.max(0, mouse.x / parent.width), 1.0);
+				    appNode.audio.volume = pos
+			    }
+			    onReleased: {
+					    let pos = Math.min(Math.max(0, mouse.x / parent.width), 1.0);
+					    appNode.audio.volume = pos
+			    }
+			    onPositionChanged: (mouse) => {
+				    if (pressed) {
+					    let pos = Math.min(Math.max(0, mouse.x / parent.width), 1.0);
+					    appNode.audio.volume = pos
+				    }
+			    }
                         }
                     }
                 }
-                Rectangle {
-			width: 46
-			height: 26
-			radius: 4
-			color: Qt.rgba(itemTheme.primary.r, itemTheme.primary.g, itemTheme.primary.b, 0.15)
-                Text {
-			anchors.centerIn: parent
-			text: appNode.audio.muted ? "恢复" : "静音"
-			color: itemTheme.primary
-			font.pixelSize: 11
-			font.bold: true
-		}MouseArea {
-			anchors.fill: parent
-			cursorShape: Qt.PointingHandCursor
+                Button {
+			display: AbstractButton.IconOnly
+			icon.name: appNode.audio.muted ? "audio-volume-muted" : "audio-volume-high"
+			flat: true
 			onClicked: appNode.audio.muted = !appNode.audio.muted
-		}}
+
+			ToolTip.visible: hovered
+			ToolTip.text: appNode.audio.muted ? "解除静音" : "静音"
+		}
             }
         }
+	}
+	Kirigami.PlaceholderMessage {
+		visible: appTracker.linkGroups.length === 0
+		text: "没有正在播放音频的应用"
+		icon.name: "audio-volume-muted"
 	}
     }
 }
