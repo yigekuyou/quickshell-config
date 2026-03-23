@@ -4,228 +4,170 @@ import QtQuick.Controls
 import Quickshell
 import Quickshell.Io
 import qs.config
-
-Rectangle {
+import org.kde.kirigami as Kirigami
+Kirigami.AbstractCard {
     id: root
 
     // ================= 1. 样式与尺寸 =================
-    color: "#80" + Colorscheme.background.toString().substring(1)
-    radius: Sizes.cornerRadius
-    clip: true // 裁剪内容，用于展开动画
 
     property bool expanded: false
     property int barHeight: Sizes.barHeight
 
     // 动态宽度：展开显示全部，收起只显示 RAM
-    width: expanded ? (contentLayout.implicitWidth + 24) : (ramGroup.implicitWidth + 24)
-    height: barHeight
-
-    implicitWidth: width
-    implicitHeight: height
-
-    Behavior on width {
-        NumberAnimation {
-            duration: 300
-            easing.type: Easing.OutQuart
-        }
+    implicitWidth: expanded ? contentLayout.implicitWidth + Kirigami.Units.largeSpacing * 2
+    : ramGroup.implicitWidth + Kirigami.Units.largeSpacing * 2
+    implicitHeight: barHeight
+    padding: Kirigami.Units.smallSpacing
+    background: Rectangle {
+	    color: Kirigami.Theme.backgroundColor
+	    opacity: 0.5
+	    radius: Kirigami.Units.smallSpacing
+	    border.color: Kirigami.Theme.focusColor
+	    border.width: root.activeFocus ? 1 : 0
     }
-
+    Behavior on implicitWidth {
+	    NumberAnimation { duration: Kirigami.Units.longDuration; easing.type: Easing.OutQuart }
+    }
     // ================= 2. 数据源 =================
-    property string ramText: "..."
-    property string cpuText: "0%"
-    property string tempText: "0°C"
-    property string diskText: "0%" // 新增硬盘文字
 
+    property int lastCpuTotal :0
+    property int lastCpuIdle: 0
+    property int memUsage: 0
     property int tempValue: 0
     property int cpuValue: 0
     property int diskValue: 0      // 新增硬盘数值(用于变色)
-
     Process {
-        id: proc
-        command: ["python3", Quickshell.env("HOME") + "/.config/quickshell/scripts/sys_monitor.py"]
-        stdout: SplitParser {
-            onRead: data => {
-                try {
-                    let json = JSON.parse(data.trim());
-
-                    root.ramText = json.ram.text;   // 现在这里是 "x.xG"
-                    root.cpuText = json.cpu.text;
-                    root.tempText = json.temp.text;
-                    root.diskText = json.disk.text; // 获取硬盘百分比
-
-                    root.cpuValue = parseInt(json.cpu.text);
-                    root.tempValue = parseInt(json.temp.text);
-                    root.diskValue = parseInt(json.disk.text);
-                } catch (e) {
-                    console.log("SysMonitor JSON Error: " + e);
-                }
-            }
-        }
+	    id: cpuProc
+	    command: ["head", "-1", "/proc/stat"]
+	    stdout: SplitParser {
+		    onRead: data => {
+			    if (!data) return
+				    var p = data.trim().split(/\s+/)
+				    var idle = parseInt(p[4]) + parseInt(p[5])
+				    var total = p.slice(1, 8).reduce((a, b) => a + parseInt(b), 0)
+				    if (lastCpuTotal > 0) {
+					    root.cpuValue = Math.round(100 * (1 - (idle - lastCpuIdle) / (total - lastCpuTotal)))
+				    }
+				    lastCpuTotal = total
+				    lastCpuIdle = idle
+		    }
+	    }
+	    Component.onCompleted: running = true
     }
+    // Memory process
+    Process {
+	    id: memProc
+	    command: ["bash", "-c", "free | grep Mem"]
+	    environment: ({
+		    "LANG": "C",
+	    })
 
+	    stdout: SplitParser {
+		    onRead: data => {
+			    if (!data) return
+				    var parts = data.trim().split(/\s+/)
+				    var total = parseInt(parts[1]) || 1
+				    var used = parseInt(parts[2]) || 0
+				    memUsage = Math.round(100 * used / total)
+		    }
+	    }
+	    Component.onCompleted: running = true
+    }
+    Process {
+	    id: tempProc
+	    // thermal_zone0 通常是 CPU 核心温度，单位是毫摄氏度 (m°C)
+	    command: ["cat", "/sys/class/thermal/thermal_zone0/temp"]
+	    stdout: SplitParser {
+		    onRead: data => {
+			    if (!data) return
+				    var rawTemp = parseInt(data.trim())
+				    if (!isNaN(rawTemp)) {
+					    root.tempValue = Math.round(rawTemp / 1000) // 转换为摄氏度
+				    }
+		    }
+	    }
+    }
     Timer {
         interval: 2000
         running: true
         repeat: true
         triggeredOnStart: true
-        onTriggered: proc.running = true
+        onTriggered: {
+		cpuProc.running = true
+		memProc.running = true
+		tempProc.running=true
+	}
     }
 
     // ================= 3. 颜色逻辑 =================
-    readonly property color colorNormal: "#ffffff"
-    readonly property color colorWarn: "#f9e2af"
-    readonly property color colorCrit: "#f38ba8"
-
-    function getTempColor(val) {
-        if (val > 85)
-            return colorCrit;
-        if (val > 70)
-            return colorWarn;
-        return colorNormal;
-    }
-
-    function getCpuColor(val) {
-        if (val > 90)
-            return colorCrit;
-        if (val > 70)
-            return colorWarn;
-        return colorNormal;
-    }
-
-    // 硬盘颜色：超过 90% 变红，超过 80% 变黄
-    function getDiskColor(val) {
-        if (val > 90)
-            return colorCrit;
-        if (val > 80)
-            return colorWarn;
-        return colorNormal;
+    function getStatusColor(val, warn, crit) {
+	    if (val > crit) return Kirigami.Theme.negativeTextColor;
+	    if (val > warn) return Kirigami.Theme.neutralTextColor;
+	    return Kirigami.Theme.textColor;
     }
 
     // ================= 4. 交互区域 =================
+    ToolTip.visible: mouseArea.containsMouse
+    ToolTip.text: expanded ? "Click to collapse" : "Click to expand details"
     MouseArea {
         anchors.fill: parent
         cursorShape: Qt.PointingHandCursor
         onClicked: {
             root.expanded = !root.expanded;
-            proc.running = true;
-        }
-        onPressed: mouse => {
-            if (mouse.button === Qt.RightButton) {
-                Quickshell.execDetached(["gnome-system-monitor"]);
-            }
         }
     }
 
     // ================= 5. 布局内容 =================
-    RowLayout {
+    contentItem: RowLayout {
         id: contentLayout
-        anchors.right: parent.right
-        anchors.verticalCenter: parent.verticalCenter
-        anchors.rightMargin: 12
-        spacing: 12
-
+        Layout.fillHeight:true
+        Layout.fillWidth:true
+        spacing: Kirigami.Units.largeSpacing  // 收起时去掉间距
         // 从右向左排：RAM 在最右边
         layoutDirection: Qt.RightToLeft
 
-        // --- 1. RAM (常驻) ---
+        // ---  RAM (常驻) ---
         RowLayout {
             id: ramGroup
-            spacing: 4
-            Text {
-                text: ""
-                color: "#a6e3a1" // 绿色图标
-                font.family: "JetBrainsMono Nerd Font"
-                font.pixelSize: 16
-            }
-            Text {
-                text: root.ramText // 显示 GB
-                color: "#ffffff"
-                font.family: "LXGW WenKai GB Screen"
-                font.bold: true
-                font.pixelSize: 13
-            }
+            Layout.fillHeight:true
+
+            spacing: Kirigami.Units.smallSpacing
+            Kirigami.Icon {
+		    source: "memory"
+		    implicitWidth: Kirigami.Units.iconSizes.small
+		    implicitHeight: Kirigami.Units.iconSizes.small
+		    color: Kirigami.Theme.positiveTextColor
+	    }
+	    Label {
+		    text: root.memUsage +"%"
+	    }
         }
 
-        // --- 2. Disk (展开显示) ---
+
+        // ---  Temp (展开显示) ---
         RowLayout {
-            id: diskGroup
-            spacing: 4
+		Layout.fillHeight:true
+		visible: root.expanded //
+		spacing: Kirigami.Units.smallSpacing
+		Kirigami.Icon {
+			source: "temp-symbolic"
+			implicitWidth: Kirigami.Units.iconSizes.small
+			color: getStatusColor(root.tempValue, 70, 85)
+		}
+		Label { text: root.tempValue + "°C" }
+	}
 
-            visible: opacity > 0
-            opacity: root.expanded ? 1 : 0
-            Behavior on opacity {
-                NumberAnimation {
-                    duration: 200
-                }
-            }
-
-            Text {
-                text: "" // 硬盘图标
-                color: root.getDiskColor(root.diskValue)
-                font.family: "JetBrainsMono Nerd Font"
-                font.pixelSize: 16
-            }
-            Text {
-                text: root.diskText // 显示 %
-                color: root.getDiskColor(root.diskValue)
-                font.family: "LXGW WenKai GB Screen"
-                font.bold: true
-                font.pixelSize: 13
-            }
-        }
-
-        // --- 3. Temp (展开显示) ---
+        // --- CPU (展开显示) ---
         RowLayout {
-            id: tempGroup
-            spacing: 4
-            visible: opacity > 0
-            opacity: root.expanded ? 1 : 0
-            Behavior on opacity {
-                NumberAnimation {
-                    duration: 200
-                }
-            }
-
-            Text {
-                text: ""
-                color: root.getTempColor(root.tempValue)
-                font.family: "JetBrainsMono Nerd Font"
-                font.pixelSize: 16
-            }
-            Text {
-                text: root.tempText
-                color: root.getTempColor(root.tempValue)
-                font.family: "LXGW WenKai GB Screen"
-                font.bold: true
-                font.pixelSize: 13
-            }
-        }
-
-        // --- 4. CPU (展开显示) ---
-        RowLayout {
-            id: cpuGroup
-            spacing: 4
-            visible: opacity > 0
-            opacity: root.expanded ? 1 : 0
-            Behavior on opacity {
-                NumberAnimation {
-                    duration: 200
-                }
-            }
-
-            Text {
-                text: ""
-                color: root.getCpuColor(root.cpuValue)
-                font.family: "JetBrainsMono Nerd Font"
-                font.pixelSize: 16
-            }
-            Text {
-                text: root.cpuText
-                color: root.getCpuColor(root.cpuValue)
-                font.family: "LXGW WenKai GB Screen"
-                font.bold: true
-                font.pixelSize: 13
-            }
-        }
+		Layout.fillHeight:true
+		visible: root.expanded //
+		spacing: Kirigami.Units.smallSpacing
+		Kirigami.Icon {
+			source: "cpu"
+			implicitWidth: Kirigami.Units.iconSizes.small
+			color: getStatusColor(root.cpuValue, 70, 90)
+		}
+		Label { text: root.cpuValue + "%" }
+	}
     }
 }

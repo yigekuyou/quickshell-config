@@ -107,6 +107,9 @@ SlideWindow {
 
         delegate: Rectangle {
 		Layout.alignment: Qt.AlignCenter
+		Layout.fillWidth: true
+		Layout.fillHeight: true
+
             // 【修复2】这里必须实例化 Theme，否则下面的颜色找不到 theme 对象
             Theme { id: itemTheme }
 
@@ -125,8 +128,11 @@ SlideWindow {
 
             ColumnLayout {
 		    Layout.alignment: Qt.AlignCenter
+		    Layout.fillWidth: true
+
             RowLayout {
                 spacing: 12
+                Layout.fillWidth: true
 
                 // 应用图标
                 Kirigami.Icon {
@@ -227,6 +233,8 @@ SlideWindow {
             }
         }
 	}
+	Layout.alignment: Qt.AlignCenter
+
 	Kirigami.PlaceholderMessage {
 		visible: appTracker.linkGroups.length === 0
 		text: "没有正在播放音频的应用"
