@@ -8,7 +8,6 @@ import qs.Services
 import qs.config
 import qs.Modules.DynamicIsland.ClockContent
 import qs.Modules.DynamicIsland.MediaContent
-import qs.Modules.DynamicIsland.NotificationContent
 import qs.Modules.DynamicIsland.VolumeContent
 import qs.Modules.DynamicIsland.LauncherContent
 import qs.Modules.DynamicIsland.DashboardContent
