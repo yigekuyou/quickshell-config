@@ -56,9 +56,6 @@ SlideWindow {
         contentItem: ColumnLayout {
 		spacing: Kirigami.Units.gridUnit
         implicitWidth: ListView.view.width
-            anchors.fill: parent
-            anchors.margins: 12
-
             RowLayout {
                 Layout.fillWidth: true
                 Kirigami.Icon {
@@ -129,7 +126,6 @@ SlideWindow {
             ColumnLayout {
 		    anchors.fill: parent
             RowLayout {
-                anchors.fill: parent
                 spacing: 12
 
                 // 应用图标
@@ -223,6 +219,7 @@ SlideWindow {
 			icon.name: appNode.audio.muted ? "audio-volume-muted" : "audio-volume-high"
 			flat: true
 			onClicked: appNode.audio.muted = !appNode.audio.muted
+			icon.color: node.audio.muted ? Kirigami.Theme.negativeTextColor : Kirigami.Theme.highlightColor
 
 			ToolTip.visible: hovered
 			ToolTip.text: appNode.audio.muted ? "解除静音" : "静音"
