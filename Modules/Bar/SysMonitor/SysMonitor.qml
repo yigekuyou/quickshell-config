@@ -1,4 +1,5 @@
 import QtQuick
+import QtCharts
 import QtQuick.Layouts
 import QtQuick.Controls
 import Quickshell
@@ -87,6 +88,34 @@ Kirigami.AbstractCard {
 		    }
 	    }
     }
+    property int gpuLoad: 0
+    property int gpuPower: 0
+    property int gpuFan: 0
+    //GPU
+    Process {
+	    id: gpuProc
+	    // 使用 stdbuf 确保输出不被内核缓存，实时流向 QML
+		command: ["script", "/dev/null", "-qc", "amdgpu_fan watch_csv 1"]
+    stderr: SplitParser {
+		    onRead: data => console.log("GPU Error:", data)
+	    }
+	    stdout: SplitParser {
+		    // 关键：将分隔符设置为换行符，这样每次 onRead 都是一行
+		    onRead: data => {
+			    if (!data || data.includes("Timestamp")) return
+				    //console.log("GPU Raw Data:", data)
+				    // 去掉前后空格并按逗号分割
+				    var parts = data.trim().split(",")
+				    if (parts.length >= 7) {
+					    // 索引 4 是 Load (%), 索引 5 是 Power (Watts)
+					    root.gpuLoad = parseInt(parts[4])
+					    // 转换浮点数为整数
+					    root.gpuPower = Math.round(parseFloat(parts[5]))
+				    }
+		    }
+	    }
+	    Component.onCompleted: running = true
+    }
     Timer {
         interval: 2000
         running: true
@@ -164,6 +193,27 @@ Kirigami.AbstractCard {
 			color: getStatusColor(root.cpuValue, 70, 90)
 		}
 		Label { text: root.cpuValue + "%" }
+	}
+	// --- GPU (展开显示) ---
+	RowLayout {
+		visible: root.expanded
+		opacity: root.expanded ? 1 : 0
+		Layout.alignment: Qt.AlignVCenter
+		spacing: Kirigami.Units.smallSpacing
+		Layout.preferredWidth: visible ? -1 : 0
+
+		Kirigami.Icon {
+			source: "video-display" // 或者使用 "gpu" (如果你的图标库支持)
+			implicitWidth: Kirigami.Units.iconSizes.small
+			implicitHeight: Kirigami.Units.iconSizes.small
+			// 负载高时变色
+			color: getStatusColor(root.gpuLoad, 70, 90)
+		}
+		Label {
+			text: root.gpuLoad + "% | " + root.gpuPower + "W"
+		}
+
+		Behavior on opacity { NumberAnimation { duration: Kirigami.Units.shortDuration } }
 	}
     }
 }
