@@ -20,7 +20,7 @@ Item {
     readonly property string trackArtist: player ? player.trackArtist : ""
     readonly property string playerName: player ? (player.identity || player.busName || "") : ""
     readonly property string artUrl: player ? (player.trackArtUrl || "") : ""
-    readonly property var position: player ? (player.position * 1000 * 1000 || "") : ""
+    readonly property var position: player ? (player.position * 1000 * 1000 || 0 ) : 0
     property int currentLyricIndex: 0
     property var mprisCurrentPlayingSongTimeMS:0
     onMprisCurrentPlayingSongTimeMSChanged: {
