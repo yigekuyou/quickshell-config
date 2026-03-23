@@ -32,98 +32,102 @@ Kirigami.Card {
                 source: (authFlow.iconName) ? authFlow.iconName : "dialog-password"
                 Layout.preferredWidth: Kirigami.Units.iconSizes.large
                 Layout.preferredHeight: Kirigami.Units.iconSizes.large
+                color: Kirigami.Theme.textColor
             }
-            Label {
-                text: authFlow ? authFlow.message : "系统认证"
-                font.bold: true
+            Kirigami.Heading {
+                text: authFlow?.message || "需要身份认证"
+                level: 3
                 wrapMode: Text.WordWrap
                 Layout.fillWidth: true
             }
         }
 
-        // 2. 身份选择
-        ComboBox {
-            visible: authFlow && authFlow.identities.length > 1
-            Layout.fillWidth: true
-            model: authFlow ? authFlow.identities : []
-            onActivated: index => {
-                authFlow.selectedIdentity = authFlow.identities[index];
-            }
-        }
+        Kirigami.FormLayout {
+		Layout.fillWidth: true
 
-        // 3. 密码输入区
-        ColumnLayout {
-            Layout.fillWidth: true
-            visible: authFlow && authFlow.isResponseRequired
+		// 身份选择
+		ComboBox {
+			Kirigami.FormData.label: "认证身份:"
+			visible: authFlow && authFlow.identities.length > 1
+			Layout.fillWidth: true
+			model: authFlow ? authFlow.identities : []
+			textRole: "display" // 假设 identity 对象有 display 属性，否则需根据实际模型调整
+			onActivated: index => {
+				authFlow.selectedIdentity = authFlow.identities[index];
+			}
+		}
 
-            Label {
-                text: authFlow ? authFlow.inputPrompt : "Password:"
-                font: Kirigami.Theme.smallFont
-            }
+		// 密码输入
+		TextField {
+			id: passwordField
+			Kirigami.FormData.label: authFlow?.inputPrompt || "密码:"
+			visible: authFlow?.isResponseRequired || false
+			Layout.fillWidth: true
+			echoMode: (authFlow && authFlow.responseVisible) ? TextInput.Normal : TextInput.Password
+			focus: true
+			placeholderText: "请输入密码..."
 
-            TextField {
-                id: passwordField
-                Layout.fillWidth: true
-                echoMode: (authFlow && authFlow.responseVisible) ? TextInput.Normal : TextInput.Password
-                focus: true
-                placeholderText: "输入密码后按回车..."
-                onAccepted: {
-                    if (authFlow)
-                        authFlow.submit(text);
-                }
-            }
-        }
+			onAccepted: if (authFlow) authFlow.submit(text)
 
-        // 4. 底部按钮与错误消息
-        ColumnLayout {
-            Layout.fillWidth: true
-            spacing: Kirigami.Units.smallSpacing
+			// 自动聚焦
+			Component.onCompleted: forceActiveFocus()
+		}
+	}
 
-            Kirigami.InlineMessage {
-                Layout.fillWidth: true
-                text: authFlow ? authFlow.supplementaryMessage : ""
-                visible: text !== ""
-                type: (authFlow && authFlow.supplementaryIsError) ? Kirigami.MessageType.Error : Kirigami.MessageType.Information
-            }
+	// 3. 错误消息
+	Kirigami.InlineMessage {
+		Layout.fillWidth: true
+		text: authFlow?.supplementaryMessage || ""
+		visible: text !== ""
+		type: (authFlow && authFlow.supplementaryIsError) ? Kirigami.MessageType.Error : Kirigami.MessageType.Information
+		showCloseButton: false
+	}
 
-            RowLayout {
-                Layout.alignment: Qt.AlignRight
-                Button {
-                    text: "取消"
-                    onClicked: {
-                        if (authFlow)
-                            authFlow.cancelAuthenticationRequest();
-                        startExit();
-                    }
-                }
-                Button {
-                    text: "确定"
-                    highlighted: true
-                    onClicked: {
-                        if (authFlow)
-                            authFlow.submit(passwordField.text);
-                    }
-                }
-            }
-        }
+	// 4. 操作按钮
+	RowLayout {
+		Layout.alignment: Qt.AlignRight
+		spacing: Kirigami.Units.smallSpacing
+
+		Button {
+			text: "取消"
+			icon.name: "dialog-cancel"
+			onClicked: {
+				authFlow?.cancelAuthenticationRequest();
+				root.requestClose();
+			}
+		}
+
+		Button {
+			text: "确定"
+			icon.name: "dialog-ok-apply"
+			highlighted: true
+			enabled: !authFlow?.isProcessing // 防止重复提交
+			onClicked: {
+				if (authFlow) authFlow.submit(passwordField.text);
+			}
+		}
+	}
     }
 
-    // 自动监听成功状态关闭窗口
+    // 状态逻辑处理
     Connections {
-        target: authFlow
-        function onIsSuccessfulChanged() {
-            if (authFlow && authFlow.isSuccessful)
-                startExit();
-        }
-        function onIsCancelledChanged() {
-            if (authFlow && authFlow.isCancelled)
-                startExit();
-        }
-        function onFailedChanged() {
-            if (authFlow && authFlow.failed) {
-                passwordField.clear();
-                // 可以在这里触发一个抖动动画
-            }
-        }
+	    target: authFlow
+	    ignoreUnknownSignals: true
+
+	    function onIsSuccessfulChanged() {
+		    if (authFlow?.isSuccessful) root.requestClose();
+	    }
+
+	    function onIsCancelledChanged() {
+		    if (authFlow?.isCancelled) root.requestClose();
+	    }
+
+	    function onFailedChanged() {
+		    if (authFlow && authFlow.failed) {
+			    passwordField.clear();
+			    shakeAnimation.start(); // 触发抖动
+			    passwordField.forceActiveFocus();
+		    }
+	    }
     }
 }
