@@ -106,7 +106,7 @@ SlideWindow {
         model: appTracker.linkGroups
 
         delegate: Rectangle {
-		anchors.fill: parent
+		Layout.alignment: Qt.AlignCenter
             // 【修复2】这里必须实例化 Theme，否则下面的颜色找不到 theme 对象
             Theme { id: itemTheme }
 
@@ -124,7 +124,7 @@ SlideWindow {
             PwObjectTracker { objects: [ appNode ] }
 
             ColumnLayout {
-		    anchors.fill: parent
+		    Layout.alignment: Qt.AlignCenter
             RowLayout {
                 spacing: 12
 

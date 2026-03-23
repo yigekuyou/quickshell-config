@@ -28,8 +28,8 @@ SlideWindow {
 
     // --- 界面内容 ---
     Kirigami.PlaceholderMessage {
-	    anchors.centerIn: parent
-	    visible: NotificationManager.temporaryNotifications.count === 0
+	    Layout.alignment: Qt.AlignCenter
+	    visible: NotificationManager.mergedNotifications.length === 0
 	    text: "没有新通知"
 	    icon.name: "notifications-none"
     }
