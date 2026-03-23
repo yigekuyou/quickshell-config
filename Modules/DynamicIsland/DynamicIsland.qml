@@ -37,8 +37,7 @@ Kirigami.ShadowedRectangle {
     property bool isWallpaperMode: !showDashboard
     property bool isLyricsMode: showLyrics && !showDashboard
     property bool isLauncherMode: !showDashboard && !isLyricsMode
-    property bool isAuthMode: PolkitService.agent.flow
-
+    property bool isAuthMode: (PolkitService.agent.flow)? 1:0
     // ================= 状态机定义 (MD3 核心) =================
     states: [
 	State {
@@ -127,7 +126,7 @@ Kirigami.ShadowedRectangle {
     MouseArea {
         anchors.fill: parent
         cursorShape: Qt.PointingHandCursor
-        enabled: !isAuthMode && !isNotifMode
+        enabled: !isAuthMode
         acceptedButtons: Qt.LeftButton | Qt.MiddleButton
         onClicked: mouse => {
             if (mouse.button === Qt.MiddleButton) {
