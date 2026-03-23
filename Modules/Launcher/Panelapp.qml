@@ -9,17 +9,15 @@ Kirigami.ShadowedRectangle {
 		fill: parent
 	}
 	radius: Kirigami.Units.gridUnit / 2
-	color: Kirigami.Theme.backgroundColor
-	shadow.color: Qt.rgba(0, 0, 0, 0.2)
-	shadow.size: Kirigami.Units.smallSpacing
-	shadow.yOffset: 2
+	color: Qt.alpha(Kirigami.Theme.backgroundColor,0.5)
+	shadow.color: Qt.alpha(0, 0, 0, 0.2)
 
 	implicitWidth:(Kirigami.Units.iconSizes.medium+Kirigami.Units.gridUnit )*TaskbarApps.apps.length
 	implicitHeight:Kirigami.Units.iconSizes.medium+Kirigami.Units.gridUnit
 	RowLayout {
 		anchors.fill: parent
-		anchors.leftMargin: Kirigami.Units.largeSpacing
-		anchors.rightMargin: Kirigami.Units.largeSpacing
+		anchors.leftMargin: Kirigami.Units.smallSpacing
+		anchors.rightMargin: Kirigami.Units.smallSpacing
 		spacing: Kirigami.Units.smallSpacing
 		Repeater {
 			model: TaskbarApps.apps
@@ -35,7 +33,7 @@ Kirigami.ShadowedRectangle {
 				highlighted: hovered
 				ToolTip.delay: Kirigami.Units.toolTipDelay
 				background: Rectangle {
-					color: appDelegate.hovered ? Kirigami.Theme.hoverColor : "transparent"
+					color: appDelegate.hovered ?Qt.alpha(Kirigami.Theme.hoverColor,0.2)  : "transparent"
 					// 运行中状态指示器
 				}
 

@@ -49,7 +49,7 @@ SlideWindow {
     }
 
     // --- 界面内容 ---
-    
+    ColumnLayout {
     // 1. 主音量卡片
     Kirigami.Card {
         Layout.fillWidth: true
@@ -233,12 +233,13 @@ SlideWindow {
             }
         }
 	}
-	Layout.alignment: Qt.AlignCenter
 
-	Kirigami.PlaceholderMessage {
-		visible: appTracker.linkGroups.length === 0
-		text: "没有正在播放音频的应用"
-		icon.name: "audio-volume-muted"
-	}
     }
+    Layout.alignment: Qt.AlignCenter
+    Kirigami.PlaceholderMessage {
+	    visible: appTracker.linkGroups.length === 0
+	    text: "没有正在播放音频的应用"
+	    icon.name: "audio-volume-muted"
+    }
+}
 }
