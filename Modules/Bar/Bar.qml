@@ -32,6 +32,9 @@ Variants {
             top: true
             right: true
         }
+        mask: Region {
+		item: island
+	}
         color: "transparent"
         implicitHeight: Sizes.barHeight
 	LazyLoader {
