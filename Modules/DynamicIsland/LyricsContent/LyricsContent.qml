@@ -22,7 +22,7 @@ Item {
     readonly property string artUrl: player ? (player.trackArtUrl || "") : ""
     readonly property var position: player ? (player.position * 1000 * 1000 || "") : ""
     property int currentLyricIndex: 0
-    property int mprisCurrentPlayingSongTimeMS:0
+    property var mprisCurrentPlayingSongTimeMS:0
     onMprisCurrentPlayingSongTimeMSChanged: {
 	    if (Lyrics.lyricsWTimes.count > 0 && player) {
 		    for (let i = 0; i < Lyrics.lyricsWTimes.count; i++) {
