@@ -23,6 +23,7 @@ Variants {
     model: Quickshell.screens
     PanelWindow {
         id: barWindow
+        WlrLayershell.namespace:"barWindow"
         WlrLayershell.layer: WlrLayer.Bottom
         WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
         required property var modelData
