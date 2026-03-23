@@ -79,7 +79,7 @@ Variants {
 									top.minimized = true;
 								} else {
 									// 否则，激活它
-									top.focus();
+									top.activate();
 									// 如果是最小化状态，取消最小化
 									if (top.minimized) top.minimized = false;
 								}

@@ -7,12 +7,14 @@ import qs.Modules.Bar
 import qs.Modules.DynamicIsland
 import qs.config
 import qs.Modules.Launcher
+import qs.Modules.Panel
 import qs.Wallpaper
 
 ShellRoot {
 	Bar {}
 	Variants {model: Quickshell.screens}
 	LoadWall{}
+	Panel{}
     // ================= 锁屏管理器 =================
     Loader {
         id: lockLoader
