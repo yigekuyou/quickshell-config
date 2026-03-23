@@ -38,6 +38,7 @@ PopupWindow {
 		anchors.fill: parent
 		opacity: 0
 		scale: 0.9
+		spacing: Kirigami.Units.largeSpacing
 
 		// Kirigami 卡片作为主体
 		Kirigami.Card {
@@ -60,11 +61,11 @@ PopupWindow {
 
 				// 第一行：应用图标 + 应用名 + 时间 + 关闭按钮
 				RowLayout {
+
 					Layout.fillWidth: true
 					spacing: Kirigami.Units.mediumSpacing
-
 					Kirigami.Icon {
-						source: notificationData.image || notificationData.appIcon || "notifications"
+						source: notificationData.appIcon || "notifications"
 						Layout.preferredWidth: Kirigami.Units.iconSizes.small
 						Layout.preferredHeight: Kirigami.Units.iconSizes.small
 					}
@@ -73,7 +74,7 @@ PopupWindow {
 						text: notificationData.appName
 						font: Kirigami.Theme.smallFont
 						color: Kirigami.Theme.highlightColor
-						elide: T.Label.ElideRight
+						elide: Label.ElideRight
 						Layout.fillWidth: true
 					}
 
@@ -95,26 +96,36 @@ PopupWindow {
 						}
 					}
 				}
+				RowLayout {
+					Kirigami.Icon {
+						source: notificationData.image || notificationData.appIcon || notificationData.appName.toLowerCase()
+						Layout.preferredWidth: Kirigami.Units.iconSizes.medium
+						Layout.preferredHeight: Kirigami.Units.iconSizes.medium
+					}
 
-				// 第二行：标题 (Summary)
-				Label {
-					text: notificationData.summary
-					font.weight: Font.Bold
-					font.pointSize: Kirigami.Theme.defaultFont.pointSize
-					Layout.fillWidth: true
-					elide: T.Label.ElideRight
-				}
+					ColumnLayout{
 
-				// 第三行：正文 (Body)
-				Label {
-					text: notificationData.body
-					wrapMode: T.Label.Wrap
-					maximumLineCount: 2
-					elide: T.Label.ElideRight
-					Layout.fillWidth: true
-					opacity: 0.8
-					font.pointSize: Kirigami.Theme.defaultFont.pointSize - 1
-				}
+						// 第二行：标题 (Summary)
+						Label {
+							text: notificationData.summary
+							font.weight: Font.Bold
+							font.pointSize: Kirigami.Theme.defaultFont.pointSize
+							Layout.fillWidth: true
+							elide: Label.ElideRight
+						}
+						// 第三行：正文 (Body)
+						Label {
+							text: notificationData.body
+							wrapMode: Label.Wrap
+							maximumLineCount: 2
+							elide: Label.ElideRight
+							Layout.fillWidth: true
+							opacity: 0.8
+							font.pointSize: Kirigami.Theme.defaultFont.pointSize - 1
+						}
+
+					}
+
 
 				// 第四行：动态按钮 (Actions)
 				RowLayout {
@@ -135,6 +146,7 @@ PopupWindow {
 						}
 					}
 				}
+			}
 			}
 			// 底部操作按钮（如果有）
 			actions: [
