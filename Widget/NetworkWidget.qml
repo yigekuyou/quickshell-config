@@ -12,6 +12,7 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Widgets
 import Quickshell.Networking
+import org.kde.kirigami as Kirigami
 
 SlideWindow {
     id: root
@@ -26,80 +27,59 @@ SlideWindow {
             id: headerTheme
         }
 
-        // 刷新按钮
-        Text {
-            id: boolscan
-            text: wifiDev.scannerEnabled? "" : ""
-            font.family: "Font Awesome 6 Free Solid"
-            font.pixelSize: 16
-            color: headerTheme.subtext
-            MouseArea {
-                anchors.fill: parent
-                cursorShape: Qt.PointingHandCursor
-                onClicked: {
-			if (wifiDev) wifiDev.scannerEnabled = !wifiDev.scannerEnabled;;
-                }
-            }
-            RotationAnimation on rotation {
-                running: wifiDev.scannerEnabled
-                from: 0
-                to: 360
-                onRunningChanged: {
-			if (!running) {
-				boolscan.rotation = 0;
-			}
+        ToolButton {
+		id: boolscan
+		// Kirigami 推荐使用 icon.name 而非直接使用字体图标字符
+		// "view-refresh" 是标准图标名，会自动匹配 Font Awesome 或 Breeze 图标库
+		icon.name: wifiDev.scannerEnabled ? "view-refresh" : "edit-find"
+		icon.width: Kirigami.Units.iconSizes.small
+		icon.height: Kirigami.Units.iconSizes.small
+
+		flat: true // 使其看起来像 header 上的工具按钮
+
+		// 旋转动画：Kirigami 环境下依然建议保留动画逻辑
+		RotationAnimation on rotation {
+			running: wifiDev.scannerEnabled
+			from: 0
+			to: 360
+			loops: Animation.Infinite
+			duration: 1000
+			onRunningChanged: if (!running) boolscan.rotation = 0
 		}
-                loops: Animation.Infinite
-                duration: 1000
-            }
-        }
 
-        Item {
-            implicitWidth: 10
-        }
-        Rectangle {
-            id: wifiSwitch
-            Layout.fillWidth: false // 通常开关不 fillWidth，除非你想要一个长条开关
-            implicitWidth: 40
-            implicitHeight: 22
-            radius: 11
+		onClicked: {
+			if (wifiDev) wifiDev.scannerEnabled = !wifiDev.scannerEnabled
+		}
 
-            // --- 核心逻辑 ---
-            // 1. 只有硬件开关开启时，这个 UI 才是可用的
-            enabled: Networking.wifiHardwareEnabled
+		ToolTip.visible: hovered
+		ToolTip.text: wifiDev.scannerEnabled ? qsTr("正在扫描...") : qsTr("开始扫描")
+	}
 
-            // 2. 状态颜色：如果硬件禁用，显示灰色；如果开启，根据软件开关状态显示颜色
-            color: !enabled ? "#A0A0A0" : (Networking.wifiEnabled ? headerTheme.primary : headerTheme.outline)
-            // 3. 视觉反馈：变灰/半透明
-            opacity: enabled ? 1.0 : 0.5
-            // 开关滑块
-            Rectangle {
-                x: ((wifiDev)&&Networking.wifiEnabled && Networking.wifiHardwareEnabled) ? 20 : 2
-                y: 2
-                width: 18
-                height: 18
-                radius: 9
-                color: "white"
-                Behavior on x {
-                    NumberAnimation {
-                        duration: 200
-                    }
-                }
-            }
+	Kirigami.Separator { Layout.fillHeight: true }
 
-            MouseArea {
-                anchors.fill: parent
-                cursorShape: parent.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
-                onClicked: {
-                    Networking.wifiEnabled = !Networking.wifiEnabled;
-                }
-            }
-        }
+	// WiFi 开关部分
+	Switch {
+		id: wifiSwitch
+
+		// 状态逻辑
+		enabled: Networking.wifiHardwareEnabled
+		checked: Networking.wifiEnabled && Networking.wifiHardwareEnabled
+
+		// Kirigami 样式会自动处理颜色（primary color）和禁用状态的灰色
+		// 不需要手动写 Rectangle 的 radius 和 color
+
+		onToggled: {
+			Networking.wifiEnabled = checked
+		}
+
+		ToolTip.visible: hovered
+		ToolTip.text: !enabled ? qsTr("硬件已禁用") : (checked ? qsTr("WiFi 已开启") : qsTr("WiFi 已关闭"))
+	}
     }
 
-    ColumnLayout {
+    Kirigami.ScrollablePage  {
         anchors.margins: 5
-        ListView {
+        Kirigami.CardsListView {
             clip: true
             Layout.fillWidth: true
             Layout.fillHeight: true

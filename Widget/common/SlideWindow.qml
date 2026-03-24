@@ -35,33 +35,32 @@ PopupWindow {
 	shadow.color: Qt.rgba(0, 0, 0, 0.25)
 	shadow.size: 15
 	shadow.yOffset: 4
-        ColumnLayout {
+        Kirigami.ScrollablePage {
 		anchors.fill: parent
-		anchors.margins: Kirigami.Units.largeSpacing
+		anchors.margins: Kirigami.Units.smallSpacing
 		spacing: Kirigami.Units.mediumSpacing
-		Layout.fillWidth: true
-		RowLayout {
+		header: RowLayout{
 			Kirigami.Icon {
 				source: popudroot.icon
 				implicitWidth: Kirigami.Units.gridUnit * 1.2
 				implicitHeight: Kirigami.Units.gridUnit * 1.2
 				color: Kirigami.Theme.activeTextColor
 			}
-			Label {
+			Kirigami.Heading {
 				text: popudroot.title
 				font.bold: true
 				font.pointSize: 12
 				color: Kirigami.Theme.textColor
 				Layout.fillWidth: true
 			}
-                RowLayout { id: headerToolsLayout }
-
-            }
-
-            ColumnLayout {
-		    Layout.fillWidth: true
-                id: contentLayout
-            }
+			RowLayout { id: headerToolsLayout }
+		}
+		ColumnLayout {
+			width: parent.width
+			Layout.fillWidth: true
+			id: contentLayout
+		}
+		Item { Layout.preferredHeight: Kirigami.Units.largeSpacing }
         }
     }
 }

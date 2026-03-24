@@ -18,18 +18,18 @@ SlideWindow {
 	    if (Volume.sinkVolume < 0.66) return "audio-volume-medium";
 	    return "audio-volume-high";
     }
-    
+
     windowHeight: 360
-    
+
     headerTools: Text {
         // 【修复1】这里需要 Theme 实例，因为 headerTools 是动态加载的
         Theme { id: theme }
-        
+
         text: "\uf013"
         font.family: "Font Awesome 6 Free Solid"
         font.pixelSize: 18
         color: theme.subtext
-        MouseArea { 
+        MouseArea {
             anchors.fill: parent
             cursorShape: Qt.PointingHandCursor
             onClicked: Quickshell.execDetached([""])
@@ -40,18 +40,21 @@ SlideWindow {
     property var defaultSink: Pipewire.defaultAudioSink
     PwObjectTracker { objects: [ root.defaultSink ] }
     PwNodeLinkTracker { id: appTracker; node: root.defaultSink }
-    
+
     function isHeadphone(node) {
         if (!node) return false;
-        const icon = node.properties["device.icon-name"] || ""; 
+        const icon = node.properties["device.icon-name"] || "";
         const desc = node.description || "";
         return icon.includes("headphone") || desc.toLowerCase().includes("headphone") || desc.toLowerCase().includes("耳机");
     }
 
     // --- 界面内容 ---
-    ColumnLayout {
     // 1. 主音量卡片
     Kirigami.Card {
+	    header: Kirigami.Heading {
+		    text: "输出设备"
+		    level: 4
+	    }
         Layout.fillWidth: true
         contentItem: ColumnLayout {
 		spacing: Kirigami.Units.gridUnit
@@ -78,7 +81,7 @@ SlideWindow {
             }
 
             // 复用 VolumeSlider
-            VolumeSlider { 
+            VolumeSlider {
                 node: root.defaultSink
                 isHeadphone: root.isHeadphone(root.defaultSink)
             }
@@ -86,23 +89,16 @@ SlideWindow {
     }
 
     // 2. 应用程序列表
-    Kirigami.Separator {
-	    Layout.fillWidth: true
+    Kirigami.Heading {
+	    text: "应用程序"
+	    level: 4
 	    visible: appTracker.linkGroups.length > 0
-    }
-    Label {
-	    text: "正在播放的程序"
-	    font: Kirigami.Theme.smallFont
-	    opacity: 0.7
-	    visible: appTracker.linkGroups.length > 0
+	    Layout.topMargin: Kirigami.Units.largeSpacing
     }
 
-    ListView {
-        Layout.fillWidth: true
-        Layout.fillHeight: true
+    Repeater {
         clip: true
-        spacing: 8
-        
+
         model: appTracker.linkGroups
 
         delegate: Rectangle {
@@ -241,5 +237,4 @@ SlideWindow {
 	    text: "没有正在播放音频的应用"
 	    icon.name: "audio-volume-muted"
     }
-}
 }
