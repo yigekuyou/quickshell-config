@@ -35,19 +35,24 @@ SlideWindow { //qmllint disable uncreatable-type
         }
 
         // 刷新按钮
-        Text {
-		text: "\uf06e" // FontAwesome 'eye' 图标
-		font.family: "Font Awesome 6 Free Solid"
-		font.pixelSize: 16
-		color: Bluetooth.defaultAdapter.discoverable ? headerTheme.primary : headerTheme.subtext
-		MouseArea {
-			anchors.fill: parent
-			cursorShape: Qt.PointingHandCursor
-			onClicked: {
-				// 切换可被发现状态
-				Bluetooth.defaultAdapter.discoverable = !Bluetooth.defaultAdapter.discoverable;
-			}
+        ToolButton {
+		id: discoverableButton
+		// 使用 Kirigami 的图标命名规范，或者保留 FontAwesome
+		// 建议使用标准图标名 "view-visible" 或 "is-visible"
+		icon.name: Bluetooth.defaultAdapter.discoverable ? "view-visible" : "view-hidden"
+		icon.color: Bluetooth.defaultAdapter.discoverable ? Kirigami.Theme.highlightColor : Kirigami.Theme.disabledTextColor
+
+		flat: true
+
+		// 视觉反馈
+		highlighted: Bluetooth.defaultAdapter.discoverable
+
+		onClicked: {
+			Bluetooth.defaultAdapter.discoverable = !Bluetooth.defaultAdapter.discoverable;
 		}
+
+		ToolTip.visible: hovered
+		ToolTip.text: Bluetooth.defaultAdapter.discoverable ? qsTr("当前可被发现") : qsTr("设置可被发现")
 	}
 	ToolButton {
 		id: boolscan
@@ -95,26 +100,24 @@ SlideWindow { //qmllint disable uncreatable-type
 	}
     }
     Kirigami.ScrollablePage  {
+	    Layout.fillHeight: true
+	    implicitHeight: contentHeight
 	    leftPadding: 0
 	    rightPadding: 0
 	    topPadding: 0
 	    bottomPadding: 0
 	    anchors.margins: 0
-	    Kirigami.CardsListView {
-
+	    Repeater {
+		    id: mainColumn
 		    Layout.fillWidth: true
-		    Layout.margins: 0
 		    model:bluetooth.devices
 		    delegate: Kirigami.AbstractCard {
-			    id: mainColumn
-
 			    leftPadding: 0
 			    rightPadding: 0
 			    topPadding: 0
 			    bottomPadding: 0
 			    anchors.margins: 0
 			    contentItem: RowLayout{
-
 				    IconImage {
 					    source: Quickshell.iconPath(modelData.icon, "bluetooth")
 					    implicitSize: 24
@@ -139,91 +142,52 @@ SlideWindow { //qmllint disable uncreatable-type
 					    font.pixelSize: 11
 					    visible: modelData.paired
 				    }
-			}
-		}
-	    }
-	    ListView {
-		    Layout.fillWidth: true; Layout.fillHeight: true
-		    model: bluetooth.devices
-		    clip: true
 
-		    delegate: Item {
-			    width: parent.width
-			    height: mainColumn.implicitHeight
-			    required property var modelData
-			    ColumnLayout {
-				    spacing: 10
-				    RowLayout {
-					    Layout.fillWidth: true
-					    // 左侧：图标与信息
-					    IconImage {
-						    source: Quickshell.iconPath(modelData.icon, "bluetooth")
-						    implicitSize: 24
+				    // 操作按钮：统一使用 Network 的 Rectangle 风格按钮
+				    Rectangle {
+					    width: 60; height: 26; radius: 4
+					    // 根据连接状态切换颜色，逻辑参考 NetworkWidget [cite: 77]
+					    color: modelData.connected ?
+					    Qt.rgba(contentTheme.error.r, contentTheme.error.g, contentTheme.error.b, 0.15) :
+					    Qt.rgba(contentTheme.primary.r, contentTheme.primary.g, contentTheme.primary.b, 0.15)
+
+					    Text {
+						    anchors.centerIn: parent
+						    text: modelData.connected ? "断开" : (modelData.paired ? "连接" : "配对")
+						    color: modelData.connected ? contentTheme.error : contentTheme.primary
+						    font.pixelSize: 11; font.bold: true
 					    }
 
-					    ColumnLayout {
-						    Label {
-							    text: modelData.deviceName;
-							    elide: Text.ElideRight
-						    }
-						    Label {
-							    text: modelData.address;
-						    }
-					    }
-
-					    Item { Layout.fillWidth: true } // 弹簧
-
-					    Label {
-
-						    text: modelData.paired ? "已配对" : ""
-						    color: contentTheme.subtext
-						    font.pixelSize: 11
-						    visible: modelData.paired
-					    }
-
-					    // 操作按钮：统一使用 Network 的 Rectangle 风格按钮
-					    Rectangle {
-						    width: 60; height: 26; radius: 4
-						    // 根据连接状态切换颜色，逻辑参考 NetworkWidget [cite: 77]
-						    color: modelData.connected ?
-						    Qt.rgba(contentTheme.error.r, contentTheme.error.g, contentTheme.error.b, 0.15) :
-						    Qt.rgba(contentTheme.primary.r, contentTheme.primary.g, contentTheme.primary.b, 0.15)
-
-						    Text {
-							    anchors.centerIn: parent
-							    text: modelData.connected ? "断开" : (modelData.paired ? "连接" : "配对")
-							    color: modelData.connected ? contentTheme.error : contentTheme.primary
-							    font.pixelSize: 11; font.bold: true
-						    }
-
-						    MouseArea {
-							    anchors.fill: parent
-							    cursorShape: Qt.PointingHandCursor
-							    onClicked: {
-								    if (modelData.connected) modelData.disconnect();
-								    else if (modelData.paired) modelData.connect();
-								    else modelData.pair();
-							    }
-						    }
-					    }
-
-					    // 移除 PopupWindow，改为简单的“移除”按钮（仅在已配对时显示）
-					    Rectangle {
-						    visible: modelData.paired
-						    width: 40; height: 26; radius: 4
-						    color: Qt.rgba(contentTheme.error.r, contentTheme.error.g, contentTheme.error.b, 0.1)
-						    Text {
-							    anchors.centerIn: parent
-							    text: "移除"; color: contentTheme.error; font.pixelSize: 11
-						    }
-						    MouseArea {
-							    anchors.fill: parent
-							    onClicked: modelData.forget()
+					    MouseArea {
+						    anchors.fill: parent
+						    cursorShape: Qt.PointingHandCursor
+						    onClicked: {
+							    if (modelData.connected) modelData.disconnect();
+							    else if (modelData.paired) modelData.connect();
+							    else modelData.pair();
 						    }
 					    }
 				    }
+
+				    // 移除 PopupWindow，改为简单的“移除”按钮（仅在已配对时显示）
+				    Rectangle {
+					    visible: modelData.paired
+					    width: 40; height: 26; radius: 4
+					    color: Qt.rgba(contentTheme.error.r, contentTheme.error.g, contentTheme.error.b, 0.1)
+					    Text {
+						    anchors.centerIn: parent
+						    text: "移除"; color: contentTheme.error; font.pixelSize: 11
+					    }
+					    MouseArea {
+						    anchors.fill: parent
+						    onClicked: modelData.forget()
+					    }
+				    }
+
 			    }
-		    }
+			}
+		}
 	    }
+
+
     }
-}
