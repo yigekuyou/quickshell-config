@@ -102,16 +102,53 @@ SlideWindow { //qmllint disable uncreatable-type
 	    rightPadding: 0
 	    topPadding: 0
 	    bottomPadding: 0
-	    anchors.margins: 5
+	    anchors.margins: 0
 	    Theme {
 		    id: contentTheme
 	    }
-	    Text {
-		    text: "蓝牙列表"
-		    color: contentTheme.subtext
-		    font.pixelSize: 12
-		    font.bold: true
-		    Layout.topMargin: 4
+	    Kirigami.CardsListView {
+		    anchors.fill: parent
+
+		    Layout.fillWidth: true
+		    Layout.margins: 0
+		    model:bluetooth.devices
+		    delegate: Kirigami.AbstractCard {
+			    id: mainColumn
+
+			    leftPadding: 0
+			    rightPadding: 0
+			    topPadding: 0
+			    bottomPadding: 0
+			    anchors.margins: 0
+			    contentItem: RowLayout{
+				    anchors.fill: parent
+
+				    IconImage {
+					    source: Quickshell.iconPath(modelData.icon, "bluetooth")
+					    implicitSize: 24
+				    }
+
+				    ColumnLayout {
+					    Label {
+						    text: modelData.deviceName;
+						    elide: Text.ElideRight
+					    }
+					    Label {
+						    text: modelData.address;
+					    }
+				    }
+
+				    Item { Layout.fillWidth: true } // 弹簧
+
+				    Label {
+
+					    text: modelData.paired ? "已配对" : ""
+					    color: contentTheme.subtext
+					    font.pixelSize: 11
+					    visible: modelData.paired
+				    }
+			}
+		}
 	    }
 	    ListView {
 		    Layout.fillWidth: true; Layout.fillHeight: true
@@ -123,8 +160,6 @@ SlideWindow { //qmllint disable uncreatable-type
 			    height: mainColumn.implicitHeight
 			    required property var modelData
 			    ColumnLayout {
-				    id: mainColumn
-				    anchors.fill: parent
 				    spacing: 10
 				    RowLayout {
 					    Layout.fillWidth: true
@@ -136,15 +171,11 @@ SlideWindow { //qmllint disable uncreatable-type
 
 					    ColumnLayout {
 						    Label {
-							    color: contentTheme.subtext
 							    text: modelData.deviceName;
-							    font.bold: true;
 							    elide: Text.ElideRight
 						    }
 						    Label {
-							    color: contentTheme.subtext
 							    text: modelData.address;
-							    font.pixelSize: 11;
 						    }
 					    }
 
