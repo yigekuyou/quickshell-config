@@ -49,36 +49,31 @@ SlideWindow { //qmllint disable uncreatable-type
 			}
 		}
 	}
+	ToolButton {
+		id: boolscan
+		icon.name: Bluetooth.defaultAdapter.discovering ? "view-refresh" : "edit-find"
+		icon.width: Kirigami.Units.iconSizes.small
+		icon.height: Kirigami.Units.iconSizes.small
 
-	Item {
-		implicitWidth: 10
+		flat: true // 使其看起来像 header 上的工具按钮
+
+		// 旋转动画：Kirigami 环境下依然建议保留动画逻辑
+		RotationAnimation on rotation {
+			running: Bluetooth.defaultAdapter.discovering
+			from: 0
+			to: 360
+			loops: Animation.Infinite
+			duration: 1000
+			onRunningChanged: if (!running) boolscan.rotation = 0
+		}
+
+		onClicked: {
+			Bluetooth.defaultAdapter.discovering = !Bluetooth.defaultAdapter.discovering
+		}
+
+		ToolTip.visible: hovered
+		ToolTip.text: Bluetooth.defaultAdapter.discovering ? qsTr("正在扫描...") : qsTr("开始扫描")
 	}
-        Text {
-            id: boolscan
-            text: Bluetooth.defaultAdapter.discovering ? "" : ""
-            font.family: "Font Awesome 6 Free Solid"
-            font.pixelSize: 16
-            color: headerTheme.subtext
-            MouseArea {
-                anchors.fill: parent
-                cursorShape: Qt.PointingHandCursor
-                onClicked: {
-			Bluetooth.defaultAdapter.discovering = !Bluetooth.defaultAdapter.discovering;
-		}
-            }
-            RotationAnimation on rotation {
-                running: Bluetooth.defaultAdapter.discovering
-                from: 0
-                to: 360
-                onRunningChanged: {
-			if (!running) {
-				boolscan.rotation = 0;
-			}
-		}
-                loops: Animation.Infinite
-                duration: 1000
-            }
-        }
         Switch {
 		id: blueSwitch
 
