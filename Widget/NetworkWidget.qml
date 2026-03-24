@@ -29,14 +29,17 @@ SlideWindow {
 
         ToolButton {
 		id: boolscan
+		action: Kirigami.Action{
 		// Kirigami 推荐使用 icon.name 而非直接使用字体图标字符
 		// "view-refresh" 是标准图标名，会自动匹配 Font Awesome 或 Breeze 图标库
 		icon.name: wifiDev.scannerEnabled ? "view-refresh" : "edit-find"
 		icon.width: Kirigami.Units.iconSizes.small
 		icon.height: Kirigami.Units.iconSizes.small
-
-		flat: true // 使其看起来像 header 上的工具按钮
-
+		checkable: true
+		onTriggered: {
+			if (wifiDev) wifiDev.scannerEnabled = !wifiDev.scannerEnabled
+		}
+		}
 		// 旋转动画：Kirigami 环境下依然建议保留动画逻辑
 		RotationAnimation on rotation {
 			running: wifiDev.scannerEnabled
@@ -46,11 +49,6 @@ SlideWindow {
 			duration: 1000
 			onRunningChanged: if (!running) boolscan.rotation = 0
 		}
-
-		onClicked: {
-			if (wifiDev) wifiDev.scannerEnabled = !wifiDev.scannerEnabled
-		}
-
 		ToolTip.visible: hovered
 		ToolTip.text: wifiDev.scannerEnabled ? qsTr("正在扫描...") : qsTr("开始扫描")
 	}
