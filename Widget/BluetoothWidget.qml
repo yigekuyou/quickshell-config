@@ -8,6 +8,8 @@ import QtQuick.Controls
 import qs.config
 import qs.Services
 import qs.Widget.common
+import org.kde.kirigami as Kirigami
+import QtQuick.Controls
 
 SlideWindow { //qmllint disable uncreatable-type
     id: bluetooth
@@ -77,44 +79,29 @@ SlideWindow { //qmllint disable uncreatable-type
                 duration: 1000
             }
         }
-        Item {
-		implicitWidth: 10
-	}
-        Rectangle {
-            id: blueSwitch
-            Layout.fillWidth: false // 通常开关不 fillWidth，除非你想要一个长条开关
-            implicitWidth: 40
-            implicitHeight: 22
-            radius: 11
+        Switch {
+		id: blueSwitch
 
-            // --- 核心逻辑 ---
-            color:  (Bluetooth.defaultAdapter.enabled ? headerTheme.primary : headerTheme.outline)
-            // 3. 视觉反馈：变灰/半透明
-            opacity: enabled ? 1.0 : 0.5
-            // 开关滑块
-            Rectangle {
-                x: ((devices)&&Bluetooth.defaultAdapter.enabled) ? 20 : 2
-                y: 2
-                width: 18
-                height: 18
-                radius: 9
-                color: "white"
-                Behavior on x {
-                    NumberAnimation {
-                        duration: 200
-                    }
-                }
-            }
-            MouseArea {
-                anchors.fill: parent
-                cursorShape: parent.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
-                onClicked: {
-                    Bluetooth.defaultAdapter.enabled = !Bluetooth.defaultAdapter.enabled;
-                }
-            }
-        }
+		// 状态逻辑
+		enabled: true
+		checked: Bluetooth.defaultAdapter.enabled
+
+		// Kirigami 样式会自动处理颜色（primary color）和禁用状态的灰色
+		// 不需要手动写 Rectangle 的 radius 和 color
+
+		onToggled: {
+			Bluetooth.defaultAdapter.enabled = checked
+		}
+
+		ToolTip.visible: hovered
+		ToolTip.text: !enabled ? qsTr("硬件已禁用") : (checked ? qsTr("蓝牙 已开启") : qsTr("蓝牙 已关闭"))
+	}
     }
-    ColumnLayout {
+    Kirigami.ScrollablePage  {
+	    leftPadding: 0
+	    rightPadding: 0
+	    topPadding: 0
+	    bottomPadding: 0
 	    anchors.margins: 5
 	    Theme {
 		    id: contentTheme
