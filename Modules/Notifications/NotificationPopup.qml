@@ -15,9 +15,8 @@ PopupWindow {
 	property int index
 	property var notificationData:NotificationManager.sortedTemopraryNotifications[index]// 对应 Quickshell 的 Notification 对象
 	visible: true
-	mask: null
 	color: "transparent"
-
+	mask: null
 	// --- 信号 ---
 	signal exitFinished()
 
@@ -26,7 +25,7 @@ PopupWindow {
 	anchor.edges: Edges.Top | Edges.Right
 	anchor.gravity: Edges.Bottom
 
-	property var pos : mapToItem(parentWindow.contentItem, 0, parentWindow.height);
+	property var pos : mapToItem(parentWindow.contentItem, 0, parentWindow.height+30);
 	anchor.rect.x: Math.round(pos.x)
 	anchor.rect.y: Math.round(pos.y+ targetYOffset)
 	onHeightChanged: {
@@ -39,15 +38,15 @@ PopupWindow {
 		opacity: 0
 		scale: 0.9
 		spacing: Kirigami.Units.largeSpacing
-
 		// Kirigami 卡片作为主体
 		Kirigami.Card {
+			id:notif
 			anchors.fill: parent
 			anchors.margins: Kirigami.Units.smallSpacing
 
 			// 设置卡片高亮样式（如果是紧急通知）
 			background: Rectangle {
-				color:  Qt.alpha(Kirigami.Theme.backgroundColor, 0.35)
+				color:  Qt.alpha(Kirigami.Theme.backgroundColor, 0.5)
 				radius: Kirigami.Units.gridUnit / 3
 				border.color: notificationData.urgency === 2 ? Kirigami.Theme.negativeTextColor : "transparent"
 				border.width: 2
@@ -79,7 +78,7 @@ PopupWindow {
 					}
 
 					Label {
-						text: "现在" // 或者 notificationData.time
+						text: notificationData.time
 						font: Kirigami.Theme.smallFont
 						color: Kirigami.Theme.disabledTextColor
 					}
