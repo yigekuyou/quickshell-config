@@ -116,26 +116,19 @@ SlideWindow {
         clip: true
 
         model: appTracker.linkGroups
+        Layout.alignment: Qt.AlignCenter
+        Layout.fillWidth: true
+        Layout.fillHeight: true
 
-        delegate: Rectangle {
-		Layout.alignment: Qt.AlignCenter
-		Layout.fillWidth: true
-		Layout.fillHeight: true
+        delegate: ColumnLayout {
 
             // 【修复2】这里必须实例化 Theme，否则下面的颜色找不到 theme 对象
             Theme { id: itemTheme }
 
             required property PwLinkGroup modelData
             property var appNode: modelData.source
-
-            implicitWidth: ListView.view.implicitWidth
-            implicitHeight: 50
-            radius: 8
-            color: "transparent"
+            Layout.fillWidth: true
             // 使用 itemTheme
-            border.color: ma.containsMouse ? itemTheme.primary : "transparent"
-            Behavior on border.color { ColorAnimation { duration: 150 } }
-
             PwObjectTracker { objects: [ appNode ] }
 
             ColumnLayout {
