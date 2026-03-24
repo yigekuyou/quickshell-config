@@ -36,50 +36,66 @@ SlideWindow { //qmllint disable uncreatable-type
 
         // 刷新按钮
         ToolButton {
-            id: discoverableButton
-            // 使用 Kirigami 的图标命名规范，或者保留 FontAwesome
-            // 建议使用标准图标名 "view-visible" 或 "is-visible"
-            icon.name: Bluetooth.defaultAdapter.discoverable ? "view-visible" : "view-hidden"
-            icon.color: Bluetooth.defaultAdapter.discoverable ? Kirigami.Theme.highlightColor : Kirigami.Theme.disabledTextColor
+		id: discoverableButton
+		action: Kirigami.Action {
+			// 使用更符合 KDE 规范的图标名
+			icon.name: Bluetooth.defaultAdapter.discoverable ? "visibility" : "hint"
+			text: Bluetooth.defaultAdapter.discoverable ? qsTr("可被发现") : qsTr("隐藏中")
 
-            flat: true
+			// 视觉高亮逻辑
+			checked: Bluetooth.defaultAdapter.discoverable
+			checkable: true
 
-            // 视觉反馈
-            highlighted: Bluetooth.defaultAdapter.discoverable
+			onTriggered: {
+				Bluetooth.defaultAdapter.discoverable = !Bluetooth.defaultAdapter.discoverable;
+			}
+		}
 
-            onClicked: {
-                Bluetooth.defaultAdapter.discoverable = !Bluetooth.defaultAdapter.discoverable;
-            }
+		// 2. 样式优化
+		// 使用 Kirigami 的显隐逻辑，确保在不同主题下颜色正确
+		display: AbstractButton.IconOnly
 
-            ToolTip.visible: hovered
-            ToolTip.text: Bluetooth.defaultAdapter.discoverable ? qsTr("当前可被发现") : qsTr("设置可被发现")
-        }
-        ToolButton {
-            id: boolscan
-            icon.name: Bluetooth.defaultAdapter.discovering ? "view-refresh" : "edit-find"
-            icon.width: Kirigami.Units.iconSizes.small
-            icon.height: Kirigami.Units.iconSizes.small
+		// 3. ToolTip 增强
+		ToolTip.delay: Qt.styleHints.mousePressAndHoldInterval
+		ToolTip.visible: hovered
+		ToolTip.text: action.text
 
-            flat: true // 使其看起来像 header 上的工具按钮
+		// 4. 背景与颜色微调
+		contentItem: Kirigami.Icon {
+			source: discoverableButton.action.icon.name
+			// 这种写法比手动判断更符合 Kirigami 的变色机制
+			color: discoverableButton.checked ? Kirigami.Theme.highlightColor : Kirigami.Theme.textColor
+		}
+	}
+	ToolButton {
+		id: boolscan
 
-            // 旋转动画：Kirigami 环境下依然建议保留动画逻辑
-            RotationAnimation on rotation {
-                running: Bluetooth.defaultAdapter.discovering
-                from: 0
-                to: 360
-                loops: Animation.Infinite
-                duration: 1000
-                onRunningChanged: if (!running)
-                    boolscan.rotation = 0
-            }
+		// 1. 使用 Action 封装逻辑，方便多处复用（如菜单栏或右键菜单）
+		action: Kirigami.Action {
+			id: scanAction
+			icon.name: Bluetooth.defaultAdapter.discovering ? "view-refresh" : "edit-find"
+			text: Bluetooth.defaultAdapter.discovering ? qsTr("正在扫描...") : qsTr("开始扫描")
 
-            onClicked: {
-                Bluetooth.defaultAdapter.discovering = !Bluetooth.defaultAdapter.discovering;
-            }
+			onTriggered: {
+				Bluetooth.defaultAdapter.discovering = !Bluetooth.defaultAdapter.discovering;
+			}
+		}
+		RotationAnimation on rotation {
+			running: Bluetooth.defaultAdapter.discovering
+			from: 0
+			to: 360
+			loops: Animation.Infinite
+			duration: 1000
+			onRunningChanged: if (!running) boolscan.rotation = 0
+		}
+		// 3. 交互细节
+		flat: true
+		display: AbstractButton.IconOnly // 在 Header 中通常只显示图标
 
-            ToolTip.visible: hovered
-            ToolTip.text: Bluetooth.defaultAdapter.discovering ? qsTr("正在扫描...") : qsTr("开始扫描")
-        }
+		ToolTip.delay: Qt.styleHints.mousePressAndHoldInterval
+		ToolTip.visible: hovered
+		ToolTip.text: scanAction.text
+	}
         Kirigami.Separator {
             Layout.fillHeight: true
         }
