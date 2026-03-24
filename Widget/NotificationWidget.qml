@@ -40,7 +40,8 @@ SlideWindow {
         Layout.fillWidth: true
         // 【核心】引用全局单例
         model: NotificationManager.mergedNotifications
-	    delegate: FormCard.FormButtonDelegate {
+	    delegate: FormCard.FormCard{
+		    FormCard.FormButtonDelegate {
 		    Layout.fillWidth: true
 
 		    // 修复越界：使用标准属性，不建议重写 contentItem
@@ -119,4 +120,5 @@ SlideWindow {
 		    }
 	    }
 	}
+}
 }
