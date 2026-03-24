@@ -88,7 +88,7 @@ PopupWindow {
 						flat: true
 						implicitWidth: Kirigami.Units.gridUnit
 						implicitHeight: Kirigami.Units.gridUnit
-						onClicked: startExit()
+						onClicked: NotificationManager.dismiss(notificationData,false)
 
 						contentItem: Kirigami.Icon {
 							source: "window-close"
@@ -141,7 +141,6 @@ PopupWindow {
 							Layout.fillWidth: true
 							onClicked: {
 								notificationData.invokeAction(modelData.id);
-								startExit();
 							}
 						}
 					}
@@ -156,7 +155,6 @@ PopupWindow {
 					icon.name: "entry-edit"
 					onTriggered: {
 						notificationData.invokeAction(notificationData.actions[0].id);
-						startExit();
 					}
 				}
 			]
