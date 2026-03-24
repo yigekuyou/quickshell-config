@@ -8,6 +8,8 @@ import qs.Widget.common
 import qs.Services
 import Quickshell.Services.Notifications
 import org.kde.kirigami as Kirigami
+import org.kde.kirigamiaddons.formcard as FormCard
+
 SlideWindow {
     id: root
     title: "通知中心"
@@ -34,87 +36,87 @@ SlideWindow {
 	    icon.name: "notifications-none"
     }
 
-    ListView {
+    Repeater {
         Layout.fillWidth: true
-        Layout.fillHeight: true
-        clip: true
-        spacing: Kirigami.Units.smallSpacing
         // 【核心】引用全局单例
         model: NotificationManager.mergedNotifications
+	    delegate: FormCard.FormButtonDelegate {
+		    Layout.fillWidth: true
 
-        delegate: ItemDelegate {
-            Theme { id: itemTheme }
-            id: iconContainer
-            width: ListView.view.width
-	    topPadding: Kirigami.Units.mediumSpacing
-	    bottomPadding: Kirigami.Units.mediumSpacing
-	    leftPadding: Kirigami.Units.largeSpacing
-	    rightPadding: Kirigami.Units.largeSpacing
-	    onClicked: {
-			    modelData.actions.invoke();
-	    }
-contentItem: RowLayout {
-                spacing: Kirigami.Units.largeSpacing
-                // 图标
-                Kirigami.Icon {
-			Layout.alignment: Qt.AlignTop
-			Layout.preferredWidth: Kirigami.Units.iconSizes.medium
-			Layout.preferredHeight: Kirigami.Units.iconSizes.medium
-			// 自动处理 Image 路径或图标名
-			source: modelData.image || modelData.appIcon || modelData.appName.toLowerCase()
-		}
-                // 内容
-                ColumnLayout {
-                    Layout.fillWidth: true
-                    spacing: Kirigami.Units.smallSpacing
-                    RowLayout {
-			    Label {
-				    text: modelData.appName
-				    font.bold: true
-				    font.pointSize: Kirigami.Theme.smallFont.pointSize
-				    color: Kirigami.Theme.highlightColor
+		    // 修复越界：使用标准属性，不建议重写 contentItem
+		    text: modelData.summary
+		    description: modelData.body
+		    implicitHeight: notifLayout.implicitHeight + topPadding + bottomPadding
+		    // 图标处理
+		    icon.name: modelData.appIcon || modelData.appName.toLowerCase() || "dialog-information"
+
+		    // 右侧操作按钮：利用 trailingActionBar (FormCard 特有)
+		    // 或者简单地在 delegate 内部处理
+		    onClicked: modelData.actions.invoke()
+
+		    // 自定义右侧：添加删除按钮
+		    contentItem: RowLayout {
+			    id: notifLayout
+			    spacing: Kirigami.Units.mediumSpacing
+			    Kirigami.Icon {
+				    Layout.alignment: Qt.AlignTop // 顶部对齐，防止长文本时图标居中不好看
+				    Layout.preferredWidth: Kirigami.Units.iconSizes.medium
+				    Layout.preferredHeight: Kirigami.Units.iconSizes.medium
+				    source: modelData.image || modelData.appIcon || "notifications"
+			    }
+
+			    // 2. 中间文字区域 (关键：必须 fillWidth 才能触发换行)
+			    ColumnLayout {
 				    Layout.fillWidth: true
-				    elide: Text.ElideRight
+				    spacing: Kirigami.Units.smallSpacing
+
+				    RowLayout {
+					    Kirigami.Heading {
+						    Layout.fillWidth: true
+						    text: modelData.appName
+						    level: 4
+						    color: Kirigami.Theme.highlightColor
+						    elide: Text.ElideRight
+					    }
+					    Label {
+						    text: modelData.time || "现在"
+						    color: Kirigami.Theme.disabledTextColor
+						    font.pointSize: Kirigami.Theme.smallFont.pointSize
+					    }
+					    // 删除按钮
+					    ToolButton {
+						    icon.name: "window-close"
+						    flat: true
+						    onClicked: NotificationManager.dismiss(modelData, true)
+					    }
+				    }
+
+				    // 标题 (Summary) - 允许换 2 行
+				    Kirigami.Heading {
+					    Layout.fillWidth: true
+					    text: modelData.summary
+					    level: 4
+					    wrapMode: Text.WordWrap       // 开启换行
+					    maximumLineCount: 2          // 最多显示2行
+					    elide: Text.ElideRight       // 超过后打省略号
+				    }
+
+				    // 正文 (Body) - 允许换多行 (n行)
+				    Label {
+					    Layout.fillWidth: true
+					    text: modelData.body
+					    opacity: 0.7
+					    font.pointSize: Kirigami.Theme.defaultFont.pointSize - 1
+
+					    // --- 核心修复属性 ---
+					    wrapMode: Text.WordWrap       // 开启物理换行
+					    maximumLineCount: 5          // 这里设置你想要的 n 行上限
+					    elide: Text.ElideRight       // 超过 n 行后显示 ...
+					    // ------------------
+				    }
 			    }
 
-			    Label {
-				    text: modelData.time || ""
-				    font: Kirigami.Theme.smallFont
-				    color: Kirigami.Theme.disabledTextColor
-			    }
 		    }
-		    // 摘要
-		    Label {
-			    text: modelData.summary
-			    font.weight: Font.Bold
-			    elide: Text.ElideRight
-			    Layout.fillWidth: true
-		    }
-		    // 正文
-		    Label {
-			    text: modelData.body
-			    wrapMode: Text.Wrap
-			    maximumLineCount: 3
-			    elide: Text.ElideRight
-			    Layout.fillWidth: true
-			    opacity: 0.7
-			    font.pointSize: Kirigami.Theme.defaultFont.pointSize - 1
-		    }
-		    // --- 动态 Action 按钮
-                }
-
-                // 删除按钮
-                Button {
-			Layout.alignment: Qt.AlignTop
-			flat: true
-			icon.name: "window-close"
-			onClicked: NotificationManager.dismiss(modelData, true)
-			// 只有在悬停或触摸设备上显现
-			ToolTip.visible: hovered
-			ToolTip.text: "清除通知"
-			Behavior on opacity { NumberAnimation { duration: Kirigami.Units.shortDuration } }
-		}
-            }
-        }
-    }
+	    }
+	}
 }

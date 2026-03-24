@@ -140,8 +140,8 @@ SlideWindow { //qmllint disable uncreatable-type
                 // 1. 图标部分
                 Kirigami.Icon {
                     source: modelData.icon|| "bluetooth"
-                    implicitWidth: Kirigami.Units.gridUnit * 1.5
-                    implicitHeight: Kirigami.Units.gridUnit * 1.5
+                    Layout.preferredWidth: Kirigami.Units.gridUnit * 1.5
+                    Layout.preferredHeight: Kirigami.Units.gridUnit * 1.5
                 }
 
                 // 2. 文本信息部分
