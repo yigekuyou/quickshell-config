@@ -31,8 +31,9 @@ PopupWindow {
 	color: Kirigami.Theme.backgroundColor
 	radius: Kirigami.Units.gridUnit * 0.8
 	border.width: 1
-	border.color: Qt.alpha(Kirigami.Theme.dividerColor, 0.3)
+	border.color: Qt.alpha(Kirigami.Theme.focusColor, 0.3)
 	shadow.color: Qt.rgba(0, 0, 0, 0.25)
+	opacity: 1
 	shadow.size: 15
 	shadow.yOffset: 4
         Kirigami.ScrollablePage {
@@ -53,8 +54,7 @@ PopupWindow {
 			}
 			Kirigami.Heading {
 				text: popudroot.title
-				font.bold: true
-				font.pointSize: 12
+				level: 4
 				color: Kirigami.Theme.textColor
 				Layout.fillWidth: true
 			}
