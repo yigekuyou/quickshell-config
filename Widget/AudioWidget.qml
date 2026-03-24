@@ -21,19 +21,35 @@ SlideWindow {
 
     windowHeight: 360
 
-    headerTools: Text {
-        // 【修复1】这里需要 Theme 实例，因为 headerTools 是动态加载的
-        Theme { id: theme }
+    headerTools:ToolButton {
+	    id: settingsButton
 
-        text: "\uf013"
-        font.family: "Font Awesome 6 Free Solid"
-        font.pixelSize: 18
-        color: theme.subtext
-        MouseArea {
-            anchors.fill: parent
-            cursorShape: Qt.PointingHandCursor
-            onClicked: Quickshell.execDetached(["systemsettings"])
-        }
+	    // 1. 使用标准图标名（"configure" 是 KDE 默认的设置图标）
+	    icon.name: "audio-card"
+	    icon.width: Kirigami.Units.iconSizes.small
+	    icon.height: Kirigami.Units.iconSizes.small
+
+	    // 2. 视觉样式：设为 flat 以适应标题栏
+	    flat: true
+
+	    // 3. 逻辑处理
+	    onClicked: {
+		    // 使用更现代的进程启动方式（如果 Quickshell 是你的特定环境，请保留，但推荐使用标准名）
+		    Quickshell.execDetached(["systemsettings", "kcm_pulseaudio"]);
+	    }
+
+	    // 4. 交互反馈
+	    ToolTip.visible: hovered
+	    ToolTip.delay: Qt.styleHints.mousePressAndHoldInterval
+	    ToolTip.text: qsTr("音频设置")
+
+	    // 5. 颜色管理：Kirigami 会自动处理图标颜色，
+	    // 但如果你想手动微调：
+	    contentItem: Kirigami.Icon {
+		    source: settingsButton.icon.name
+		    // 自动适配主题中的副标题/暗淡文字颜色
+		    color: settingsButton.hovered ? Kirigami.Theme.hoverColor : Kirigami.Theme.disabledTextColor
+	    }
     }
 
     // --- Pipewire 逻辑 ---
