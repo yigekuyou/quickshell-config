@@ -74,6 +74,8 @@ SlideWindow { //qmllint disable uncreatable-type
 		ToolTip.visible: hovered
 		ToolTip.text: Bluetooth.defaultAdapter.discovering ? qsTr("正在扫描...") : qsTr("开始扫描")
 	}
+	Kirigami.Separator { Layout.fillHeight: true }
+
         Switch {
 		id: blueSwitch
 
@@ -98,11 +100,7 @@ SlideWindow { //qmllint disable uncreatable-type
 	    topPadding: 0
 	    bottomPadding: 0
 	    anchors.margins: 0
-	    Theme {
-		    id: contentTheme
-	    }
 	    Kirigami.CardsListView {
-		    anchors.fill: parent
 
 		    Layout.fillWidth: true
 		    Layout.margins: 0
@@ -116,7 +114,6 @@ SlideWindow { //qmllint disable uncreatable-type
 			    bottomPadding: 0
 			    anchors.margins: 0
 			    contentItem: RowLayout{
-				    anchors.fill: parent
 
 				    IconImage {
 					    source: Quickshell.iconPath(modelData.icon, "bluetooth")
