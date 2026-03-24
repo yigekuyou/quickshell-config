@@ -13,7 +13,7 @@ import Quickshell
 import Quickshell.Widgets
 import Quickshell.Networking
 import org.kde.kirigami as Kirigami
-
+import QtQuick.Controls
 SlideWindow {
     id: root
     title: "网络配置"
@@ -78,234 +78,85 @@ SlideWindow {
     }
 
     Kirigami.ScrollablePage  {
-        anchors.margins: 5
-        Kirigami.CardsListView {
-            clip: true
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            model: Networking.devices
-            delegate: Item {
-                width: parent.width
-                height: mainColumn.implicitHeight // 确保 delegate 有高度
-                ColumnLayout {
-                    id: mainColumn
-                    property string currentTab: "wifi"
-                    anchors.fill: parent
-                    spacing: 10
-                    Rectangle {
-                        Theme {
-                            id: tabTheme
-                        }
-                        Layout.fillWidth: true
-                        height: 36
-                        color: tabTheme.surface
-                        radius: 8
-                        RowLayout {
-                            anchors.fill: parent
-                            anchors.margins: 4
-                            spacing: 0
-                            Rectangle {
-                                Layout.fillWidth: true
-                                Layout.fillHeight: true
-                                color: mainColumn.currentTab === "wifi" ? tabTheme.primary : "transparent"
-                                radius: 6
-                                Behavior on color {
-                                    ColorAnimation {
-                                        duration: 150
-                                    }
-                                }
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: "Wi-Fi"
-                                    font.bold: true
-                                    color: mainColumn.currentTab === "wifi" ? tabTheme.text : tabTheme.subtext
-                                }
-                                MouseArea {
-                                    anchors.fill: parent
-                                    onClicked: mainColumn.currentTab = "wifi"
-                                }
-                            }
-                            Rectangle {
-                                Layout.fillWidth: true
-                                Layout.fillHeight: true
-                                color: mainColumn.currentTab === "ethernet" ? tabTheme.primary : "transparent"
-                                radius: 6
-                                Behavior on color {
-                                    ColorAnimation {
-                                        duration: 150
-                                    }
-                                }
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: "以太网"
-                                    font.bold: true
-                                    color: mainColumn.currentTab === "ethernet" ? tabTheme.text : tabTheme.subtext
-                                }
-                                MouseArea {
-                                    anchors.fill: parent
-                                    onClicked: mainColumn.currentTab = "ethernet"
-                                }
-                            }
-                        }
-                    }
+	    leftPadding: 0
+	    rightPadding: 0
+	    topPadding: 0
+	    bottomPadding: 0
+	    // 选项卡切换 (Wi-Fi / Ethernet)
+	    header:Kirigami.NavigationTabBar {
+		    actions: [
+			    Kirigami.Action {
+				    text: "Wi-Fi"
+				    icon.name: "network-wireless"
+				    checked: true
+				    onTriggered: contentStack.currentIndex = 0
+			    },
+			    Kirigami.Action {
+				    text: "以太网"
+				    icon.name: "network-wired"
+				    onTriggered: contentStack.currentIndex = 1
+			    }
+		    ]
+	    }StackLayout {
+		    id: contentStack
+		    // Wi-Fi 列表页
+		    Kirigami.CardsListView {
+			    Layout.margins: 0
+			    model: wifiDev ? [...wifiDev.networks.values].sort((a, b) => {
+				    if (a.connected !== b.connected) return b.connected - a.connected;
+				    return b.signalStrength - a.signalStrength;
+			    }) : []
+			    delegate: Kirigami.AbstractCard {
+				    contentItem: RowLayout {
+					    ColumnLayout {
+						    Layout.fillWidth: true
+						    spacing: Kirigami.Units.smallSpacing
 
-                    // 2. 内容切换区
-                    StackLayout {
-                        currentIndex: mainColumn.currentTab === "wifi" ? 0 : 1
-
-                        ColumnLayout {
-                            spacing: 6
-                            Theme {
-                                id: contentTheme
-                            }
-                            Text {
-                                text: "网络列表"
-                                color: contentTheme.subtext
-                                font.pixelSize: 12
-                                font.bold: true
-                                Layout.topMargin: 4
-                            }
-                            ColumnLayout {
-                                Repeater {
-                                    Layout.fillWidth: true
-                                    model: {
-                                        if (modelData.type !== DeviceType.Wifi)
-                                            return [];
-                                        return [...modelData.networks.values].sort((a, b) => {
-                                            if (a.connected !== b.connected) {
-                                                return b.connected - a.connected;
-                                            }
-                                            return b.signalStrength - a.signalStrength;
-                                        });
-                                    }
-
-                                    StackLayout {
-                                        Layout.fillWidth: true
-
-                                        RowLayout {
-                                            ColumnLayout {
-                                                Layout.fillWidth: true
-                                                RowLayout {
-                                                    Label {
-                                                        text: modelData.name
-                                                        font.bold: true
-                                                    }
-                                                    Label {
-                                                        text: modelData.known ? "Known" : ""
-                                                        color: palette.placeholderText
-                                                    }
-                                                }
-                                                RowLayout {
-                                                    Label {
-                                                        text: `${WifiSecurityType.toString(modelData.security)}`
-                                                        color: palette.placeholderText
-                                                    }
-                                                    Label {
-                                                        text: ` ${Math.round(modelData.signalStrength * 100)}%`
-                                                        color: palette.placeholderText
-                                                    }
-                                                }
-                                                Label {
-                                                    visible: Networking.backend == NetworkBackendType.NetworkManager && (modelData.nmReason != NMConnectionStateReason.Unknown && modelData.nmReason != NMConnectionStateReason.None)
-                                                    text: `Connection change reason: ${NMConnectionStateReason.toString(modelData.nmReason)}`
-                                                }
-                                            }
-                                            Item {
-                                                Layout.fillWidth: true
-                                            }
-
-                                            Rectangle {
-                                                visible: !modelData.connected
-                                                width: 46
-                                                height: 26
-                                                radius: 4
-                                                color: Qt.rgba(itemTheme.primary.r, itemTheme.primary.g, itemTheme.primary.b, 0.15)
-
-                                                Text {
-                                                    anchors.centerIn: parent
-                                                    text: "连接"
-                                                    color: itemTheme.primary
-                                                    font.pixelSize: 11
-                                                    font.bold: true
-                                                }
-                                                MouseArea {
-                                                    anchors.fill: parent
-                                                    cursorShape: Qt.PointingHandCursor
-                                                    onClicked: modelData.connect()
-                                                }
-                                            }
-                                            Rectangle {
-                                                visible: modelData.connected
-                                                width: 50
-                                                height: 26
-                                                radius: 4
-                                                color: Qt.rgba(itemTheme.error.r, itemTheme.error.g, itemTheme.error.b, 0.15)
-
-                                                Text {
-                                                    anchors.centerIn: parent
-                                                    text: "断开"
-                                                    color: itemTheme.error
-                                                    font.pixelSize: 11
-                                                    font.bold: true
-                                                }
-                                                MouseArea {
-                                                    anchors.fill: parent
-                                                    cursorShape: Qt.PointingHandCursor
-                                                    onClicked: {
-                                                        onClicked: modelData.disconnect();
-                                                    }
-                                                }
-					    }Rectangle {
-						    visible: modelData.forget
-						    width: 50
-						    height: 26
-						    radius: 4
-						    color: Qt.rgba(itemTheme.error.r, itemTheme.error.g, itemTheme.error.b, 0.15)
-
-						    Text {
-							    anchors.centerIn: parent
-							    text: "忘记"
-							    color: itemTheme.error
-							    font.pixelSize: 11
-							    font.bold: true
+						    Kirigami.Heading {
+							    text: modelData.name
+							    level: 4
 						    }
-						    MouseArea {
-							    anchors.fill: parent
-							    cursorShape: Qt.PointingHandCursor
-							    onClicked: {
-								    modelData.forget();
-							    }
+						    Label {
+							    text: `${WifiSecurityType.toString(modelData.security)} | ${Math.round(modelData.signalStrength * 100)}%`
+							    opacity: 0.7
+							    Layout.fillWidth: true
+							    font: Kirigami.Theme.smallFont
 						    }
 					    }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        Item {
-                            Theme {
-                                id: ethTheme
-                            }
-                            ColumnLayout {
-                                anchors.centerIn: parent
-                                spacing: 10
-                                Text {
-                                    text: "\uf796"
-                                    font.family: "Font Awesome 6 Free Solid"
-                                    font.pixelSize: 40
-                                    color: ethTheme.outline
-                                    Layout.alignment: Qt.AlignHCenter
-                                }
-                                Text {
-                                    text: "以太网设置暂不可用"
-                                    color: ethTheme.subtext
-                                }
-                            }
-                        }
-                    }
 
-                }
-            }
-        }
+					    // 连接/断开 按钮组
+					    RowLayout {
+						    Button {
+							    visible: !modelData.connected
+							    text: "连接"
+							    highlighted: true
+							    onClicked: modelData.connect()
+						    }
+
+						    Button {
+							    visible: modelData.connected
+							    text: "断开"
+							    Kirigami.Theme.colorSet: Kirigami.Theme.Critical
+							    onClicked: modelData.disconnect()
+						    }
+
+						    ToolButton {
+							    icon.name: "edit-delete"
+							    visible: modelData.known
+							    onClicked: modelData.forget()
+							    ToolTip.text: "忘记网络"
+						    }
+					    }
+				    }
+			    }
+		    }
+
+		    // 以太网占位页
+		    Kirigami.PlaceholderMessage {
+			    icon.name: "network-wired"
+			    text: "以太网设置暂不可用"
+			    explanation: "请检查网线连接或稍后再试。"
+		    }
+	    }
     }
 }

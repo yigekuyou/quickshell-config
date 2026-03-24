@@ -39,6 +39,11 @@ PopupWindow {
 		anchors.fill: parent
 		anchors.margins: Kirigami.Units.smallSpacing
 		spacing: Kirigami.Units.mediumSpacing
+		leftPadding: Kirigami.Units.smallSpacing
+		rightPadding: Kirigami.Units.smallSpacing
+		topPadding: Kirigami.Units.smallSpacing
+		bottomPadding: Kirigami.Units.smallSpacing
+
 		header: RowLayout{
 			Kirigami.Icon {
 				source: popudroot.icon
