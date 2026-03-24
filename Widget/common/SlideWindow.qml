@@ -28,6 +28,8 @@ PopupWindow {
     Kirigami.ShadowedRectangle {
         id: bg
 	anchors.fill: parent
+	implicitHeight:parent
+	implicitWidth:parent
 	color: Kirigami.Theme.backgroundColor
 	radius: Kirigami.Units.gridUnit * 0.8
 	border.width: 1
@@ -36,7 +38,7 @@ PopupWindow {
 	opacity: 1
 	shadow.size: 15
 	shadow.yOffset: 4
-        Kirigami.ScrollablePage {
+		Kirigami.ScrollablePage {
 		anchors.fill: parent
 		anchors.margins: Kirigami.Units.smallSpacing
 		spacing: Kirigami.Units.mediumSpacing
@@ -44,6 +46,9 @@ PopupWindow {
 		rightPadding: Kirigami.Units.smallSpacing
 		topPadding: Kirigami.Units.smallSpacing
 		bottomPadding: Kirigami.Units.smallSpacing
+		ColumnLayout {
+			id: contentLayout
+		}
 		clip: true // 必须裁剪，否则滚动内容会超出底边圆角
 		header: RowLayout{
 			Kirigami.Icon {
@@ -59,12 +64,6 @@ PopupWindow {
 				Layout.fillWidth: true
 			}
 			RowLayout { id: headerToolsLayout }
-		}
-		ColumnLayout {
-			width: parent.width
-			Layout.fillWidth: true
-			Layout.fillHeight: true
-			id: contentLayout
 		}
         }
     }
