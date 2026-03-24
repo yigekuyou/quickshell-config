@@ -82,6 +82,7 @@ SlideWindow {
 	    rightPadding: 0
 	    topPadding: 0
 	    bottomPadding: 0
+	    anchors.margins: 0
 	    // 选项卡切换 (Wi-Fi / Ethernet)
 	    header:Kirigami.NavigationTabBar {
 		    actions: [
@@ -98,9 +99,11 @@ SlideWindow {
 			    }
 		    ]
 	    }StackLayout {
+
 		    id: contentStack
 		    // Wi-Fi 列表页
 		    Kirigami.CardsListView {
+			    Layout.fillHeight: true
 			    Layout.margins: 0
 			    model: wifiDev ? [...wifiDev.networks.values].sort((a, b) => {
 				    if (a.connected !== b.connected) return b.connected - a.connected;

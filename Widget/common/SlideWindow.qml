@@ -43,7 +43,7 @@ PopupWindow {
 		rightPadding: Kirigami.Units.smallSpacing
 		topPadding: Kirigami.Units.smallSpacing
 		bottomPadding: Kirigami.Units.smallSpacing
-
+		clip: true // 必须裁剪，否则滚动内容会超出底边圆角
 		header: RowLayout{
 			Kirigami.Icon {
 				source: popudroot.icon
@@ -63,9 +63,9 @@ PopupWindow {
 		ColumnLayout {
 			width: parent.width
 			Layout.fillWidth: true
+			Layout.fillHeight: true
 			id: contentLayout
 		}
-		Item { Layout.preferredHeight: Kirigami.Units.largeSpacing }
         }
     }
 }

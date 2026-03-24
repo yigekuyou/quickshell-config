@@ -32,7 +32,7 @@ SlideWindow {
         MouseArea {
             anchors.fill: parent
             cursorShape: Qt.PointingHandCursor
-            onClicked: Quickshell.execDetached([""])
+            onClicked: Quickshell.execDetached(["systemsettings"])
         }
     }
 
