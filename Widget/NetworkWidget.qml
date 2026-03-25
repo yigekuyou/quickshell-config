@@ -20,6 +20,7 @@ SlideWindow {
     id: root
     title: "网络配置"
     icon: "network-wireless"
+    property string currentTab: "wifi" // 用于切换视图的 ID
     property var wifiDev: getWifiDevice()
     function getWifiDevice() {
         return [...Networking.devices.values].find(d => d.type === DeviceType.Wifi);
@@ -87,18 +88,19 @@ SlideWindow {
             Kirigami.Action {
                 text: "Wi-Fi"
                 icon.name: "network-wireless"
-                checked: true
-                onTriggered: wifiComp.visible = true
-            },
+		checked: root.currentTab === "wifi"
+		onTriggered: root.currentTab = "wifi"
+
+	},
             Kirigami.Action {
                 text: "以太网"
                 icon.name: "network-wired"
-                onTriggered: wifiComp.visible = false
-            }
+		checked: root.currentTab === "wired"
+		onTriggered: root.currentTab = "wired"
+	}
         ]
     }
     Repeater {
-	    id:wifiComp
         model: wifiDev ? [...wifiDev.networks.values].sort((a, b) => {
             if (a.connected !== b.connected)
                 return b.connected - a.connected;
@@ -109,6 +111,9 @@ SlideWindow {
         Layout.margins: 0
 
         FormCard.FormCard{
+		id:wifiComp
+		visible:root.currentTab === "wifi"
+		Layout.fillWidth: true
 		FormCard.FormButtonDelegate {
 			implicitHeight: wifiLayout.implicitHeight + topPadding + bottomPadding
             contentItem: RowLayout {
