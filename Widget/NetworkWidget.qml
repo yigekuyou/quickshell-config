@@ -160,10 +160,27 @@ SlideWindow {
             }
         }
     }
-    Kirigami.PlaceholderMessage {
-        visible: root.currentTab === "wired"
-        icon.name: "network-wired"
-        text: "以太网设置暂不可用"
-        explanation: "请检查网线连接或稍后再试。"
+
+    // 以太网占位部分
+    FormCard.FormCard {
+	    visible: root.currentTab === "wired" ||!Networking.wifiEnabled && root.currentTab === "wifi"
+	    Layout.fillWidth: true
+	    FormCard.FormHeader { title: "有线网络连接" }
+	    Kirigami.PlaceholderMessage {
+		    id:wiredLyout
+		    visible:root.currentTab === "wired"
+		    icon.name: "network-wired"
+		    text: "以太网设置暂不可用"
+		    explanation: "占位符"
+	    }
+	    Kirigami.PlaceholderMessage {
+		    id: offMessage
+		    // 控制显示：当 WiFi 关闭时显示
+		    visible: !Networking.wifiEnabled && root.currentTab === "wifi"
+
+		    icon.name: "network-wireless-off"
+		    text: "Wi-Fi 已关闭"
+		    explanation: "请在上方开关处开启 Wi-Fi 和扫描可用网络。"
+	    }
     }
 }
