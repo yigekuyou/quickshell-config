@@ -49,18 +49,38 @@ Kirigami.ShadowedRectangle {
 				ToolTip.text: modelData.appId
 
 				onClicked: {
-					if (modelData.toplevels.length > 0) {
-						// 取得当前窗口实例
-						let top = modelData.toplevels[0];
+					const wins = modelData.toplevels;
+					const count = wins.length;
 
-						if (top.active) {
-							// 如果已经是当前窗口，则最小化
-							top.minimized = true;
+					if (count > 0) {
+						// 1寻找当前处于激活状态的窗口索引
+						let activeIndex = -1;
+						for (let i = 0; i < count; i++) {
+							if (wins[i].activated === true) {
+								activeIndex = i;
+								break;
+							}
+						}
+
+						// 2. 执行切换逻辑
+						if (activeIndex !== -1) {
+							// 情况 A：该应用的某个窗口正处于激活状态
+							if (count === 1) {
+								// 只有一个窗口时，点击则最小化
+								wins[0].minimized = true;
+							} else {
+								// 有多个窗口，按顺序切换到下一个 (Index + 1)
+								let nextIndex = (activeIndex + 1) % count;
+								let nextWin = wins[nextIndex];
+
+								nextWin.activate(); // 调用文档中的 activate() 函数
+								if (nextWin.minimized) nextWin.minimized = false;
+							}
 						} else {
-							// 否则，激活它
-							top.activate();
-							// 如果是最小化状态，取消最小化
-							if (top.minimized) top.minimized = false;
+							// 情况 B：当前没有窗口被激活
+							// 默认激活第一个，如果它被最小化了则恢复
+							wins[0].activate();
+							if (wins[0].minimized) wins[0].minimized = false;
 						}
 					}
 				}

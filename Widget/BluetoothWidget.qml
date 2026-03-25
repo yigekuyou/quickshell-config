@@ -156,20 +156,18 @@ SlideWindow { //qmllint disable uncreatable-type
                         Layout.fillWidth: true
                     }
 
-                    Label {
+                    Kirigami.Heading {
                         text: modelData.address
-                        font.pixelSize: Kirigami.Units.smallFont.pixelSize
-                        opacity: 0.7
+                        level: 4
                         elide: Text.ElideRight
                         Layout.fillWidth: true
                     }
                 }
 
                 // 3. 状态标签
-                Label {
+                Kirigami.Heading {
                     text: "已配对"
                     visible: modelData.paired
-                    font.pixelSize: Kirigami.Units.smallFont.pixelSize
                     color: Kirigami.Theme.disabledTextColor
                 }
 
