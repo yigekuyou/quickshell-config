@@ -21,11 +21,6 @@ PanelWindow {
 
     property int currentMode: 0 
     
-    // 始终优先读取实时选中的壁纸预览图，否则读取软链接
-    property string previewImage: (currentMode === 2 && wallpaperPage.currentSelectedPreview !== "") 
-                                  ? wallpaperPage.currentSelectedPreview 
-                                  : "file://" + Quickshell.env("HOME") + "/.cache/wallpaper_rofi/current"
-
     onVisibleChanged: {
         if (visible) {
             // 智能焦点路由

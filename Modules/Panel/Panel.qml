@@ -8,6 +8,7 @@ import QtQuick.Layouts
 Variants {
 	model: Quickshell.screens
 	PanelWindow {
+		LauncherManager{}
 		id: panelWindow
 		WlrLayershell.namespace:"panelWindow"
 		WlrLayershell.layer: WlrLayer.Top

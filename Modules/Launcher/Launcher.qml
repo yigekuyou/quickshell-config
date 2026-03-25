@@ -10,11 +10,15 @@ import qs.Widget.common
 import qs.Services
 import org.kde.kirigami as Kirigami
 
-FloatingWindow {
-	id: root
+PanelWindow {
+	id:popudroot
+	anchors { top: true; bottom: true; left: true; right: true }
+
+	WlrLayershell.namespace: "rofi-launcher-overlay"
+	focusable:true
 	Rectangle {
-		anchors.centerIn: parent
-		width: 600; height: 500
+		anchors.fill: parent
+
 		radius: Kirigami.Units.gridUnit / 2
 		color: Kirigami.Theme.backgroundColor
 
@@ -133,9 +137,9 @@ FloatingWindow {
 					onClicked: {
 						resultsList.currentIndex = index;
 						LauncherService.launch(index);
+						popudroot.destroy();
 					}
 				}
-
 
 				// 滚动条
 				ScrollBar.vertical: ScrollBar {}
