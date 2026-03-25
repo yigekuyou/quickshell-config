@@ -4,9 +4,10 @@ import QtQuick
 import QtQuick.Layouts
 import qs.Services
 import qs.config
-Rectangle {
+import org.kde.kirigami as Kirigami
+Kirigami.ShadowedRectangle {
 	id: root
-	color: "#80" + Colorscheme.background.toString().substring(1)
+	color: Qt.alpha(Kirigami.Theme.backgroundColor, 0.5)
 
 	radius: Sizes.cornerRadius
 	implicitHeight: Sizes.barHeight
@@ -27,7 +28,7 @@ Rectangle {
 		radius: Sizes.cornerRadius
 
 		// 之前修改的高亮色
-		color: Colorscheme.on_primary_container
+		color: Kirigami.Theme.activeTextColor
 
 		Behavior on x { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
 		Behavior on width { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
@@ -64,7 +65,7 @@ Rectangle {
 				text: index + 1
 				font { bold: true }
 
-				color: delegateRoot.Active ? "#0db9d7" : (ws ? "#7aa2f7" : "#444b6a")
+				color: delegateRoot.Active ? Kirigami.Theme.highlightColor  : (ws ? Kirigami.Theme.activeTextColor : Kirigami.Theme.textColor)
 
 				Behavior on color { ColorAnimation { duration: 200 }
 				}
