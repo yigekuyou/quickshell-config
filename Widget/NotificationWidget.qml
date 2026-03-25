@@ -56,29 +56,12 @@ SlideWindow {
 		    onClicked: modelData.actions.invoke()
 
 		    // 自定义右侧：添加删除按钮
-		    contentItem: RowLayout {
+		    trailing: RowLayout {
 			    id: notifLayout
 			    spacing: Kirigami.Units.mediumSpacing
-			    Kirigami.Icon {
-				    Layout.alignment: Qt.AlignTop // 顶部对齐，防止长文本时图标居中不好看
-				    Layout.preferredWidth: Kirigami.Units.iconSizes.medium
-				    Layout.preferredHeight: Kirigami.Units.iconSizes.medium
-				    source: modelData.image || modelData.appIcon || "notifications"
-			    }
 
 			    // 2. 中间文字区域 (关键：必须 fillWidth 才能触发换行)
-			    ColumnLayout {
-				    Layout.fillWidth: true
-				    spacing: Kirigami.Units.smallSpacing
-
 				    RowLayout {
-					    Kirigami.Heading {
-						    Layout.fillWidth: true
-						    text: modelData.appName
-						    level: 4
-						    color: Kirigami.Theme.highlightColor
-						    elide: Text.ElideRight
-					    }
 					    Label {
 						    text: modelData.time || "现在"
 						    color: Kirigami.Theme.disabledTextColor
@@ -91,32 +74,6 @@ SlideWindow {
 						    onClicked: NotificationManager.dismiss(modelData, true)
 					    }
 				    }
-
-				    // 标题 (Summary) - 允许换 2 行
-				    Kirigami.Heading {
-					    Layout.fillWidth: true
-					    text: modelData.summary
-					    level: 4
-					    wrapMode: Text.WordWrap       // 开启换行
-					    maximumLineCount: 2          // 最多显示2行
-					    elide: Text.ElideRight       // 超过后打省略号
-				    }
-
-				    // 正文 (Body) - 允许换多行 (n行)
-				    Label {
-					    Layout.fillWidth: true
-					    text: modelData.body
-					    opacity: 0.7
-					    font.pointSize: Kirigami.Theme.defaultFont.pointSize - 1
-
-					    // --- 核心修复属性 ---
-					    wrapMode: Text.WordWrap       // 开启物理换行
-					    maximumLineCount: 5          // 这里设置你想要的 n 行上限
-					    elide: Text.ElideRight       // 超过 n 行后显示 ...
-					    // ------------------
-				    }
-			    }
-
 		    }
 	    }
 	}

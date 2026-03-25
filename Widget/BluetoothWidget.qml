@@ -136,37 +136,11 @@ SlideWindow { //qmllint disable uncreatable-type
             topPadding: 0
             bottomPadding: 0
             anchors.margins: 0
-            contentItem: RowLayout {
-                // 1. 图标部分
-                Kirigami.Icon {
-                    source: modelData.icon|| "bluetooth"
-                    Layout.preferredWidth: Kirigami.Units.gridUnit * 1.5
-                    Layout.preferredHeight: Kirigami.Units.gridUnit * 1.5
-                }
-
-                // 2. 文本信息部分
-                ColumnLayout {
-                    spacing: 0
-                    Layout.fillWidth: true
-
-                    Kirigami.Heading {
-                        text: modelData.deviceName || "未知设备"
-                        level: 4
-                        elide: Text.ElideRight
-                        Layout.fillWidth: true
-                    }
-
-                    Kirigami.Heading {
-                        text: modelData.address
-                        level: 4
-                        elide: Text.ElideRight
-                        Layout.fillWidth: true
-                    }
-                }
-
+            trailing: RowLayout {
                 // 3. 状态标签
                 Kirigami.Heading {
                     text: "已配对"
+		    level:4
                     visible: modelData.paired
                     color: Kirigami.Theme.disabledTextColor
                 }
@@ -192,7 +166,6 @@ SlideWindow { //qmllint disable uncreatable-type
                                 modelData.pair();
                         }
                     }
-
                     // 移除按钮 (仅在已配对时显示)
                     ToolButton {
                         visible: modelData.paired

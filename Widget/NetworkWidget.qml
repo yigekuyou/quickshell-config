@@ -114,25 +114,12 @@ SlideWindow {
             visible: root.currentTab === "wifi"
             Layout.fillWidth: true
             FormCard.FormButtonDelegate {
+		    text: modelData.name || "未知设备"
+		    description:  `${WifiSecurityType.toString(modelData.security)} | ${Math.round(modelData.signalStrength * 100)}%`
+
                 implicitHeight: wifiLayout.implicitHeight + topPadding + bottomPadding
-                contentItem: RowLayout {
+                trailing: RowLayout {
                     id: wifiLayout
-                    ColumnLayout {
-                        Layout.fillWidth: true
-                        spacing: Kirigami.Units.smallSpacing
-
-                        Kirigami.Heading {
-                            text: modelData.name
-                            level: 4
-                        }
-                        Label {
-                            text: `${WifiSecurityType.toString(modelData.security)} | ${Math.round(modelData.signalStrength * 100)}%`
-                            opacity: 0.7
-                            Layout.fillWidth: true
-                            font: Kirigami.Theme.smallFont
-                        }
-                    }
-
                     // 连接/断开 按钮组
                     RowLayout {
                         Button {
@@ -145,7 +132,6 @@ SlideWindow {
                         Button {
                             visible: modelData.connected
                             text: "断开"
-                            Kirigami.Theme.colorSet: Kirigami.Theme.Critical
                             onClicked: modelData.disconnect()
                         }
 
