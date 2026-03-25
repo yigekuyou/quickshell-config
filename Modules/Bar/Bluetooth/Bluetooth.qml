@@ -50,7 +50,6 @@ RowLayout {
 	spacing: Kirigami.Units.smallSpacing
 	anchors.fill: parent
             Layout.fillWidth: true
-            Layout.preferredHeight: 80
                         Kirigami.Icon {
 				Layout.preferredWidth: Kirigami.Units.gridUnit
 				Layout.preferredHeight: Kirigami.Units.gridUnit

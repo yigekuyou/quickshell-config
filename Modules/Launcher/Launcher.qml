@@ -12,8 +12,15 @@ import org.kde.kirigami as Kirigami
 
 PanelWindow {
 	id:popudroot
-	anchors { top: true; bottom: true; left: true; right: true }
-
+	anchors { top: true; left: true; right: true }
+	exclusionMode:ExclusionMode.Ignore
+	property int sideMargin: screen.width / 3
+	height: Kirigami.Units.gridUnit * 30
+	margins {
+		left: sideMargin
+		right: sideMargin
+		top: Kirigami.Units.smallSpacing+Sizes.barHeight // 顶部留一点点像素缝隙更美观
+	}
 	WlrLayershell.namespace: "rofi-launcher-overlay"
 	focusable:true
 	Rectangle {
@@ -46,14 +53,21 @@ PanelWindow {
 
 				// 按键控制逻辑
 				Keys.onPressed: (event) => {
-					if (event.key === Qt.Key_Down) {
-						resultsList.incrementCurrentIndex();
-					} else if (event.key === Qt.Key_Up) {
-						resultsList.decrementCurrentIndex();
-					} else if (event.key === Qt.Key_Return) {
-						LauncherService.launch(resultsList.currentIndex);
-					} else if (event.key === Qt.Key_Escape) {
-						LauncherService.active = false;
+					switch (event.key) {
+						case Qt.Key_Down:
+							resultsList.incrementCurrentIndex();
+							break;
+						case Qt.Key_Up:
+							resultsList.decrementCurrentIndex();
+							break;
+						case Qt.Key_Return:
+						case Qt.Key_Enter: // 通常建议同时处理小键盘的回车
+							LauncherService.launch(resultsList.currentIndex);
+							popudroot.destroy();
+							break;
+						case Qt.Key_Escape:
+							popudroot.destroy();
+							break;
 					}
 				}
 			}
