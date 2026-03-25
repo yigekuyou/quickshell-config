@@ -42,11 +42,14 @@ Item {
 }
 onPositionChanged:{
 	root.mprisCurrentPlayingSongTimeMS = position
-	positionWatchdog.restart()
-}
+	if (player !== null) {
+		positionWatchdog.restart()
+	} else {
+		positionWatchdog.stop() // 确保它彻底闭嘴
+	}}
     Timer {
 	    id: positionWatchdog
-	    running: player.playbackState == MprisPlaybackState.Playing
+	    running: player && player.isPlaying
 	    interval: 200
 	    repeat: true
 	    onTriggered: if (root.active == MprisPlaybackState.Playing){player.positionChanged()}
