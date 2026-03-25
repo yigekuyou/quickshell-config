@@ -158,17 +158,12 @@ SlideWindow {
                     }
                 }
             }
-            FormCard.FormCard {
-                visible: root.currentTab === "wired"
-                Layout.fillWidth: true
-                FormCard.FormHeader {
-                    title: "有线网络连接"
-                }
-                FormCard.FormTextDelegate {
-                    text: "当前暂无活跃的有线连接"
-                    description: "请插入网线以查看详情"
-                }
-            }
         }
+    }
+    Kirigami.PlaceholderMessage {
+        visible: root.currentTab === "wired"
+        icon.name: "network-wired"
+        text: "以太网设置暂不可用"
+        explanation: "请检查网线连接或稍后再试。"
     }
 }
