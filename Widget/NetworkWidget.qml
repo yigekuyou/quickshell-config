@@ -14,6 +14,7 @@ import Quickshell.Widgets
 import Quickshell.Networking
 import org.kde.kirigami as Kirigami
 import QtQuick.Controls
+import org.kde.kirigamiaddons.formcard as FormCard
 
 SlideWindow {
     id: root
@@ -107,8 +108,11 @@ SlideWindow {
         Layout.fillWidth: true
         Layout.margins: 0
 
-        Kirigami.AbstractCard {
+        FormCard.FormCard{
+		FormCard.FormButtonDelegate {
+			implicitHeight: wifiLayout.implicitHeight + topPadding + bottomPadding
             contentItem: RowLayout {
+		    id:wifiLayout
                 ColumnLayout {
                     Layout.fillWidth: true
                     spacing: Kirigami.Units.smallSpacing
@@ -151,4 +155,5 @@ SlideWindow {
             }
         }
     }
+}
 }
