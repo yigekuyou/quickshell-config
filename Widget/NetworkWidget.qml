@@ -82,22 +82,21 @@ SlideWindow {
         }
     }
     Kirigami.NavigationTabBar {
-	    Layout.fillWidth: true
+        Layout.fillWidth: true
 
         actions: [
             Kirigami.Action {
                 text: "Wi-Fi"
                 icon.name: "network-wireless"
-		checked: root.currentTab === "wifi"
-		onTriggered: root.currentTab = "wifi"
-
-	},
+                checked: root.currentTab === "wifi"
+                onTriggered: root.currentTab = "wifi"
+            },
             Kirigami.Action {
                 text: "以太网"
                 icon.name: "network-wired"
-		checked: root.currentTab === "wired"
-		onTriggered: root.currentTab = "wired"
-	}
+                checked: root.currentTab === "wired"
+                onTriggered: root.currentTab = "wired"
+            }
         ]
     }
     Repeater {
@@ -110,55 +109,66 @@ SlideWindow {
         Layout.fillWidth: true
         Layout.margins: 0
 
-        FormCard.FormCard{
-		id:wifiComp
-		visible:root.currentTab === "wifi"
-		Layout.fillWidth: true
-		FormCard.FormButtonDelegate {
-			implicitHeight: wifiLayout.implicitHeight + topPadding + bottomPadding
-            contentItem: RowLayout {
-		    id:wifiLayout
-                ColumnLayout {
-                    Layout.fillWidth: true
-                    spacing: Kirigami.Units.smallSpacing
-
-                    Kirigami.Heading {
-                        text: modelData.name
-                        level: 4
-                    }
-                    Label {
-                        text: `${WifiSecurityType.toString(modelData.security)} | ${Math.round(modelData.signalStrength * 100)}%`
-                        opacity: 0.7
+        FormCard.FormCard {
+            id: wifiComp
+            visible: root.currentTab === "wifi"
+            Layout.fillWidth: true
+            FormCard.FormButtonDelegate {
+                implicitHeight: wifiLayout.implicitHeight + topPadding + bottomPadding
+                contentItem: RowLayout {
+                    id: wifiLayout
+                    ColumnLayout {
                         Layout.fillWidth: true
-                        font: Kirigami.Theme.smallFont
+                        spacing: Kirigami.Units.smallSpacing
+
+                        Kirigami.Heading {
+                            text: modelData.name
+                            level: 4
+                        }
+                        Label {
+                            text: `${WifiSecurityType.toString(modelData.security)} | ${Math.round(modelData.signalStrength * 100)}%`
+                            opacity: 0.7
+                            Layout.fillWidth: true
+                            font: Kirigami.Theme.smallFont
+                        }
+                    }
+
+                    // 连接/断开 按钮组
+                    RowLayout {
+                        Button {
+                            visible: !modelData.connected
+                            text: "连接"
+                            highlighted: true
+                            onClicked: modelData.connect()
+                        }
+
+                        Button {
+                            visible: modelData.connected
+                            text: "断开"
+                            Kirigami.Theme.colorSet: Kirigami.Theme.Critical
+                            onClicked: modelData.disconnect()
+                        }
+
+                        ToolButton {
+                            icon.name: "edit-delete"
+                            visible: modelData.known
+                            onClicked: modelData.forget()
+                            ToolTip.text: "忘记网络"
+                        }
                     }
                 }
-
-                // 连接/断开 按钮组
-                RowLayout {
-                    Button {
-                        visible: !modelData.connected
-                        text: "连接"
-                        highlighted: true
-                        onClicked: modelData.connect()
-                    }
-
-                    Button {
-                        visible: modelData.connected
-                        text: "断开"
-                        Kirigami.Theme.colorSet: Kirigami.Theme.Critical
-                        onClicked: modelData.disconnect()
-                    }
-
-                    ToolButton {
-                        icon.name: "edit-delete"
-                        visible: modelData.known
-                        onClicked: modelData.forget()
-                        ToolTip.text: "忘记网络"
-                    }
+            }
+            FormCard.FormCard {
+                visible: root.currentTab === "wired"
+                Layout.fillWidth: true
+                FormCard.FormHeader {
+                    title: "有线网络连接"
+                }
+                FormCard.FormTextDelegate {
+                    text: "当前暂无活跃的有线连接"
+                    description: "请插入网线以查看详情"
                 }
             }
         }
     }
-}
 }
