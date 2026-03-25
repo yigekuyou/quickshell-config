@@ -43,11 +43,6 @@ Kirigami.ShadowedRectangle {
 					scale: appDelegate.pressed ? 0.9 : (appDelegate.hovered ? 1.1 : 1.0)
 					Behavior on scale { NumberAnimation { duration: Kirigami.Units.shortDuration } }
 				}
-
-				// 交互逻辑
-				ToolTip.visible: appDelegate.hovered
-				ToolTip.text: modelData.appId
-
 				onClicked: {
 					const wins = modelData.toplevels;
 					const count = wins.length;

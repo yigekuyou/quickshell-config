@@ -14,11 +14,10 @@ Singleton {
 		}
 		return list.length > 0 ? list[0] : null;
 	}
-	property string identity : player.identity
+	property string identity : player ? (player.identity || "") : ""
 
 	// The data model other QML files will bind to
 	readonly property alias lyricsWTimes: lyricsWTimes
-	readonly property string currentId: player ? player.identity : ""
 	onIdentityChanged: {
 		if (identity) {
 			lyricSource.findAndGetAsText(identity);

@@ -57,7 +57,7 @@ Kirigami.Card {
 			anchors.centerIn: parent
 			width: 32; height: 32
 			source: "audio-x-generic"
-			visible: root.artUrl === ""
+			visible: root.artUrl === "" && status !== Kirigami.Icon.Error
 		}
             }
 

@@ -6,4 +6,5 @@ import qs.config
 import qs.Modules.Wallpaper.WallpaperContent
 ShellRoot {
 	Wallpaper{}
+
 }
