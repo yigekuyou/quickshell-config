@@ -93,8 +93,6 @@ PanelWindow {
 
 					// 背景：手动实现 Kirigami 选中效果
 					background: Rectangle {
-						implicitWidth: 100
-						implicitHeight: 40
 						opacity: delegateItem.highlighted ? 0.3 : (delegateItem.hovered ? 0.15 : 0)
 						color: delegateItem.highlighted ? Kirigami.Theme.highlightColor : Kirigami.Theme.hoverColor
 						radius: 4
@@ -103,7 +101,7 @@ PanelWindow {
 						Rectangle {
 							anchors.left: parent.left
 							anchors.verticalCenter: parent.verticalCenter
-							width: 3
+							width: Kirigami.Units.smallSpacing
 							height: parent.height * 0.6
 							color: Kirigami.Theme.highlightColor
 							visible: delegateItem.highlighted
@@ -143,7 +141,7 @@ PanelWindow {
 								color: delegateItem.highlighted ? Kirigami.Theme.highlightedTextColor : Kirigami.Theme.disabledTextColor
 								elide: Text.ElideRight
 								Layout.fillWidth: true
-								opacity: 0.8
+								opacity: 0.5
 							}
 						}
 					}
