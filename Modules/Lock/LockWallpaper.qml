@@ -2,8 +2,8 @@ import QtQuick
 import com.github.catsout.wallpaperEngineKde
 import Quickshell.Wayland
 import qs.config
-
 import QtMultimedia
+
 Item {
 	anchors.fill: parent
 
