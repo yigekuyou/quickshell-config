@@ -2,7 +2,6 @@ import Quickshell
 import Quickshell.Wayland
 import org.kde.kirigami as Kirigami
 import qs.Modules.Launcher
-import qs.Modules.Lock
 import QtQuick
 import QtQuick.Layouts
 
@@ -10,7 +9,6 @@ Variants {
 	model: Quickshell.screens
 	PanelWindow {
 		LauncherManager{}
-		LockManager{}
 		id: panelWindow
 		WlrLayershell.namespace:"panelWindow"
 		WlrLayershell.layer: WlrLayer.Top

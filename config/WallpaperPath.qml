@@ -8,8 +8,8 @@ Item {
 	property string wallpaperId: "1761310151"
 	readonly property string assetsPath: "file:///mnt/DATA/SteamLibrary/steamapps/common/wallpaper_engine/assets"
 	readonly property string sceneSource: workshopBase + wallpaperId + "/scene.pkg"
-	readonly property string wallpaperType: adapter.type  // "scene", "video", "Web"
-	readonly property string fileName: (adapter.type === "scene") ? "scene.pkg" : adapter.file;
+	readonly property string wallpaperType: adapter.type.toLowerCase()  // "scene", "video", "Web"
+	readonly property string fileName: (adapter.type.toLowerCase() === "scene") ? "scene.pkg" : adapter.file;
 	readonly property string source: Qt.resolvedUrl(workshopBase + wallpaperId + "/" + fileName);      // 最终给渲染器使用的完整 URL
 	FileView {
 		path: workshopBase + wallpaperId + "/project.json"

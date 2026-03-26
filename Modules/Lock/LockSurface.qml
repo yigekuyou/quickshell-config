@@ -10,12 +10,7 @@ import qs.Modules.Wallpaper.WallpaperContent
 
 Kirigami.Page {
 	anchors.fill: parent
-	background: Rectangle {
-		color: Kirigami.Theme.backgroundColor
-		// 这里可以添加背景图片或模糊效果
-		Wallpaper{}
-
-	}
+	background: LockWallpaper{}
 	ColumnLayout {
 		anchors.fill: parent
 		spacing: 0 // 建议设为0，通过内部子项的 Layout.margins 控制间距

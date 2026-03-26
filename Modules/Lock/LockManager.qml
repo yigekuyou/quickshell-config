@@ -8,6 +8,10 @@ Item {
 	id: root
 	property alias pam :pam
 
+	// --- 播放参数 ---
+	property int fps: 60
+	property real speed: 1.0
+	property bool muted: true
 	PamContext {
 		id: pam
 	}
