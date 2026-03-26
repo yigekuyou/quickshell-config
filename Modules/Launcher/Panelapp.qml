@@ -5,13 +5,11 @@ import qs.Services
 import QtQuick
 import QtQuick.Layouts
 Kirigami.ShadowedRectangle {
-	anchors {
-		fill: parent
-	}
+	Layout.alignment:parent
+
 	radius: Kirigami.Units.gridUnit / 2
 	color: Qt.alpha(Kirigami.Theme.backgroundColor,0.5)
-	shadow.color: Qt.alpha(0, 0, 0, 0.2)
-
+	shadow.color: Qt.alpha(Kirigami.Theme.backgroundColor, 0.2)
 	implicitWidth:(Kirigami.Units.iconSizes.medium+Kirigami.Units.gridUnit )*TaskbarApps.apps.length
 	implicitHeight:Kirigami.Units.iconSizes.medium+Kirigami.Units.gridUnit
 	RowLayout {

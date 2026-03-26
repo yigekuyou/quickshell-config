@@ -11,9 +11,7 @@ RowLayout{
 	property bool isHeadphone: false
 	property var theme: Theme {}
 		Kirigami.Icon {
-			anchors.left: parent.left
-			anchors.leftMargin: Kirigami.Units.mediumSpacing
-			anchors.verticalCenter: parent.verticalCenter
+			Layout.alignment:parent.left
 			source: (node && node.audio.muted) ? "audio-volume-muted" : (root.isHeadphone ? "audio-headphones" : "audio-speakers")
 			implicitWidth: Kirigami.Units.iconSizes.small
 			implicitHeight: Kirigami.Units.iconSizes.small
