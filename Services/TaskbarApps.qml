@@ -1,5 +1,5 @@
 pragma Singleton
-import qs.config
+import qs.Config
 import QtQuick
 import Quickshell
 import Quickshell.Wayland

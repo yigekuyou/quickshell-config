@@ -1,5 +1,5 @@
 import QtQuick
-import qs.config
+import qs.Config
 
 QtObject {
     property color background: Colorscheme.background

@@ -3,7 +3,7 @@ import QtQuick.Layouts
 import QtQuick.Controls
 import Quickshell
 import qs.Services
-import qs.config
+import qs.Config
 import org.kde.kirigami as Kirigami
 // 1. 导入 Widget 目录
 import qs.Widget

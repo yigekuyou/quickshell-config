@@ -5,7 +5,7 @@ import Quickshell.Widgets
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import qs.config
+import qs.Config
 import qs.Widget.common
 import qs.Services
 import org.kde.kirigami as Kirigami

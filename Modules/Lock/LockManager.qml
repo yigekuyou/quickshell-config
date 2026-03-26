@@ -3,7 +3,7 @@ import Quickshell
 import Quickshell.Io
 import qs.Services
 import Quickshell.Services.Pam
-import qs.config
+import qs.Config
 
 Item {
     readonly property bool other: {

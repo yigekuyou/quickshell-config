@@ -1,7 +1,7 @@
 import QtQuick
 // 【重要】引入 Sizes.qml 所在的目录
 // 假设 ClockContent.qml 在 qs/Modules/DynamicIsland/Clock/，你需要向上跳 3 级
-import qs.config 
+import qs.Config
 import Quickshell
 import qs.Services
 import org.kde.kirigami as Kirigami

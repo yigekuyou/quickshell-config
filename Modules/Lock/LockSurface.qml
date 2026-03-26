@@ -5,7 +5,7 @@ import org.kde.kirigami as Kirigami
 import QtQuick.Controls
 import QtQuick.Layouts
 import qs.Services
-import qs.config
+import qs.Config
 import qs.Modules.Wallpaper.WallpaperContent
 import Quickshell.Services.Pam
 

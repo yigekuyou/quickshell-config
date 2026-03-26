@@ -2,7 +2,7 @@ import Quickshell
 import QtQuick
 import com.github.catsout.wallpaperEngineKde
 import Quickshell.Wayland
-import qs.config
+import qs.Config
 import QtMultimedia
 
 // --- 后端 A: SceneViewer (异步加载) ---

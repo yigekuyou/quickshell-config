@@ -3,7 +3,7 @@ import QtQuick.Layouts
 import QtQuick.Shapes
 import Quickshell
 import Quickshell.Io
-import qs.config 
+import qs.Config
 
 Rectangle {
     id: root

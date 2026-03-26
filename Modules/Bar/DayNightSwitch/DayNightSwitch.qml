@@ -1,7 +1,7 @@
 import QtQuick
 import QtQuick.Shapes 1.15
 import Qt5Compat.GraphicalEffects 
-import qs.config 
+import qs.Config
 
 Item {
     id: root

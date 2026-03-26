@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
-import qs.config
+import qs.Config
 import org.kde.kirigami as Kirigami
 Kirigami.ShadowedRectangle {
     id: root

@@ -1,7 +1,7 @@
 import QtQuick
 import com.github.catsout.wallpaperEngineKde
 import Quickshell.Wayland
-import qs.config
+import qs.Config
 import QtMultimedia
 import Quickshell
 import Quickshell.Io

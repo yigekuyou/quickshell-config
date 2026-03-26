@@ -4,7 +4,7 @@ import Quickshell
 import Quickshell.Widgets
 import Quickshell.Services.UPower
 import qs.Services
-import qs.config
+import qs.Config
 import org.kde.kirigami as Kirigami
 
 // import qs.Components // 已移除

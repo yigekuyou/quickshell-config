@@ -1,6 +1,6 @@
 import org.kde.kirigami as Kirigami
 import QtQuick.Controls
-import qs.config
+import qs.Config
 import qs.Services
 import QtQuick
 import QtQuick.Layouts

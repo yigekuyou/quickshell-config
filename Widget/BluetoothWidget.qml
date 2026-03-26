@@ -5,7 +5,7 @@ import Quickshell.Bluetooth
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
-import qs.config
+import qs.Config
 import qs.Services
 import qs.Widget.common
 import org.kde.kirigami as Kirigami

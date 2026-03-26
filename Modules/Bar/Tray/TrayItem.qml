@@ -2,7 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Services.SystemTray
 import Quickshell.Widgets // 包含 PopupWindow
-import qs.config
+import qs.Config
 MouseArea {
 	id: root
 	required property var modelData

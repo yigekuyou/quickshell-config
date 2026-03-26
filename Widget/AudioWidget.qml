@@ -5,7 +5,7 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Services.Pipewire
 import qs.Widget.common
-import qs.config
+import qs.Config
 import qs.Widget.audio
 import qs.Services
 

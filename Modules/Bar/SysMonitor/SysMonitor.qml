@@ -4,7 +4,7 @@ import QtQuick.Layouts
 import QtQuick.Controls
 import Quickshell
 import Quickshell.Io
-import qs.config
+import qs.Config
 import org.kde.kirigami as Kirigami
 Kirigami.AbstractCard {
     id: root

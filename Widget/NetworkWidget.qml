@@ -4,7 +4,7 @@ import QtQuick.Controls
 import Quickshell
 import qs.Services
 import Quickshell.Io
-import qs.config
+import qs.Config
 import qs.Widget.common
 import QtQuick
 import QtQuick.Controls

@@ -6,7 +6,7 @@ import QtQuick.Controls
 import Quickshell
 import Quickshell.Io
 import Quickshell.Services.Mpris
-import qs.config
+import qs.Config
 import qs.Services
 import qs.Modules.DynamicIsland.LyricsContent
 import org.kde.kirigami as Kirigami
