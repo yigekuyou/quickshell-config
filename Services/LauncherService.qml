@@ -43,15 +43,6 @@ Singleton {
 			});
 		}
 	}
-
-	function toggle() {
-		active = !active;
-		if (active) {
-			searchText = "";
-			selectedIndex = 0;
-		}
-	}
-
 	function launch(index) {
 		const entry = filteredApps.values[index];
 		if (entry) {
@@ -68,10 +59,5 @@ Singleton {
 			active = false;
 				}
 		}
-	}
-
-	IpcHandler {
-		target: "launcher"
-		function toggle(): void { service.toggle() }
 	}
 }

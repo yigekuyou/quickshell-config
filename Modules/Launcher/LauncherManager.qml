@@ -33,7 +33,6 @@ Item {
 	IpcHandler {
 		target: "launcher"
 		function open() {
-			// 3. 异步调用建议：有时 IPC 触发太快，UI 还没准备好
 			createWindow();
 			return "LAUNCHER_TOGGLED";
 		}
