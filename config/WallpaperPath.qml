@@ -24,6 +24,5 @@ QtObject {
 	property int fps: 60
 	property real speed: 1.0
 	property bool muted: true
-
 }
 
