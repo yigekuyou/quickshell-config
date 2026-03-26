@@ -27,9 +27,6 @@ Kirigami.Page {
 		onCompleted: (result) => {
 			if (result === PamResult.Success) {
 				unlocked()
-			} else {
-				passwordField.forceActiveFocus();
-
 			}
 		}
 	}
@@ -52,6 +49,8 @@ Kirigami.Page {
 
 		// --- 时钟内容块 ---
 		ColumnLayout {
+			visible:pam.active
+
 			id: clockContainer
 			Layout.fillWidth: true
 			Layout.alignment: Qt.AlignHCenter
@@ -64,17 +63,17 @@ Kirigami.Page {
 				Kirigami.Heading {
 					font.pixelSize: Kirigami.Units.gridUnit * 12
 					text: Time.hours
-					color: Kirigami.Theme.disabledTextColor
+					color:  Qt.alpha(Kirigami.Theme.disabledTextColor, 1)
 				}
 				Kirigami.Heading {
 					font.pixelSize: Kirigami.Units.gridUnit * 12
 					text: ":"
-					color: Kirigami.Theme.textColor
+					color: Qt.alpha(Kirigami.Theme.textColor, 0.5)
 				}
 				Kirigami.Heading {
 					font.pixelSize: Kirigami.Units.gridUnit * 12
 					text: Time.minutes
-					color: Kirigami.Theme.textColor
+					color:Qt.alpha(Kirigami.Theme.textColor, 0.5)
 				}
 			}
 
@@ -82,33 +81,34 @@ Kirigami.Page {
 			RowLayout {
 				Layout.alignment: Qt.AlignHCenter
 				spacing: Kirigami.Units.smallSpacing
-				Kirigami.Heading { text: Time.month; level: 2; color: Kirigami.Theme.disabledTextColor }
-				Kirigami.Heading { text: Time.day; level: 2; color: Kirigami.Theme.textColor }
+				Kirigami.Heading { text: Time.month; font.pixelSize: Kirigami.Units.gridUnit * 3; color:Qt.alpha(Kirigami.Theme.disabledTextColor, 1) }
+				Kirigami.Heading { text: Time.day; font.pixelSize: Kirigami.Units.gridUnit * 3; color: Kirigami.Theme.textColor }
 			}
 		}
-
+		Item {
+			Layout.fillWidth: true
+			Layout.fillHeight: true
+			Layout.preferredHeight: 1
+		}
 		// --- 4. 底部(时钟下方) ---
 		ColumnLayout {
 			Layout.fillWidth: true
 			Kirigami.FormLayout {
 				TextField {
 					id: passwordField
-					enabled: pam.active && pam.responseRequired
+					enabled:true
+					visible: pam.active
 					echoMode: TextInput.Password
 					placeholderText: pam.message
-					Component.onCompleted: {
-						if (!pam.active) {
-							pam.start();
-						}
-						// 自动获取焦点，用户可以直接打字
-						forceActiveFocus();
+					background: Rectangle {
+						color: Qt.alpha(Kirigami.Theme.backgroundColor, 0.5)
+					}
+					Keys.onEscapePressed: {
+						pam.abort();
 					}
 					onAccepted: {
 						pam.respond(text);
-						text = ""; // 擦除
-					}
-					Component.onDestruction: {
-						if (pam.active) pam.abort();
+						text=""; // 擦除
 					}
 				}
 			}
@@ -118,7 +118,16 @@ Kirigami.Page {
 		Item {
 			Layout.fillWidth: true
 			Layout.fillHeight: true
-			Layout.preferredHeight: 2
+			Layout.preferredHeight: 8
+		}
+	}
+	MouseArea {
+		anchors.fill: parent
+		onClicked: {
+			if (!pam.active) {
+				pam.start();
+			}
+			passwordField.forceActiveFocus();
 		}
 	}
 }
