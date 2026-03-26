@@ -44,7 +44,7 @@ PanelWindow {
 				Layout.fillWidth: true
 				placeholderText: qsTr("搜索应用...")
 
-				text: LauncherService.searchText
+				text: LauncherService.searchText=""
 				onTextChanged: LauncherService.searchText = text
 
 				// 自动聚焦

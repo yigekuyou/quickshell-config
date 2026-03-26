@@ -67,6 +67,8 @@ Item {
 			player.setProperty("keepaspect", true);
 			player.setProperty("panscan", 1.0);
 			player.setProperty("speed", WallpaperPath.speed);
+			player.setProperty("volume", WallpaperPath.volume);
+			player.command(["set", "hwdec=vulkan-copy"])
 			if (source.toString() !== "") {
 				play()
 			}
@@ -84,17 +86,14 @@ Item {
 	    sourceComponent: Item {
 		    anchors.fill: parent
 
-		    MediaPlayer {
+		    Video {
 			    id: player
 			    source: WallpaperLock.source
-
-			    // 设置音频输出（控制静音）
-			    audioOutput: AudioOutput {
-				    muted: WallpaperLock.muted
-			    }
-			    videoOutput:videoOutput
+			    autoPlay:true
 			    // 循环播放设置
 			    loops: MediaPlayer.Infinite
+			    muted: WallpaperPath.muted
+			    volume:WallpaperPath.volume
 
 			    // 速度控制
 			    playbackRate: WallpaperLock.speed
@@ -102,11 +101,6 @@ Item {
 			    Component.onCompleted: {
 				    player.play();
 			    }
-		    }VideoOutput {
-			    id: videoOutput
-			    anchors.fill: parent
-			    // 对应 mpv 的 keepaspect 和 panscan 1.0 (等比例填充)
-			    fillMode: VideoOutput.PreserveAspectCrop
 		    }
 	    }
     }
