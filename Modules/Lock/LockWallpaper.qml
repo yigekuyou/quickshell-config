@@ -3,7 +3,8 @@ import com.github.catsout.wallpaperEngineKde
 import Quickshell.Wayland
 import qs.config
 
-import QtMultimediaItem {
+import QtMultimedia
+Item {
 	anchors.fill: parent
 
 	// --- 后端 A: SceneViewer ---
