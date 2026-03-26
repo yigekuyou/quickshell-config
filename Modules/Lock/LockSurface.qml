@@ -7,10 +7,34 @@ import QtQuick.Layouts
 import qs.Services
 import qs.config
 import qs.Modules.Wallpaper.WallpaperContent
+import Quickshell.Services.Pam
 
 Kirigami.Page {
+	signal unlocked()
 	anchors.fill: parent
 	background: LockWallpaper{}
+	PamContext {
+		id: pam
+		configDirectory: Quickshell.env("HOME") + "/.config/quickshell/Modules/Lock/pam"
+		config: "password.conf"
+
+		onPamMessage: {
+			console.log("PAM 消息: " + message);
+			if (responseRequired) {
+				console.log("等待用户输入...");
+			}
+		}
+
+		// 验证完成后的处理
+		onCompleted: (result) => {
+			if (result === PamResult.Success) {
+				console.log("验证成功！");
+				unlocked()
+			} else {
+				console.log("验证失败。");
+			}
+		}
+	}
 	ColumnLayout {
 		anchors.fill: parent
 		spacing: 0 // 建议设为0，通过内部子项的 Layout.margins 控制间距
@@ -68,9 +92,29 @@ Kirigami.Page {
 		// --- 4. 底部(时钟下方) ---
 		ColumnLayout {
 			Layout.fillWidth: true
-			// 这里放你的组件...
+			Kirigami.FormLayout {
+				TextField {
+					id: passwordField
+					enabled: pam.active && pam.responseRequired
+					echoMode: TextInput.Password
+					placeholderText: pam.message
+					Component.onCompleted: {
+						if (!pam.active) {
+							pam.start();
+						}
+						// 自动获取焦点，用户可以直接打字
+						forceActiveFocus();
+					}
+					onAccepted: {
+						pam.respond(text);
+						text = ""; // 擦除
+					}
+					Component.onDestruction: {
+						if (pam.active) pam.abort();
+					}
+				}
+			}
 		}
-
 		// --- 5. 底部弹性占位---
 		// 权重设为 2，保证时钟上方空间:下方空间 = 1:2，即时钟在 1/3 处
 		Item {

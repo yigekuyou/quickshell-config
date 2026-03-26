@@ -3,19 +3,10 @@ import Quickshell
 import Quickshell.Wayland
 
 ShellRoot {
-	property var pam:LockManager.pam
 	signal unlocked()
+	property QtObject pamBackend
 
 	id: root
-	Timer {
-		id: safetyTimer
-		interval: 5000
-		running: true
-		repeat: false
-		onTriggered: {
-			lock.locked = false
-		}
-	}
 WlSessionLock {
 	id: lock
 	locked : true
@@ -26,6 +17,7 @@ WlSessionLock {
 	}
 	WlSessionLockSurface {
 		LockSurface{
+			onUnlocked: lock.locked = false
 		}
 	}
 }

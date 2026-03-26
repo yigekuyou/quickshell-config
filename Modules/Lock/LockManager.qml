@@ -1,3 +1,4 @@
+
 import QtQuick
 import Quickshell
 import Quickshell.Io
@@ -6,14 +7,10 @@ import Quickshell.Services.Pam
 import qs.config
 
 Item {
-    property alias pam: pam
     readonly property bool other: {
         return (Quickshell.env("QSG_RHI_BACKEND").toLowerCase() === "vulkan") === (WallpaperLock.wallpaperType === "scene");
     }
 
-    PamContext {
-        id: pam
-    }
     Loader {
         id: lockLoader
         active: false
