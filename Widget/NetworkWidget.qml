@@ -117,7 +117,6 @@ SlideWindow {
 		    text: modelData.name || "未知设备"
 		    description:  `${WifiSecurityType.toString(modelData.security)} | ${Math.round(modelData.signalStrength * 100)}%`
 
-                implicitHeight: wifiLayout.implicitHeight + topPadding + bottomPadding
                 trailing: RowLayout {
                     id: wifiLayout
                     // 连接/断开 按钮组

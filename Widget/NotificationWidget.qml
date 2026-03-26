@@ -47,7 +47,6 @@ SlideWindow {
 		    // 修复越界：使用标准属性，不建议重写 contentItem
 		    text: modelData.summary
 		    description: modelData.body
-		    implicitHeight: notifLayout.implicitHeight + topPadding + bottomPadding
 		    // 图标处理
 		    icon.name: modelData.appIcon || modelData.appName.toLowerCase() || "dialog-information"
 

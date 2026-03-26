@@ -31,7 +31,8 @@ Kirigami.Page {
 				console.log("验证成功！");
 				unlocked()
 			} else {
-				console.log("验证失败。");
+				passwordField.forceActiveFocus();
+
 			}
 		}
 	}
