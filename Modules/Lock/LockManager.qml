@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell
+import Quickshell.Wayland
 import Quickshell.Io
 import qs.Services
 import Quickshell.Services.Pam
@@ -22,12 +23,22 @@ Item {
             }
         }
     }
-    IdleMonitor {
-	    enabled: idlestatus
-	    timeout: Config.general.idle.lockTimeout
+        IdleMonitor {
+	    enabled: Idle.idlelock&&!lockLoader.active&&!other
+	    timeout: Idle.idlelocktime
 	    onIsIdleChanged: {
 		    if (isIdle)
-			    root.lock.lock.locked = true;
+		    {
+			    if (other) {
+				    lock.exec(lock.command);
+			    } else {
+				    if (!lockLoader.active) {
+					    lockLoader.active = true;
+					    return "LOCKED";
+				    }
+				    return "ALREADY_LOCKED";
+			    }
+		    };
 	    }
     }
     Process {
@@ -40,11 +51,9 @@ Item {
         function open() {
             if (other) {
                 lock.exec(lock.command);
-		console.log("qs路径")
             } else {
                 if (!lockLoader.active) {
                     lockLoader.active = true;
-		    console.log("local路径")
                     return "LOCKED";
                 }
                 return "ALREADY_LOCKED";
