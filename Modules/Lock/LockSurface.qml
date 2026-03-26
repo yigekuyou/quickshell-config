@@ -6,12 +6,15 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import qs.Services
 import qs.config
+import qs.Modules.Wallpaper.WallpaperContent
 
 Kirigami.Page {
 	anchors.fill: parent
 	background: Rectangle {
 		color: Kirigami.Theme.backgroundColor
 		// 这里可以添加背景图片或模糊效果
+		Wallpaper{}
+
 	}
 	ColumnLayout {
 		anchors.fill: parent

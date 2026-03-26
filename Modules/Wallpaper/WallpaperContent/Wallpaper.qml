@@ -9,7 +9,7 @@ Item {
     LazyLoader {
         id: sceneLoader
         // 当类型为 scene 或 web 时，异步加载组件
-        activeAsync: WallpaperPath.wallpaperType === "scene"
+        activeAsync: Quickshell.env("QSG_RHI_BACKEND")!="vulkan"&&WallpaperPath.wallpaperType === "scene"
         PanelWindow {
             aboveWindows: false
             focusable: false
