@@ -3,6 +3,8 @@ import com.github.catsout.wallpaperEngineKde
 import Quickshell.Wayland
 import qs.config
 import QtMultimedia
+import Quickshell
+import Quickshell.Io
 
 Item {
 	anchors.fill: parent
@@ -86,7 +88,8 @@ Item {
 				Component.onCompleted: {
 					player.play();
 				}
-			}VideoOutput {
+			}
+			VideoOutput {
 				id: videoOutput
 				anchors.fill: parent
 				// 对应 mpv 的 keepaspect 和 panscan 1.0 (等比例填充)
