@@ -1,4 +1,3 @@
-
 import QtQuick
 import Quickshell
 import Quickshell.Io
@@ -23,7 +22,14 @@ Item {
             }
         }
     }
-
+    IdleMonitor {
+	    enabled: idlestatus
+	    timeout: Config.general.idle.lockTimeout
+	    onIsIdleChanged: {
+		    if (isIdle)
+			    root.lock.lock.locked = true;
+	    }
+    }
     Process {
         id: lock
         running: false

@@ -16,7 +16,7 @@ import qs.Modules.Bar.SysMonitor
 import qs.Modules.Bar.NotificationButton
 import qs.Modules.Bar.DayNightSwitch
 import qs.Modules.DynamicIsland
-import qs.config
+import qs.Config
 import qs.Services
 
 Variants {
