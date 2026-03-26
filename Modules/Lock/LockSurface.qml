@@ -19,16 +19,13 @@ Kirigami.Page {
 		config: "password.conf"
 
 		onPamMessage: {
-			console.log("PAM 消息: " + message);
 			if (responseRequired) {
-				console.log("等待用户输入...");
 			}
 		}
 
 		// 验证完成后的处理
 		onCompleted: (result) => {
 			if (result === PamResult.Success) {
-				console.log("验证成功！");
 				unlocked()
 			} else {
 				passwordField.forceActiveFocus();
