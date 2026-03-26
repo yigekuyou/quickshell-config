@@ -10,5 +10,4 @@ ShellRoot {
 	Wallpaper{}
 	LockManager{}
 
-
 }

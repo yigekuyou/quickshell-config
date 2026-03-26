@@ -62,7 +62,7 @@ Item {
 		id: mediaLoader
 		anchors.fill: parent
 		// 只有当类型为 video 时才加载
-		active: mpvLoader.active&&WallpaperLock.wallpaperType === "video"
+		active: !mpvLoader.active&&WallpaperLock.wallpaperType === "video"
 		asynchronous: true
 
 		sourceComponent: Item {

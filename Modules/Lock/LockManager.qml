@@ -3,39 +3,50 @@ import Quickshell
 import Quickshell.Io
 import qs.Services
 import Quickshell.Services.Pam
+import qs.config
 
 Item {
-	id: root
-	property alias pam :pam
+    property alias pam: pam
+    readonly property bool other: {
+        return (Quickshell.env("QSG_RHI_BACKEND").toLowerCase() === "vulkan") === (WallpaperLock.wallpaperType === "scene");
+    }
 
-	// --- 播放参数 ---
-	property int fps: 60
-	property real speed: 1.0
-	property bool muted: true
-	PamContext {
-		id: pam
-	}
-	Loader {
-		id: lockLoader
-		active: false
-		source:"Lock.qml"
-		Connections {
-			enabled: lockLoader.status === Loader.Ready
-			target: lockLoader.item
-			function onUnlocked() {
-				lockLoader.active = false
-			}
-		}
-	}
-	IpcHandler {
-		target: "lock"
+    PamContext {
+        id: pam
+    }
+    Loader {
+        id: lockLoader
+        active: false
+        source: "Lock.qml"
+        Connections {
+            enabled: lockLoader.status === Loader.Ready
+            target: lockLoader.item
+            function onUnlocked() {
+                lockLoader.active = false;
+            }
+        }
+    }
 
-		function open() {
-			if (!lockLoader.active) {
-				lockLoader.active = true
-				return "LOCKED"
-			}
-			return "ALREADY_LOCKED"
-		}
-	}
+    Process {
+        id: lock
+        running: false
+        command: ["qs", "--path", Quickshell.env("XDG_CONFIG_HOME") + "/quickshell/Wallpaper/Wall.qml", "ipc", "call", "lock", "open"]
+    }
+    IpcHandler {
+        target: "lock"
+        function open() {
+            if (other) {
+                lock.exec(lock.command);
+		console.log("qs路径")
+
+            } else {
+                if (!lockLoader.active) {
+                    lockLoader.active = true;
+		    console.log("local路径")
+                    return "LOCKED";
+                }
+                return "ALREADY_LOCKED";
+            }
+        }
+    }
 }
