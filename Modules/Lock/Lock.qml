@@ -2,8 +2,10 @@ import QtQuick
 import Quickshell
 import Quickshell.Wayland
 import qs.Config
+import Quickshell.Hyprland
 
 ShellRoot {
+	id: root
 	signal unlocked()
 	property QtObject pamBackend
 
@@ -12,13 +14,12 @@ ShellRoot {
 		timeout: Idle.dpmsTimeout
 		onIsIdleChanged: {
 			if (isIdle)
-				Hypr.dispatch("dpms off");
+				Hyprland.dispatch("dpms off");
 			else
-				Hypr.dispatch("dpms on");
+				Hyprland.dispatch("dpms on");
 		}
 	}
 
-	id: root
 WlSessionLock {
 	id: lock
 	locked : true
