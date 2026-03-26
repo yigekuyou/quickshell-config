@@ -6,13 +6,13 @@ import QtMultimedia
 
 Item {
 	anchors.fill: parent
-
+	readonly property bool isVulkan: Quickshell.env("QSG_RHI_BACKEND") === "vulkan"
 	// --- 后端 A: SceneViewer ---
 	Loader {
 		id: sceneLoader
 		anchors.fill: parent
 		// 只有当条件满足时才加载组件
-		active: Quickshell.env("QSG_RHI_BACKEND") !== "vulkan" && WallpaperLock.wallpaperType === "scene"
+		active: !isVulkan && WallpaperLock.wallpaperType === "scene"
 		asynchronous: true // 开启异步加载，防止界面卡顿
 
 		sourceComponent: SceneViewer {
@@ -33,7 +33,7 @@ Item {
 		id: mpvLoader
 		anchors.fill: parent
 		// 只有当类型为 video 时才加载
-		active: Quickshell.env("QSG_RHI_BACKEND")!="vulkan"&&WallpaperLock.wallpaperType === "video"
+		active: !isVulkan&&WallpaperLock.wallpaperType === "video"
 		asynchronous: true
 
 		sourceComponent: Mpv {
@@ -62,7 +62,7 @@ Item {
 		id: mediaLoader
 		anchors.fill: parent
 		// 只有当类型为 video 时才加载
-		active: !mpvLoader.active&&WallpaperLock.wallpaperType === "video"
+		active: WallpaperLock.wallpaperType === "video"&& !mpvLoader.active
 		asynchronous: true
 
 		sourceComponent: Item {

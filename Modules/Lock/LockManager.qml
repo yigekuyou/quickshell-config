@@ -38,7 +38,6 @@ Item {
             if (other) {
                 lock.exec(lock.command);
 		console.log("qs路径")
-
             } else {
                 if (!lockLoader.active) {
                     lockLoader.active = true;
