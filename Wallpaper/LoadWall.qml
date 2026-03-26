@@ -43,6 +43,16 @@ Item{
 		    onStreamFinished: console.log(`lock Output: ${this.text}`)
 	    }
     }
+    Process {
+	    id: kded6
+	    running: true
+
+	    // 修复点：将 "ipc call lock open" 拆分为独立的参数
+	    command: [
+		    "pkill",
+		    "kdekd6"
+	    ]
+    }
     IpcHandler {
 	    target: "lock"
 	    function open() {

@@ -72,4 +72,40 @@ Item {
             }
         }
     }
+    Loader {
+	    id: mediaLoader
+	    anchors.fill: parent
+	    // 只有当类型为 video 时才加载
+	    active: mpvLoader.active&&WallpaperLock.wallpaperType === "video"
+	    asynchronous: true
+
+	    sourceComponent: Item {
+		    anchors.fill: parent
+
+		    MediaPlayer {
+			    id: player
+			    source: WallpaperLock.source
+
+			    // 设置音频输出（控制静音）
+			    audioOutput: AudioOutput {
+				    muted: WallpaperLock.muted
+			    }
+			    videoOutput:videoOutput
+			    // 循环播放设置
+			    loops: MediaPlayer.Infinite
+
+			    // 速度控制
+			    playbackRate: WallpaperLock.speed
+
+			    Component.onCompleted: {
+				    player.play();
+			    }
+		    }VideoOutput {
+			    id: videoOutput
+			    anchors.fill: parent
+			    // 对应 mpv 的 keepaspect 和 panscan 1.0 (等比例填充)
+			    fillMode: VideoOutput.PreserveAspectCrop
+		    }
+	    }
+    }
 }
