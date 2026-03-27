@@ -8,9 +8,11 @@ import qs.Services
 import qs.Config
 import qs.Modules.Wallpaper.WallpaperContent
 import Quickshell.Services.Pam
+import Quickshell.Hyprland
 
 Kirigami.Page {
 	signal unlocked();
+	signal sendSleepSignal();
 	anchors.fill: parent
 	background: LockWallpaper{}
 	ColumnLayout {
@@ -107,9 +109,21 @@ Kirigami.Page {
 			clockTimer.restart();
 			clockContainer.visible=true
 		}
+		focus:!pam.active
 		onClicked: {
+			Hyprland.dispatch("dpms on");
+			clockTimer.restart();
+			clockContainer.visible=true
+
 			if (!pam.active) {
 				pam.start();
+			}
+		}
+		Keys.onPressed: (event) => {
+			if (event.key === Qt.Key_Escape) {
+				// 这里调用你的休眠方法
+				Hyprland.dispatch("dpms off");
+				event.accepted = true;
 			}
 		}
 	}
