@@ -6,7 +6,6 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import qs.Config
-import qs.Widget.common
 import qs.Services
 import org.kde.kirigami as Kirigami
 import org.kde.kirigamiaddons.formcard as FormCard
@@ -16,7 +15,7 @@ PanelWindow {
 	anchors { top: true; left: true; right: true }
 	exclusionMode:ExclusionMode.Ignore
 	property int sideMargin: screen.width / 3
-	height: Kirigami.Units.gridUnit * 30
+	implicitHeight: Kirigami.Units.gridUnit * 30
 	margins {
 		left: sideMargin
 		right: sideMargin
@@ -129,16 +128,6 @@ PanelWindow {
 					}
 					Keys.onPressed: (event) => {
 						switch (event.key) {
-							case Qt.Key_Down:
-								incrementCurrentIndex();
-								break;
-							case Qt.Key_Up:
-								decrementCurrentIndex();
-								break;
-							case Qt.Key_Enter:
-								LauncherService.launch(currentIndex);
-								popudroot.destroy();
-								break;
 							case Qt.Key_Escape:
 								popudroot.destroy();
 								break;
