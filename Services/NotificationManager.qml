@@ -77,6 +77,7 @@ Singleton {
                 var timer = Qt.createQmlObject('import QtQuick; Timer { interval: 10000; repeat: false; }', root) as Timer;
                 timer.onTriggered.connect(function () { // qmllint disable missing-property
                     root.dismiss(notification, false);
+		    timer.destroy();
                 });
                 timer.start();
             } else if (notification.urgency == NotificationUrgency.Critical) {

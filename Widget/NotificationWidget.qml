@@ -52,8 +52,7 @@ SlideWindow {
 
 		    // 右侧操作按钮：利用 trailingActionBar (FormCard 特有)
 		    // 或者简单地在 delegate 内部处理
-		    onClicked: modelData.actions.invoke()
-
+		    onClicked: actionMenu.popup(notifLayout, 0, notifLayout.height)
 		    // 自定义右侧：添加删除按钮
 		    trailing: RowLayout {
 			    id: notifLayout
@@ -72,17 +71,6 @@ SlideWindow {
 						    flat: true
 						    onClicked: NotificationManager.dismiss(modelData, true)
 					    }
-
-				    ToolButton {
-					    icon.name: "view-more-symbolic"
-					    flat: true
-					    onClicked: {
-						    if (modelData.actions.length > 0) {
-							    // 使用弹窗的父级或 Overlay 打开
-							    actionMenu.popup(notifLayout, 0, notifLayout.height)
-						    }
-					    }
-				    }
 				    Menu {
 					    id: actionMenu
 					    // 动态加载来自 notificationData 的 actions
