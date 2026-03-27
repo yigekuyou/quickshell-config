@@ -23,12 +23,18 @@ Item {
         }
     }
     IdleMonitor {
-        enabled: Idle.idledpms && lockLoader.active
+        enabled: Idle.idledpms && lockLoader.active && lockLoader.item.locked
         timeout: Idle.dpmsTimeout
         onIsIdleChanged: {
             if (isIdle)
                 Hyprland.dispatch("dpms off");
-            else
+        }
+    }
+    IdleMonitor {
+        enabled: Idle.idledpms
+        timeout: Idle.dpmsTimeout
+        onIsIdleChanged: {
+            if (!isIdle)
                 Hyprland.dispatch("dpms on");
         }
     }
@@ -47,6 +53,14 @@ Item {
                     return "ALREADY_LOCKED";
                 }
             }
+        }
+    }
+    IdleMonitor {
+        enabled: idlesleep
+        timeout: Idle.sleepTimeout
+        onIsIdleChanged: {
+            if (isIdle)
+                Quickshell.execDetached(["systemctl", "suspend"]);
         }
     }
     Process {
