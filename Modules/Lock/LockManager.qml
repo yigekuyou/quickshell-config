@@ -23,23 +23,32 @@ Item {
             }
         }
     }
-        IdleMonitor {
-	    enabled: Idle.idlelock&&!lockLoader.active&&!other
-	    timeout: Idle.idlelocktime
-	    onIsIdleChanged: {
-		    if (isIdle)
-		    {
-			    if (other) {
-				    lock.exec(lock.command);
-			    } else {
-				    if (!lockLoader.active) {
-					    lockLoader.active = true;
-					    return "LOCKED";
-				    }
-				    return "ALREADY_LOCKED";
-			    }
-		    };
-	    }
+    IdleMonitor {
+        enabled: Idle.idledpms && lockLoader.active
+        timeout: Idle.dpmsTimeout
+        onIsIdleChanged: {
+            if (isIdle)
+                Hyprland.dispatch("dpms off");
+            else
+                Hyprland.dispatch("dpms on");
+        }
+    }
+    IdleMonitor {
+        enabled: Idle.idlelock && !lockLoader.active && !other
+        timeout: Idle.idlelocktime
+        onIsIdleChanged: {
+            if (isIdle) {
+                if (other) {
+                    lock.exec(lock.command);
+                } else {
+                    if (!lockLoader.active) {
+                        lockLoader.active = true;
+                        return "LOCKED";
+                    }
+                    return "ALREADY_LOCKED";
+                }
+            }
+        }
     }
     Process {
         id: lock

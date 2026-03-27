@@ -9,16 +9,7 @@ ShellRoot {
 	signal unlocked()
 	property QtObject pamBackend
 
-	IdleMonitor {
-		enabled: Idle.idledpms
-		timeout: Idle.dpmsTimeout
-		onIsIdleChanged: {
-			if (isIdle)
-				Hyprland.dispatch("dpms off");
-			else
-				Hyprland.dispatch("dpms on");
-		}
-	}
+
 
 WlSessionLock {
 	id: lock
