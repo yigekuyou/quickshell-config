@@ -15,18 +15,57 @@ Variants {
 		WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
 		exclusionMode: ExclusionMode.Ignore
 		required property var modelData
+		property bool isExpanded :true
+		property int triggerHeight: 1
 		screen: modelData
+		Timer {
+			id: hideTimer
+			interval: 500 // 鼠标离开半秒后收起
+			running:true
+			onTriggered: panelWindow.isExpanded = false
+		}
 		anchors {
 			bottom: true
 		}
+		margins {
+			bottom: isExpanded ? Kirigami.Units.smallSpacing : 0
+		}
 		color: "transparent"
 		implicitWidth: layout.implicitWidth
-		implicitHeight: layout.implicitHeight
+		implicitHeight: isExpanded ? layout.implicitHeight : triggerHeight
+		Behavior on implicitHeight {
+			NumberAnimation {
+				duration: 250
+				easing.type: Easing.OutCubic
+			}
+		}
+		MouseArea {
+			anchors.fill: parent
+			hoverEnabled: true
+
+			// 核心逻辑：进入展开，离开触发定时器
+			onEntered: {
+				hideTimer.stop()
+				panelWindow.isExpanded = true
+			}
+			onExited: hideTimer.start()
+		Kirigami.ShadowedRectangle {
+			anchors.fill: parent
+			color: Kirigami.Theme.backgroundColor
+			radius: Kirigami.Units.smallSpacing
+			border.color: Qt.rgba(Kirigami.Theme.textColor.r, Kirigami.Theme.textColor.g, Kirigami.Theme.textColor.b, 0.1)
+			border.width: isExpanded ?1:0
+			shadow.size:isExpanded ? Kirigami.Units.smallSpacing :0
+			shadow.color: Qt.rgba(0, 0, 0, 0.3)
+			shadow.yOffset: 2
 		RowLayout{
 			id:layout
+			anchors.centerIn: parent
+			spacing: Kirigami.Units.mediumSpacing
+			anchors.margins: Kirigami.Units.smallSpacing
 			Panelapp{}
 		}
-
-
+		}
 	}
+}
 }
