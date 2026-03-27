@@ -22,7 +22,8 @@ Singleton {
 		values: {
 			const all = allEntries;
 			const q = service.searchText.trim().toLowerCase();
-
+			const bestGuess = DesktopEntries.heuristicLookup(q)
+			const bestGuessId = bestGuess ? bestGuess.id : null;
 			if (q === "") return all.sort((a, b) => a.name.localeCompare(b.name));
 
 			let scoredResults = all.map(entry => {
@@ -36,6 +37,9 @@ Singleton {
 				const name = (entry.name || "").toLowerCase();
 				const gName = (entry.genericName || "").toLowerCase();
 				const words = name.split(/\s+/); // 拆分单词
+				if (bestGuessId && entry.id === bestGuessId) {
+					score += 120;
+				}
 				//单词首字母匹配 (例如: "Visual Studio Code" -> vsc)
 				const initials = words.map(w => w[0]).join("");
 				if (initials.includes(qLower)) score += 50;
@@ -56,6 +60,12 @@ Singleton {
 				if (gName.includes(qLower)) score += 20;
 
 				// 附加：Comment 作为保底搜索
+				if (score === 0) {
+					const fuzzyPattern = qLower.split("").join(".*");
+					if (new RegExp(fuzzyPattern).test(name)) {
+						score += 5; // 给个低分保底，保证它能显示出来
+					}
+				}
 				if (score === 0 && (entry.comment || "").toLowerCase().includes(qLower)) {
 					score += 1;
 				}
