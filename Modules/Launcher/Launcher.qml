@@ -48,7 +48,10 @@ PanelWindow {
 				placeholderText: qsTr("搜索应用...")
 
 				text: LauncherService.searchText=""
-				onTextChanged: LauncherService.searchText = text
+				onTextChanged:{
+					resultsList.currentIndex = 0
+					LauncherService.searchText = text
+				}
 
 				// 自动聚焦
 				Component.onCompleted: forceActiveFocus()
@@ -57,6 +60,12 @@ PanelWindow {
 				// 按键控制逻辑
 				Keys.onPressed: (event) => {
 					switch (event.key) {
+						case Qt.Key_Down:
+							resultsList.incrementCurrentIndex();
+							break;
+						case Qt.Key_Up:
+							resultsList.decrementCurrentIndex();
+							break;
 						case Qt.Key_Enter: // 通常建议同时处理小键盘的回车
 							LauncherService.launch(resultsList.currentIndex);
 							popudroot.destroy();
@@ -83,10 +92,20 @@ PanelWindow {
 					text: modelData.name
 					description:modelData.comment
 					icon.name:modelData.icon ?? "system-run"
+					highlighted: ListView.isCurrentItem
 					palette.text: highlighted ? Kirigami.Theme.highlightedTextColor : Kirigami.Theme.textColor
 					palette.buttonText: highlighted ? Kirigami.Theme.highlightedTextColor : Kirigami.Theme.textColor
 					// 状态绑定
-					highlighted: ListView.isCurrentItem
+					HoverHandler {
+						id: mouseTracker
+						acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+						onHoveredChanged: {
+							if (hovered) {
+								// 当鼠标划过该项时，强制让 ListView 的高亮跟随到这一项
+								resultsList.currentIndex = index;
+							}
+						}
+					}
 
 					// 背景：手动实现 Kirigami 选中效果
 					background: Rectangle {
