@@ -4,6 +4,8 @@ import QtQuick.Controls
 import org.kde.kirigami as Kirigami
 import Quickshell
 import qs.Services
+import org.kde.kirigamiaddons.formcard as FormCard
+import org.kde.kirigami as Kirigami
 
 // 保持使用 PopupWindow 作为顶层容器
 PopupWindow {
@@ -39,11 +41,13 @@ PopupWindow {
 		scale: 0.9
 		spacing: Kirigami.Units.largeSpacing
 		// Kirigami 卡片作为主体
-		Kirigami.Card {
+		FormCard.FormButtonDelegate {
 			id:notif
 			anchors.fill: parent
 			anchors.margins: Kirigami.Units.smallSpacing
-
+			icon.name:notificationData.image || notificationData.appIcon || notificationData.appName.toLowerCase()
+			description:notificationData.body
+			text: notificationData.summary
 			// 设置卡片高亮样式（如果是紧急通知）
 			background: Rectangle {
 				color:  Qt.alpha(Kirigami.Theme.backgroundColor, 0.5)
@@ -52,111 +56,47 @@ PopupWindow {
 				border.width: 2
 				layer.enabled: true
 			}
+			trailing: RowLayout {
+				id: notifLayout
+				spacing: Kirigami.Units.mediumSpacing
 
-			ColumnLayout {
-				anchors.fill: parent
-				id: contentLayout
-				spacing: Kirigami.Units.smallSpacing
-
-				// 第一行：应用图标 + 应用名 + 时间 + 关闭按钮
+				// 2. 中间文字区域 (关键：必须 fillWidth 才能触发换行)
 				RowLayout {
-
-					Layout.fillWidth: true
-					spacing: Kirigami.Units.mediumSpacing
-					Kirigami.Icon {
-						source: notificationData.appIcon || "notifications"
-						Layout.preferredWidth: Kirigami.Units.iconSizes.small
-						Layout.preferredHeight: Kirigami.Units.iconSizes.small
-					}
-
 					Label {
-						text: notificationData.appName
-						font: Kirigami.Theme.smallFont
-						color: Kirigami.Theme.highlightColor
-						elide: Label.ElideRight
-						Layout.fillWidth: true
-					}
-
-					Label {
-						text: notificationData.time
-						font: Kirigami.Theme.smallFont
+						text: modelData.time || "现在"
 						color: Kirigami.Theme.disabledTextColor
+						font.pointSize: Kirigami.Theme.smallFont.pointSize
 					}
-
-					Button {
+					ToolButton {
+						icon.name: "view-more-symbolic"
 						flat: true
-						implicitWidth: Kirigami.Units.gridUnit
-						implicitHeight: Kirigami.Units.gridUnit
-						onClicked: NotificationManager.dismiss(notificationData,false)
-
-						contentItem: Kirigami.Icon {
-							source: "window-close"
-							color: parent.hovered ? Kirigami.Theme.negativeTextColor : Kirigami.Theme.disabledTextColor
+						onClicked: {
+							if (notificationData.actions.length > 0) {
+								// 使用弹窗的父级或 Overlay 打开
+								actionMenu.popup(notif, 0, notif.height)
+							}
 						}
 					}
-				}
-				RowLayout {
-					Kirigami.Icon {
-						source: notificationData.image || notificationData.appIcon || notificationData.appName.toLowerCase()
-						Layout.preferredWidth: Kirigami.Units.iconSizes.medium
-						Layout.preferredHeight: Kirigami.Units.iconSizes.medium
-					}
-
-					ColumnLayout{
-
-						// 第二行：标题 (Summary)
-						Label {
-							text: notificationData.summary
-							font.weight: Font.Bold
-							font.pointSize: Kirigami.Theme.defaultFont.pointSize
-							Layout.fillWidth: true
-							elide: Label.ElideRight
-						}
-						// 第三行：正文 (Body)
-						Label {
-							text: notificationData.body
-							wrapMode: Label.Wrap
-							maximumLineCount: 2
-							elide: Label.ElideRight
-							Layout.fillWidth: true
-							opacity: 0.8
-							font.pointSize: Kirigami.Theme.defaultFont.pointSize - 1
-						}
-
-					}
-
-
-				// 第四行：动态按钮 (Actions)
-				RowLayout {
-					visible: notificationData.actions.length > 0
-					Layout.fillWidth: true
-					Layout.topMargin: Kirigami.Units.smallSpacing
-
-					Repeater {
-						model: notificationData.actions
-						Button {
-							text: modelData.label
-							flat: false
-							Layout.fillWidth: true
-							onClicked: {
-								notificationData.invokeAction(modelData.id);
+					Menu {
+						id: actionMenu
+						// 动态加载来自 notificationData 的 actions
+						parent: Overlay.overlay
+						Instantiator {
+							model: notificationData.actions
+							onObjectAdded: (index, object) => actionMenu.insertItem(index, object)
+							onObjectRemoved: (index, object) => actionMenu.removeItem(object)
+							delegate: MenuItem {
+								text: modelData.text
+								icon.name: notificationData.hasActionIcons?modelData.identifier :"system-run-symbolic"
+								onTriggered: {
+									notificationData.invoke(modelData.id)
+								}
 							}
 						}
 					}
 				}
 			}
-			}
-			// 底部操作按钮（如果有）
-			actions: [
-				Kirigami.Action {
-					visible: notificationData.actions.length > 0
-					text: "查看详情"
-					icon.name: "entry-edit"
-					onTriggered: {
-						notificationData.invokeAction(notificationData.actions[0].id);
-					}
-				}
-			]
+
 		}
 
 		// --- 状态动画 ---

@@ -48,7 +48,7 @@ SlideWindow {
 		    text: modelData.summary
 		    description: modelData.body
 		    // 图标处理
-		    icon.name: modelData.appIcon || modelData.appName.toLowerCase() || "dialog-information"
+		    icon.name: modelData.image||modelData.appIcon || modelData.appName.toLowerCase() || "dialog-information"
 
 		    // 右侧操作按钮：利用 trailingActionBar (FormCard 特有)
 		    // 或者简单地在 delegate 内部处理
@@ -72,7 +72,35 @@ SlideWindow {
 						    flat: true
 						    onClicked: NotificationManager.dismiss(modelData, true)
 					    }
+
+				    ToolButton {
+					    icon.name: "view-more-symbolic"
+					    flat: true
+					    onClicked: {
+						    if (modelData.actions.length > 0) {
+							    // 使用弹窗的父级或 Overlay 打开
+							    actionMenu.popup(notifLayout, 0, notifLayout.height)
+						    }
+					    }
 				    }
+				    Menu {
+					    id: actionMenu
+					    // 动态加载来自 notificationData 的 actions
+					    parent: Overlay.overlay
+					    Instantiator {
+						    model: modelData.actions
+						    onObjectAdded: (index, object) => actionMenu.insertItem(index, object)
+						    onObjectRemoved: (index, object) => actionMenu.removeItem(object)
+						    delegate: MenuItem {
+							    text: modelData.text
+							    icon.name: modelData.identifier // 如果有的话
+							    onTriggered: {
+								    modelData.invoke(modelData.id)
+							    }
+						    }
+					    }
+				    }
+			    }
 		    }
 	    }
 	}
