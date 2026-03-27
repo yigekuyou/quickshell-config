@@ -32,8 +32,6 @@ Kirigami.Page {
 
 		// --- 时钟内容块 ---
 		ColumnLayout {
-			visible:pam.active
-
 			id: clockContainer
 			Layout.fillWidth: true
 			Layout.alignment: Qt.AlignHCenter
@@ -76,10 +74,24 @@ Kirigami.Page {
 		// --- 4. 底部(时钟下方) ---
 		ColumnLayout {
 			Layout.fillWidth: true
+			Kirigami.Heading {
+				id: failureLabel
+				text: "认证失败，请重试"
+				color: Kirigami.Theme.negativeTextColor // 使用主题的红色
+				font.pixelSize: Kirigami.Units.gridUnit * 1.5
+				Layout.alignment: Qt.AlignHCenter
+				opacity: 0 // 默认隐藏
+
+				// 简单的渐变动画
+				Behavior on opacity { NumberAnimation { duration: 200 } }
+			}
 		LockContext{
 			id:pam
 			onSuccess:{
 				unlocked()
+			}
+			onFailed:{
+				failureLabel.opacity = 1
 			}
 			}
 		}
@@ -91,11 +103,22 @@ Kirigami.Page {
 			Layout.preferredHeight: 8
 		}
 	}
+	Timer {
+		id: clockTimer
+		interval: 10000 // 10秒
+		repeat: false
+		onTriggered: {
+			clockContainer.visible=false
+		}
+	}
 	MouseArea {
 		anchors.fill: parent
+		hoverEnabled: true
+		onPositionChanged: {clockTimer.restart();clockContainer.visible=true}
 		onClicked: {
 			if (!pam.active) {
 				pam.start();
+				failureLabel.opacity = 0
 			}
 		}
 	}
