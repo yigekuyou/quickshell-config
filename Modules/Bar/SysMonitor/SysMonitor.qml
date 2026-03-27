@@ -17,7 +17,7 @@ Kirigami.AbstractCard {
     // 动态宽度：展开显示全部，收起只显示 RAM
     implicitWidth: expanded ? contentLayout.implicitWidth + Kirigami.Units.largeSpacing * 2
     : ramGroup.implicitWidth + Kirigami.Units.largeSpacing * 2
-    implicitHeight: Kirigami.Units.gridUnit * 2
+    implicitHeight: Sizes.barHeight
     padding: Kirigami.Units.smallSpacing
     background: Rectangle {
 	    color: Kirigami.Theme.backgroundColor

@@ -18,7 +18,7 @@ Kirigami.ShadowedRectangle {
 	// --- 滑动的高亮块 ---
 	Rectangle {
 		id: indicator
-		implicitHeight: Sizes.barHeight
+		implicitHeight: Sizes.barHeight/2
 
 		x: layout.x + (root.activeItem ? root.activeItem.x : 0)
 		y: layout.y + (root.activeItem ? root.activeItem.y : 0)

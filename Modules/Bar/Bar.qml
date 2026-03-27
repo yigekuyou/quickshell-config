@@ -18,6 +18,7 @@ import qs.Modules.Bar.DayNightSwitch
 import qs.Modules.DynamicIsland
 import qs.Config
 import qs.Services
+import org.kde.kirigami as Kirigami
 
 Variants {
     model: Quickshell.screens
@@ -34,7 +35,7 @@ Variants {
             right: true
         }
         color: "transparent"
-        implicitHeight: Sizes.barHeight
+        implicitHeight: Math.max(Sizes.barHeight+Kirigami.Units.smallSpacing )
 	LazyLoader {
 		loading: true
         PopupWindow {
