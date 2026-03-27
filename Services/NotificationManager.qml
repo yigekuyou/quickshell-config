@@ -10,6 +10,7 @@ Singleton {
     property list<Notification> temporaryNotifications: []
     property list<Notification> sortedTemopraryNotifications: sortNotifications(temporaryNotifications)
     property bool dnd: false
+    property int notifnumber: 3
 
     onDndChanged: {
         if (dnd) {
@@ -52,10 +53,6 @@ Singleton {
         });
     }
 
-    ElapsedTimer {
-        id: elapsedTimer
-    }
-
     NotificationServer {
         id: notificationsServer
         actionsSupported: true
@@ -71,18 +68,14 @@ Singleton {
         onNotification: function (notification) {
             notification.tracked = true;
 
-            if (elapsedTimer.elapsed() >= 0.1 && !root.dnd && notification.urgency != NotificationUrgency.Critical) {
-                root.temporaryNotifications.push(notification);
-
-                var timer = Qt.createQmlObject('import QtQuick; Timer { interval: 10000; repeat: false; }', root) as Timer;
-                timer.onTriggered.connect(function () { // qmllint disable missing-property
-                    root.dismiss(notification, false);
-		    timer.destroy();
-                });
-                timer.start();
+            if (!root.dnd && notification.urgency != NotificationUrgency.Critical) {
+                root.temporaryNotifications.unshift(notification);
             } else if (notification.urgency == NotificationUrgency.Critical) {
-                root.temporaryNotifications.push(notification);
+                root.temporaryNotifications.unshift(notification);
             }
+            if (temporaryNotifications.length > root.notifnumber) {
+		    temporaryNotifications.pop();
+	    }
         }
     }
 }
