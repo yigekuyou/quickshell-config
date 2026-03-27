@@ -7,8 +7,6 @@ Singleton {
 	id: service
 
 	property string searchText: ""
-	property int selectedIndex: 0
-	property bool active: false
 
 	// 搜索模型
 	property alias model: filteredApps
@@ -101,7 +99,6 @@ Singleton {
 				});
 				} else {
 			entry.execute();
-			active = false;
 				}
 		}
 	}

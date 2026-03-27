@@ -57,13 +57,6 @@ PanelWindow {
 				// 按键控制逻辑
 				Keys.onPressed: (event) => {
 					switch (event.key) {
-						case Qt.Key_Down:
-							resultsList.incrementCurrentIndex();
-							break;
-						case Qt.Key_Up:
-							resultsList.decrementCurrentIndex();
-							break;
-						case Qt.Key_Return:
 						case Qt.Key_Enter: // 通常建议同时处理小键盘的回车
 							LauncherService.launch(resultsList.currentIndex);
 							popudroot.destroy();
@@ -82,8 +75,6 @@ PanelWindow {
 				Layout.fillHeight: true
 				clip: true
 				model: LauncherService.model
-				currentIndex: LauncherService.selectedIndex
-				onCurrentIndexChanged: LauncherService.selectedIndex = currentIndex
 				highlightFollowsCurrentItem: true
 				// 列表项委托
 				delegate:FormCard.FormButtonDelegate{
@@ -114,9 +105,25 @@ PanelWindow {
 						}
 					}
 					onClicked: {
-						resultsList.currentIndex = index;
 						LauncherService.launch(index);
 						popudroot.destroy();
+					}
+					Keys.onPressed: (event) => {
+						switch (event.key) {
+							case Qt.Key_Down:
+								incrementCurrentIndex();
+								break;
+							case Qt.Key_Up:
+								decrementCurrentIndex();
+								break;
+							case Qt.Key_Enter:
+								LauncherService.launch(currentIndex);
+								popudroot.destroy();
+								break;
+							case Qt.Key_Escape:
+								popudroot.destroy();
+								break;
+						}
 					}
 				}
 			}
