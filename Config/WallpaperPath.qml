@@ -5,7 +5,7 @@ Item {
 	property string steampath:"/mnt/DATA/SteamLibrary/"
 	readonly property string workshoppath:"steamapps/workshop/content/431960/"
 	readonly property string workshopBase: steampath+workshoppath
-	property string wallpaperId: "1761310151"
+	property string wallpaperId: "3276955573"
 	readonly property string assetsPath: "file:///mnt/DATA/SteamLibrary/steamapps/common/wallpaper_engine/assets"
 	readonly property string sceneSource: workshopBase + wallpaperId + "/scene.pkg"
 	readonly property string wallpaperType: adapter.type.toLowerCase()  // "scene", "video", "Web"

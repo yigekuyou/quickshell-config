@@ -7,7 +7,7 @@ import qs.Modules.Wallpaper.WallpaperContent
 import Quickshell.Wayland
 
 
-Item {
+Scope {
 	readonly property bool other: {
 		return (Quickshell.env("QSG_RHI_BACKEND").toLowerCase() === "vulkan") === (WallpaperPath.wallpaperType === "scene");
 	}

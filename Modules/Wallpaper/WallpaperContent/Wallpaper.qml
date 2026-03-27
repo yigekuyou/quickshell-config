@@ -1,12 +1,13 @@
-import Quickshell
 import QtQuick
 import com.github.catsout.wallpaperEngineKde
 import Quickshell.Wayland
 import qs.Config
 import QtMultimedia
+import Quickshell
+import Quickshell.Io
 
-// --- 后端 A: SceneViewer (异步加载) ---
 PanelWindow {
+	readonly property bool isVulkan: (Quickshell.env("QSG_RHI_BACKEND") === "vulkan")
 	aboveWindows: false
 	focusable: false
 	exclusionMode: ExclusionMode.Ignore
@@ -55,7 +56,7 @@ PanelWindow {
 
 	// --- 定义后端 C: Qt Multimedia (Video) ---
 	Component {
-		id: videoComponent
+		id: mediaComponent
 		Video {
 			source: WallpaperPath.source
 			autoPlay: true
@@ -73,16 +74,22 @@ PanelWindow {
 		// 核心逻辑：根据变量决定加载哪个 Component
 		sourceComponent: {
 			const type = WallpaperPath.wallpaperType;
-			const isVulkan = Quickshell.env("QSG_RHI_BACKEND") === "vulkan";
-
 			if (type === "scene" && !isVulkan) {
 				return sceneComponent;
-			} else if (type === "video") {
-				// 这里你可以根据需要二选一：mpv 还是 video
-				return mpvComponent;
-			} else {
-				return null;
 			}
+			if (type === "video") {
+				// 如果非 Vulkan 且满足条件，优先用 MPV，否则降级到 MediaPlayer
+				if (!isVulkan) {
+
+					return mpvComponent;
+				} else {
+					console.log("加载壁纸组件",mediaComponent );
+
+					return mediaComponent;
+				}
+			}
+
+			return null;
 		}
 
 		// 状态检查
