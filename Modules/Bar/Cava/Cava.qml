@@ -18,18 +18,16 @@ Kirigami.ShadowedRectangle {
     property bool expanded: false
     property string scriptPath: Quickshell.env("HOME") + "/.config/quickshell/scripts/cava.sh"
 
-    property int collapsedWidth: 40
-    property int autoWidth: (cavaText.contentWidth > 0 ? cavaText.contentWidth : 50) + 45
+    property int collapsedWidth: Kirigami.Units.gridUnit*2
+    property int autoWidth: (widthfull.implicitWidth > 0 ? widthfull.implicitWidth : Kirigami.Units.gridUnit*2)
     
-    width: expanded ? autoWidth : collapsedWidth
-    height: Sizes.barHeight
     
     clip: true
     
-    implicitWidth: width
-    implicitHeight: height
+    implicitWidth: expanded ? autoWidth : collapsedWidth
+    implicitHeight: Sizes.barHeight
 
-    Behavior on width { NumberAnimation { duration: 300; easing.type: Easing.OutQuart } }
+    Behavior on implicitWidth { NumberAnimation { duration: 300; easing.type: Easing.OutQuart } }
         
         MouseArea {
             anchors.fill: parent
@@ -38,8 +36,9 @@ Kirigami.ShadowedRectangle {
         }
 
         RowLayout {
-anchors.fill: parent
-            
+		id:widthfull
+	anchors.fill: parent
+            Layout.alignment: Qt.AlignBottom
             // ★★★ 核心修复：动态右边距 ★★★
             // 收起时：(40 - 图标宽) / 2 -> 算术级绝对居中
             // 展开时：8 -> 保持紧凑
@@ -63,7 +62,6 @@ anchors.fill: parent
 		    implicitHeight: Kirigami.Units.iconSizes.small
 
 		    // 4. 布局对齐：确保在 RowLayout 中垂直居中
-		    Layout.alignment: Qt.AlignVCenter
 		    		    isMask: true
 	    }
 
@@ -75,6 +73,34 @@ anchors.fill: parent
 		    // 2. 像素调节：上下留出一点边距，让视觉更精致
 		    Layout.topMargin: Kirigami.Units.smallSpacing
 		    Layout.bottomMargin: Kirigami.Units.smallSpacing
+		    Layout.leftMargin: Kirigami.Units.smallSpacing
+
+		    // 3. 颜色：自动使用主题的分隔线颜色（带透明度，不突兀）
+		    // 如果你想让它更亮或更暗，可以手动调节 opacity
+		    opacity: 0.6
+		    Behavior on opacity { NumberAnimation { duration: 200 } }
+		    // 4. 逻辑控制：如果你的音乐组件未展开，隐藏分割线
+		    visible: root.expanded
+	    }
+	    Kirigami.Heading {
+		    id:cavaText
+		    level: 5
+		    visible:root.expanded
+		    Layout.alignment: Qt.AlignBottom
+		    Layout.fillWidth: true
+		    Layout.topMargin: Kirigami.Units.smallSpacing
+		    Layout.bottomMargin: Kirigami.Units.smallSpacing
+		    opacity: 0.5
+	    }
+	    Kirigami.Separator {
+		    implicitWidth: 1
+		    Layout.fillHeight: true
+
+		    // 2. 像素调节：上下留出一点边距，让视觉更精致
+		    Layout.topMargin: Kirigami.Units.smallSpacing
+		    Layout.bottomMargin: Kirigami.Units.smallSpacing
+		    Layout.leftMargin: Kirigami.Units.smallSpacing
+		    Layout.rightMargin: Kirigami.Units.smallSpacing
 
 		    // 3. 颜色：自动使用主题的分隔线颜色（带透明度，不突兀）
 		    // 如果你想让它更亮或更暗，可以手动调节 opacity
@@ -84,16 +110,8 @@ anchors.fill: parent
 		    visible: root.expanded
 	    }
 
-
         }
-                Kirigami.Heading {
-			id:cavaText
-			level: 5
-			Layout.fillWidth: true
 
-			visible: parent.visible
-			opacity: 0.5
-            }
 
     Process {
         id: cavaScript
