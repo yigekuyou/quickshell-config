@@ -13,23 +13,6 @@ Kirigami.Page {
 	signal unlocked()
 	anchors.fill: parent
 	background: LockWallpaper{}
-	PamContext {
-		id: pam
-		configDirectory: Quickshell.env("HOME") + "/.config/quickshell/Modules/Lock/pam"
-		config: "password.conf"
-
-		onPamMessage: {
-			if (responseRequired) {
-			}
-		}
-
-		// 验证完成后的处理
-		onCompleted: (result) => {
-			if (result === PamResult.Success) {
-				unlocked()
-			}
-		}
-	}
 	ColumnLayout {
 		anchors.fill: parent
 		spacing: 0 // 建议设为0，通过内部子项的 Layout.margins 控制间距
@@ -93,24 +76,11 @@ Kirigami.Page {
 		// --- 4. 底部(时钟下方) ---
 		ColumnLayout {
 			Layout.fillWidth: true
-			Kirigami.FormLayout {
-				TextField {
-					id: passwordField
-					enabled:true
-					visible: pam.active
-					echoMode: TextInput.Password
-					placeholderText: pam.message
-					background: Rectangle {
-						color: Qt.alpha(Kirigami.Theme.backgroundColor, 0.5)
-					}
-					Keys.onEscapePressed: {
-						pam.abort();
-					}
-					onAccepted: {
-						pam.respond(text);
-						text=""; // 擦除
-					}
-				}
+		LockContext{
+			id:pam
+			onSuccess:{
+				unlocked()
+			}
 			}
 		}
 		// --- 5. 底部弹性占位---
@@ -127,7 +97,6 @@ Kirigami.Page {
 			if (!pam.active) {
 				pam.start();
 			}
-			passwordField.forceActiveFocus();
 		}
 	}
 }

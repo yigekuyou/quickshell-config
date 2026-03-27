@@ -4,25 +4,19 @@ import Quickshell.Wayland
 import qs.Config
 import Quickshell.Hyprland
 
-ShellRoot {
-	id: root
-	signal unlocked()
-	property QtObject pamBackend
-
-
 
 WlSessionLock {
-	id: lock
+	signal unlocked()
 	locked : true
 	onLockedChanged: {
 		if (!locked) {
-			root.unlocked();
+			unlocked();
 		}
 	}
 	WlSessionLockSurface {
 		LockSurface{
-			onUnlocked: lock.locked = false
+			onUnlocked: locked = false
 		}
 	}
 }
-}
+

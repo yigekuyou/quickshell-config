@@ -10,7 +10,6 @@ Item {
     readonly property bool other: {
         return (Quickshell.env("QSG_RHI_BACKEND").toLowerCase() === "vulkan") === (WallpaperLock.wallpaperType === "scene");
     }
-
     Loader {
         id: lockLoader
         active: false

@@ -1,25 +1,22 @@
 import QtQuick
 import Quickshell
 import Quickshell.Services.Pam
+import org.kde.kirigami as Kirigami
+import QtQuick.Controls
+import QtQuick.Layouts
 
-Scope {
-    id: root
-    signal unlocked()
+Kirigami.FormLayout{
+    signal success()
     signal failed()
+    signal start()
+    property bool active: passwordField.visible
 
-    property string currentText: ""
-    property bool unlockInProgress: false
-    property bool showFailure: false
-
-    // 输入变化时隐藏错误提示
-    onCurrentTextChanged: showFailure = false;
-
-    function tryUnlock() {
-        if (currentText === "") return;
-        root.unlockInProgress = true;
-        pam.start();
-    }
-
+    onStart:{
+	    if (!pam.active) {
+		    pam.start();
+	    }
+	    passwordField.forceActiveFocus();
+	}
     PamContext {
         id: pam
         // 指向 pam 文件夹的绝对路径
@@ -27,19 +24,36 @@ Scope {
         config: "password.conf"
 
         onPamMessage: {
-            if (this.responseRequired) {
-                this.respond(root.currentText);
+            if (responseRequired) {
             }
         }
 
         onCompleted: result => {
             if (result == PamResult.Success) {
-                root.unlocked();
+		    success()
             } else {
-                root.currentText = ""; // 清空密码
-                root.showFailure = true;
+		    failed();
+                passwordField.text = ""; // 清空密码
             }
-            root.unlockInProgress = false;
         }
+    }
+    Kirigami.FormLayout {
+	    TextField {
+		    id: passwordField
+		    enabled:true
+		    visible: pam.active
+		    echoMode: TextInput.Password
+		    placeholderText: pam.message
+		    background: Rectangle {
+			    color: Qt.alpha(Kirigami.Theme.backgroundColor, 0.5)
+		    }
+		    Keys.onEscapePressed: {
+			    pam.abort();
+		    }
+		    onAccepted: {
+			    pam.respond(text);
+			    text=""; // 擦除
+		    }
+	    }
     }
 }
