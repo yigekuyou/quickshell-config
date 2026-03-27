@@ -34,22 +34,28 @@ Variants {
 		implicitWidth: isExpanded ? layout.implicitWidth:modelData.width
 		implicitHeight: isExpanded ? layout.implicitHeight : triggerHeight
 		Behavior on implicitHeight {
-			NumberAnimation {
-				duration: 250
-				easing.type: Easing.OutCubic
+			SequentialAnimation {
+				PauseAnimation {
+					duration: isExpanded ? 0 : 10
+				}
+				NumberAnimation {
+					duration: 250
+					easing.type: Easing.OutCubic
+				}
 			}
+
 		}
 		Behavior on implicitWidth {
 			SequentialAnimation {
 				PauseAnimation {
-					duration: isExpanded ? 250 : 0
+					duration: isExpanded ? 300 : 0
 				}
 
 				PropertyAction {}
 
 				// 如果是收起，变窄后可以加个占位等待，确保和高度动画同步结束（可选）
 				PauseAnimation {
-					duration: isExpanded ? 0 : 250
+					duration: isExpanded ? 0 : 300
 				}			}
 		}
 		MouseArea {
