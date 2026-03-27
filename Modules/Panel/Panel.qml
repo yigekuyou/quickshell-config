@@ -21,7 +21,7 @@ Variants {
 		Timer {
 			id: hideTimer
 			interval: 500 // 鼠标离开半秒后收起
-			running:true
+			running:isExpanded
 			onTriggered: panelWindow.isExpanded = false
 		}
 		anchors {
@@ -31,13 +31,26 @@ Variants {
 			bottom: isExpanded ? Kirigami.Units.smallSpacing : 0
 		}
 		color: "transparent"
-		implicitWidth: layout.implicitWidth
+		implicitWidth: isExpanded ? layout.implicitWidth:modelData.width
 		implicitHeight: isExpanded ? layout.implicitHeight : triggerHeight
 		Behavior on implicitHeight {
 			NumberAnimation {
 				duration: 250
 				easing.type: Easing.OutCubic
 			}
+		}
+		Behavior on implicitWidth {
+			SequentialAnimation {
+				PauseAnimation {
+					duration: isExpanded ? 250 : 0
+				}
+
+				PropertyAction {}
+
+				// 如果是收起，变窄后可以加个占位等待，确保和高度动画同步结束（可选）
+				PauseAnimation {
+					duration: isExpanded ? 0 : 250
+				}			}
 		}
 		MouseArea {
 			anchors.fill: parent
