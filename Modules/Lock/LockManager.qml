@@ -43,15 +43,11 @@ Item {
         timeout: Idle.idlelocktime
         onIsIdleChanged: {
             if (isIdle) {
-                if (other) {
-                    lock.exec(lock.command);
-                } else {
                     if (!lockLoader.active) {
                         lockLoader.active = true;
                         return "LOCKED";
                     }
                     return "ALREADY_LOCKED";
-                }
             }
         }
     }
