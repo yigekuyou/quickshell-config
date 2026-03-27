@@ -32,7 +32,7 @@ Item {
     }
     IdleMonitor {
         enabled: Idle.idledpms
-        timeout: Idle.dpmsTimeout
+        timeout: Idle.dpmsTimeout+Idle.idlelocktime
         onIsIdleChanged: {
             if (!isIdle)
                 Hyprland.dispatch("dpms on");
@@ -52,7 +52,7 @@ Item {
         }
     }
     IdleMonitor {
-        enabled: idlesleep
+        enabled: Idle.idlesleep&&lockLoader.active
         timeout: Idle.sleepTimeout
         onIsIdleChanged: {
             if (isIdle)
