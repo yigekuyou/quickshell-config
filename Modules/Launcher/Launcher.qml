@@ -9,6 +9,7 @@ import qs.Config
 import qs.Widget.common
 import qs.Services
 import org.kde.kirigami as Kirigami
+import org.kde.kirigamiaddons.formcard as FormCard
 
 PanelWindow {
 	id:popudroot
@@ -23,13 +24,15 @@ PanelWindow {
 	}
 	WlrLayershell.namespace: "rofi-launcher-overlay"
 	focusable:true
-	Rectangle {
+	Kirigami.ShadowedRectangle {
 		anchors.fill: parent
-
-		radius: Kirigami.Units.gridUnit / 2
+		radius: Kirigami.Units.smallSpacing
 		color: Kirigami.Theme.backgroundColor
-
 		// 边框使用 Kirigami 标准色
+		shadow.color: Qt.rgba(0, 0, 0, 0.3)
+		shadow.size: 10
+		shadow.yOffset: 2
+
 		border.color: Kirigami.Theme.focusColor
 		border.width: 1
 
@@ -81,13 +84,16 @@ PanelWindow {
 				model: LauncherService.model
 				currentIndex: LauncherService.selectedIndex
 				onCurrentIndexChanged: LauncherService.selectedIndex = currentIndex
-
+				highlightFollowsCurrentItem: true
 				// 列表项委托
-				delegate: ItemDelegate {
+				delegate:FormCard.FormButtonDelegate{
 					id: delegateItem
 					width: resultsList.width
-					height: Kirigami.Units.gridUnit * 2.5 // 标准列表高度
-
+					text: modelData.name
+					description:modelData.comment
+					icon.name:modelData.icon ?? "system-run"
+					palette.text: highlighted ? Kirigami.Theme.highlightedTextColor : Kirigami.Theme.textColor
+					palette.buttonText: highlighted ? Kirigami.Theme.highlightedTextColor : Kirigami.Theme.textColor
 					// 状态绑定
 					highlighted: ListView.isCurrentItem
 
@@ -107,55 +113,13 @@ PanelWindow {
 							visible: delegateItem.highlighted
 						}
 					}
-
-					contentItem: RowLayout {
-						spacing: Kirigami.Units.largeSpacing
-
-						// 图标
-						Kirigami.Icon {
-							source: Quickshell.iconPath(modelData.icon ?? "system-run", true)
-							Layout.preferredWidth: Kirigami.Units.iconSizes.medium
-							Layout.preferredHeight: Kirigami.Units.iconSizes.medium
-							Layout.alignment: Qt.AlignVCenter
-						}
-
-						// 文字信息
-						ColumnLayout {
-							spacing: 0
-							Layout.fillWidth: true
-							Layout.alignment: Qt.AlignVCenter
-
-							Kirigami.Heading {
-								text: modelData.name ?? ""
-								level: 4
-								elide: Text.ElideRight
-								Layout.fillWidth: true
-								// 选中时文字变色
-								color: delegateItem.highlighted ? Kirigami.Theme.highlightedTextColor : Kirigami.Theme.textColor
-							}
-
-							Label {
-								text: modelData.description ?? ""
-								visible: text !== ""
-								font: Kirigami.Theme.smallFont
-								color: delegateItem.highlighted ? Kirigami.Theme.highlightedTextColor : Kirigami.Theme.disabledTextColor
-								elide: Text.ElideRight
-								Layout.fillWidth: true
-								opacity: 0.5
-							}
-						}
-					}
-
 					onClicked: {
 						resultsList.currentIndex = index;
 						LauncherService.launch(index);
 						popudroot.destroy();
 					}
 				}
-
-				// 滚动条
-				ScrollBar.vertical: ScrollBar {}
 			}
-}
+		}
 	}
 }
