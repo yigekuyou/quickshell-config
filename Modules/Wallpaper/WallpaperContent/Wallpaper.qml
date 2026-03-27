@@ -6,7 +6,20 @@ import QtMultimedia
 import Quickshell
 import Quickshell.Io
 
-PanelWindow {
+Instantiator {
+	// 只有当 wallpaperType 是合法值且符合 Vulkan 逻辑时才创建实例
+	model: {
+		const type = WallpaperPath.wallpaperType;
+		const isVulkan = (Quickshell.env("QSG_RHI_BACKEND") === "vulkan");
+
+		// 只有满足以下条件，才返回一个包含 1 个元素的列表，触发窗口创建
+		if (type === "scene" && !isVulkan) return [1];
+		if (type === "video") return [1];
+
+		// 否则返回空列表，窗口不会被创建
+		return [];
+	}
+delegate:PanelWindow {
 	readonly property bool isVulkan: (Quickshell.env("QSG_RHI_BACKEND") === "vulkan")
 	aboveWindows: false
 	focusable: false
@@ -99,4 +112,5 @@ PanelWindow {
 			}
 		}
 	}
+}
 }
