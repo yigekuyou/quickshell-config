@@ -6,102 +6,90 @@ import qs.Config
 import QtMultimedia
 
 // --- 后端 A: SceneViewer (异步加载) ---
-Item {
-    LazyLoader {
-        id: sceneLoader
-        // 当类型为 scene 或 web 时，异步加载组件
-        activeAsync: Quickshell.env("QSG_RHI_BACKEND")!="vulkan"&&WallpaperPath.wallpaperType === "scene"
-        PanelWindow {
-            aboveWindows: false
-            focusable: false
-            exclusionMode: ExclusionMode.Ignore
-            WlrLayershell.namespace: "Nox:wallpaper"
-            WlrLayershell.layer: WlrLayer.Background
-            anchors {
-                left: true
-                bottom: true
-                right: true
-                top: true
-            }
-            implicitWidth: parent.width
-            implicitHeight: parent.height
-            SceneViewer {
-                anchors.fill: parent
-                source: WallpaperPath.source
-                assets: WallpaperPath.assetsPath
-                speed: WallpaperPath.speed
-                muted: WallpaperPath.muted
-
-                Component.onCompleted: {
-                    setAcceptMouse(false);
-                    setAcceptHover(false);
-                }
-            }
-        }
-    }
-    // --- 后端 B: MPV (异步加载) ---
-    LazyLoader {
-        id: mpvLoader
-        // 当类型为 video 时，异步加载组件
-        activeAsync: Quickshell.env("QSG_RHI_BACKEND")!="vulkan"&&WallpaperPath.wallpaperType === "video"
-        PanelWindow {
-            aboveWindows: false
-            focusable: false
-            exclusionMode: ExclusionMode.Ignore
-            WlrLayershell.namespace: "Nox:wallpaper"
-            WlrLayershell.layer: WlrLayer.Background
-            anchors {
-                left: true
-                bottom: true
-                right: true
-                top: true
-            }
-            implicitWidth: parent.width
-            implicitHeight: parent.height
-            Mpv {
-                id: player
-                anchors.fill: parent
-                source: WallpaperPath.source
-                mute: WallpaperPath.muted
-                onSourceChanged: {
-			player.setProperty("keepaspect", true);
-			player.setProperty("panscan", 1.0);
-			player.setProperty("speed", WallpaperPath.speed);
-			player.setProperty("volume", WallpaperPath.volume);
-			player.command(["set", "hwdec=vulkan-copy"])
-			if (source.toString() !== "") {
-				play()
+PanelWindow {
+	aboveWindows: false
+	focusable: false
+	exclusionMode: ExclusionMode.Ignore
+	WlrLayershell.namespace: "Nox:wallpaper"
+	WlrLayershell.layer: WlrLayer.Background
+	anchors {
+		left: true
+		bottom: true
+		right: true
+		top: true
+	}
+	implicitHeight:height
+	implicitWidth:width
+	// --- 定义后端 A: SceneViewer ---
+	Component {
+		id: sceneComponent
+		SceneViewer {
+			source: WallpaperPath.source
+			assets: WallpaperPath.assetsPath
+			speed: WallpaperPath.speed
+			muted: WallpaperPath.muted
+			Component.onCompleted: {
+				setAcceptMouse(false);
+				setAcceptHover(false);
 			}
 		}
-            }
-        }
-    }
-    Loader {
-	    id: mediaLoader
-	    anchors.fill: parent
-	    // 只有当类型为 video 时才加载
-	    active: mpvLoader.active&&WallpaperLock.wallpaperType === "video"
-	    asynchronous: true
+	}
 
-	    sourceComponent: Item {
-		    anchors.fill: parent
+	// --- 定义后端 B: MPV ---
+	Component {
+		id: mpvComponent
+		Mpv {
+			id: player
+			source: WallpaperPath.source
+			mute: WallpaperPath.muted
+			onSourceChanged: {
+				player.setProperty("keepaspect", true);
+				player.setProperty("panscan", 1.0);
+				player.setProperty("speed", WallpaperPath.speed);
+				player.setProperty("volume", WallpaperPath.volume);
+				player.command(["set", "hwdec=vulkan-copy"])
+				if (source.toString() !== "") play()
+			}
+		}
+	}
 
-		    Video {
-			    id: player
-			    source: WallpaperLock.source
-			    autoPlay:true
-			    // 循环播放设置
-			    loops: MediaPlayer.Infinite
-			    muted: WallpaperPath.muted
-			    volume:WallpaperPath.volume
+	// --- 定义后端 C: Qt Multimedia (Video) ---
+	Component {
+		id: videoComponent
+		Video {
+			source: WallpaperPath.source
+			autoPlay: true
+			loops: MediaPlayer.Infinite
+			muted: WallpaperPath.muted
+			volume: WallpaperPath.volume
+			playbackRate: WallpaperPath.speed
+		}
+	}
+	Loader {
+		id: mainLoader
+		anchors.fill: parent
+		asynchronous: true // 开启异步加载，防止界面卡死
 
-			    // 速度控制
-			    playbackRate: WallpaperLock.speed
+		// 核心逻辑：根据变量决定加载哪个 Component
+		sourceComponent: {
+			const type = WallpaperPath.wallpaperType;
+			const isVulkan = Quickshell.env("QSG_RHI_BACKEND") === "vulkan";
 
-			    Component.onCompleted: {
-				    player.play();
-			    }
-		    }
-	    }
-    }
+			if (type === "scene" && !isVulkan) {
+				return sceneComponent;
+			} else if (type === "video") {
+				// 这里你可以根据需要二选一：mpv 还是 video
+				return mpvComponent;
+			} else {
+				return null;
+			}
+		}
+
+		// 状态检查
+		onStatusChanged: {
+			if (status === Loader.Error) {
+				console.error("加载壁纸组件失败:", sourceComponent);
+			}
+		}
+	}
 }

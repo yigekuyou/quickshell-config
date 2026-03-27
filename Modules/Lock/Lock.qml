@@ -4,7 +4,6 @@ import Quickshell.Wayland
 import qs.Config
 import Quickshell.Hyprland
 
-
 WlSessionLock {
 	signal unlocked()
 	locked : true

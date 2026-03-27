@@ -9,5 +9,4 @@ import qs.Modules.Lock
 ShellRoot {
 	Wallpaper{}
 	LockManager{}
-
 }

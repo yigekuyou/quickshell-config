@@ -9,15 +9,9 @@ import Quickshell.Io
 Item {
 	anchors.fill: parent
 	readonly property bool isVulkan: Quickshell.env("QSG_RHI_BACKEND") === "vulkan"
-	// --- 后端 A: SceneViewer ---
-	Loader {
-		id: sceneLoader
-		anchors.fill: parent
-		// 只有当条件满足时才加载组件
-		active: !isVulkan && WallpaperLock.wallpaperType === "scene"
-		asynchronous: true // 开启异步加载，防止界面卡顿
-
-		sourceComponent: SceneViewer {
+	Component {
+		id: sceneComponent
+		SceneViewer {
 			source: WallpaperLock.source
 			assets: WallpaperLock.assetsPath
 			speed: WallpaperLock.speed
@@ -30,71 +24,85 @@ Item {
 		}
 	}
 
-	// --- 后端 B: MPV ---
-	Loader {
-		id: mpvLoader
-		anchors.fill: parent
-		// 只有当类型为 video 时才加载
-		active: !isVulkan&&WallpaperLock.wallpaperType === "video"
-		asynchronous: true
-
-		sourceComponent: Mpv {
-			id: player
+	Component {
+		id: mpvComponent
+		Mpv {
+			id: mpvPlayer
 			anchors.fill: parent
 			source: WallpaperLock.source
 			mute: WallpaperLock.muted
 
 			Component.onCompleted: {
-				player.setProperty("keepaspect", true);
-				player.setProperty("panscan", 1.0);
-				player.setProperty("speed", WallpaperLock.speed);
-				player.play();
+				setProperty("keepaspect", true);
+				setProperty("panscan", 1.0);
+				setProperty("speed", WallpaperLock.speed);
+				command(["set", "hwdec=vulkan-copy"])
+				play();
 			}
 
-			// 监听速度变化
+			// 监听速度变化，同步到后端
 			Connections {
 				target: WallpaperLock
 				function onSpeedChanged() {
-					player.setProperty("speed", WallpaperLock.speed);
+					mpvPlayer.setProperty("speed", WallpaperLock.speed);
 				}
 			}
 		}
 	}
-	Loader {
-		id: mediaLoader
-		anchors.fill: parent
-		// 只有当类型为 video 时才加载
-		active: WallpaperLock.wallpaperType === "video"&& !mpvLoader.active
-		asynchronous: true
 
-		sourceComponent: Item {
+	Component {
+		id: mediaComponent
+		Item {
 			anchors.fill: parent
-
 			MediaPlayer {
-				id: player
+				id: mplayer
 				source: WallpaperLock.source
-
-				// 设置音频输出（控制静音）
-				audioOutput: AudioOutput {
-					muted: WallpaperLock.muted
-				}
-				videoOutput:videoOutput
-				// 循环播放设置
+				audioOutput: AudioOutput { muted: WallpaperLock.muted }
+				videoOutput: vOutput
 				loops: MediaPlayer.Infinite
-
-				// 速度控制
 				playbackRate: WallpaperLock.speed
-
-				Component.onCompleted: {
-					player.play();
-				}
+				Component.onCompleted: play()
 			}
 			VideoOutput {
-				id: videoOutput
+				id: vOutput
 				anchors.fill: parent
-				// 对应 mpv 的 keepaspect 和 panscan 1.0 (等比例填充)
 				fillMode: VideoOutput.PreserveAspectCrop
 			}
+		}
+	}
+
+	// ----------------------------------------------------------------
+	// 2. 统一调度器 (用一个 Loader 切换，节省内存且逻辑清晰)
+	// ----------------------------------------------------------------
+
+	Loader {
+		id: mainLoader
+		anchors.fill: parent
+		asynchronous: true
+
+		// 核心切换逻辑
+		sourceComponent: {
+			const type = WallpaperLock.wallpaperType;
+
+			if (type === "scene" && !isVulkan) {
+				return sceneComponent;
+			}
+
+			if (type === "video") {
+				// 如果非 Vulkan 且满足条件，优先用 MPV，否则降级到 MediaPlayer
+				if (!isVulkan) {
+					return mpvComponent;
+				} else {
+					return mediaComponent;
+				}
+			}
+
+			return null;
+		}
+
+		// 加载指示（调试用）
+		onStatusChanged: {
+			if (status === Loader.Error) console.error("Failed to load wallpaper component");
 		}
 	}
 }
