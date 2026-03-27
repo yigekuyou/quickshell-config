@@ -74,24 +74,13 @@ Kirigami.Page {
 		// --- 4. 底部(时钟下方) ---
 		ColumnLayout {
 			Layout.fillWidth: true
-			Kirigami.Heading {
-				id: failureLabel
-				text: "认证失败，请重试"
-				color: Kirigami.Theme.negativeTextColor // 使用主题的红色
-				font.pixelSize: Kirigami.Units.gridUnit * 1.5
-				Layout.alignment: Qt.AlignHCenter
-				opacity: 0 // 默认隐藏
 
-				// 简单的渐变动画
-				Behavior on opacity { NumberAnimation { duration: 200 } }
-			}
 		LockContext{
 			id:pam
 			onSuccess:{
 				unlocked()
 			}
 			onFailed:{
-				failureLabel.opacity = 1
 			}
 			}
 		}
