@@ -1,208 +1,132 @@
-import QtQuick
-import QtQuick.Layouts
-import QtQuick.Controls
 import Quickshell
 import Quickshell.Io
+import Quickshell.Wayland
+import Quickshell.Widgets
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Layouts
 import qs.Config
+import qs.Services
+import org.kde.kirigami as Kirigami
+import org.kde.kirigamiaddons.formcard as FormCard
+PopupWindow {
+	id:root
+	anchor.window: panelWindow
+	anchor.edges: Edges.Bottom
+	anchor.gravity: Edges.Top
+	property var pos : mapToItem(parentWindow.contentItem, 0, parentWindow.height);
+	anchor.rect.x: Math.round(pos.x)
+	anchor.rect.y: Math.round(pos.y)
+	grabFocus: true
 
-Item {
-    id: root
-    
-    signal requestCloseLauncher()
-
-    ListModel { id: allAppsModel }
-    ListModel { id: filteredApps }
-    property bool isLoading: true
-    property var tempAppsData: ({}) 
-
-    function decrementCurrentIndex() { appsList.decrementCurrentIndex() }
-    function incrementCurrentIndex() { appsList.incrementCurrentIndex() }
-    function forceSearchFocus() { searchBox.forceActiveFocus() }
+	visible: true
+	mask: null
+	implicitWidth: Kirigami.Units.gridUnit * 40
+	implicitHeight: Math.max(Sizes.barHeight, Kirigami.Units.gridUnit * 30 )
+	color: "transparent"
 
 
-    function parseSingleLine(line) {
-        line = line.trim()
-        if (!line) return
-        let firstColon = line.indexOf(":")
-        if (firstColon === -1) return
-        let path = line.substring(0, firstColon)
-        let content = line.substring(firstColon + 1)
-        let firstEq = content.indexOf("=")
-        if (firstEq === -1) return
-        let key = content.substring(0, firstEq)
-        let value = content.substring(firstEq + 1)
+Kirigami.ShadowedRectangle {
+		anchors.fill: parent
+		radius: Kirigami.Units.smallSpacing
+		color: Kirigami.Theme.backgroundColor
+		// 边框使用 Kirigami 标准色
+		shadow.color: Qt.rgba(0, 0, 0, 0.3)
+		shadow.size: 10
+		shadow.yOffset: 2
 
-        if (!root.tempAppsData[path]) {
-            root.tempAppsData[path] = { name: "", exec: "", icon: "", noDisplay: false }
-        }
+		border.color: Kirigami.Theme.focusColor
+		border.width: 1
 
-        if (key === "Name" && !root.tempAppsData[path].name) root.tempAppsData[path].name = value
-        else if (key === "Exec" && !root.tempAppsData[path].exec) root.tempAppsData[path].exec = value.replace(/ %[fFuUdDnNickvm].*/, "").trim()
-        else if (key === "Icon" && !root.tempAppsData[path].icon) root.tempAppsData[path].icon = value
-        else if (key === "NoDisplay" && value === "true") root.tempAppsData[path].noDisplay = true
-    }
+		RowLayout {
+			anchors.fill: parent
+			anchors.margins: Kirigami.Units.largeSpacing
+			spacing: Kirigami.Units.smallSpacing
 
-    function finalizeApps() {
-        allAppsModel.clear()
-        for (let path in root.tempAppsData) {
-            let app = root.tempAppsData[path]
-            if (app.name && app.exec && !app.noDisplay) {
-                allAppsModel.append(app)
-            }
-        }
-        root.isLoading = false
-        root.tempAppsData = {} 
-        search("") 
-    }
+			Rectangle {
+				Layout.preferredWidth: Kirigami.Units.gridUnit * 8
+				Layout.fillHeight: true
+				color: Qt.darker(Kirigami.Theme.backgroundColor, 1.05) // 稍微深一点的背景区分
+				radius: Kirigami.Units.smallSpacing
 
-    function search(text) {
-        filteredApps.clear()
-        let q = text.toLowerCase()
-        let count = 0
-        
-        if (root.isLoading) return
+				ListView {
+					id: categoryList
+					anchors.fill: parent
+					anchors.margins: Kirigami.Units.smallSpacing
+					model: LauncherService.categories
+					spacing: 2
+					clip: true
 
-        for(let i = 0; i < allAppsModel.count; i++) {
-            let item = allAppsModel.get(i)
-            if(item.name.toLowerCase().includes(q) || item.exec.toLowerCase().includes(q)) {
-                filteredApps.append(item)
-                count++
-                if (count >= 40) break 
-            }
-        }
-        appsList.currentIndex = 0
-    }
+					delegate: ItemDelegate {
+						width: parent.width
+						text: modelData.name
+						highlighted: LauncherService.categories === modelData
 
-    onVisibleChanged: {
-        if (visible) {
-            searchBox.text = ""
-            if (allAppsModel.count === 0 && !root.isLoading) {
-                appScanner.running = true
-            } else {
-                search("")
-            }
-        }
-    }
+						onClicked: {
+							appGrid.model = modelData.apps;
+						}
+					}
+				}
+			}
+			ScrollView {
+				Layout.fillWidth: true
+				Layout.fillHeight: true
+				clip: true
+				ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
 
-    // ==========================================
-    // UI 渲染层
-    // ==========================================
-    
-    TextInput {
-        id: searchBox
-        x: -1000 
-        y: -1000
-        width: 0
-        height: 0
-        opacity: 0
-        visible: true 
-        
-        onTextChanged: root.search(text)
-        Keys.onReturnPressed: (event) => { runSelectedApp(); event.accepted = true }
-        Keys.onEnterPressed: (event) => { runSelectedApp(); event.accepted = true }
-        Keys.onUpPressed: (event) => { appsList.decrementCurrentIndex(); event.accepted = true }
-        Keys.onDownPressed: (event) => { appsList.incrementCurrentIndex(); event.accepted = true }
-    }
+				GridView {
+					id: appGrid
+					// 注意：这里的 model 应该跟随当前选中的分类
+					model: []
 
-    Text {
-        anchors.centerIn: parent 
-        text: "Loading applications..."
-        color: Colorscheme.on_surface_variant
-        font.pixelSize: 16
-        visible: root.isLoading
-    }
+					cellWidth: width / 4 // 动态计算列数，例如一行4个
+					cellHeight: Kirigami.Units.gridUnit * 6
 
-    ListView {
-        id: appsList
-        width: parent.width
-        height: 490 
-        anchors.verticalCenter: parent.verticalCenter 
-        clip: true
-        model: filteredApps
-        spacing: 6
-        
-        boundsBehavior: Flickable.StopAtBounds
-        highlightRangeMode: ListView.StrictlyEnforceRange 
-        preferredHighlightBegin: 0
-        preferredHighlightEnd: height - 56 
-        
-        highlight: Rectangle { 
-            color: Colorscheme.primary
-            radius: 12 
-        }
-        highlightMoveDuration: 0 
+					delegate: Kirigami.AbstractCard {
+						// 减去间距防止溢出
+						implicitWidth: appGrid.cellWidth - Kirigami.Units.largeSpacing
+						implicitHeight: appGrid.cellHeight - Kirigami.Units.largeSpacing
+						showClickFeedback: true
 
-        delegate: Item {
-            id: delegateItem 
-            width: ListView.view.width
-            height: 56
+						// 直接在 Card 上处理点击，不需要额外的 MouseArea 覆盖
+						onClicked: {
+							LauncherService.launch(index);
+							popudroot.visible = false;
+						}
 
-            MouseArea {
-                anchors.fill: parent
-                onClicked: {
-                    appsList.currentIndex = index
-                    runSelectedApp()
-                }
-            }
+						ColumnLayout {
+							anchors.centerIn: parent
+							spacing: Kirigami.Units.smallSpacing
 
-            RowLayout {
-                anchors.fill: parent
-                anchors.leftMargin: 12
-                anchors.rightMargin: 16
-                spacing: 16
+							Kirigami.Icon {
+								Layout.alignment: Qt.AlignHCenter
+								source: modelData.icon || "system-run"
+								implicitWidth: Kirigami.Units.gridUnit * 2
+								implicitHeight: Kirigami.Units.gridUnit * 2
+							}
 
-                Item {
-                    Layout.preferredWidth: 36
-                    Layout.preferredHeight: 36
+							Text {
+								text: modelData.name
+								wrapMode:Text.WrapAnywhere
+								Layout.fillWidth: true
+								horizontalAlignment: Text.AlignHCenter
+								elide: Text.ElideRight
+								color: Kirigami.Theme.textColor
+								font.pointSize: Kirigami.Units.gridUnit * 0.5
+							}
+						}
+						Keys.onPressed: (event) => {
+							switch (event.key) {
+								case Qt.Key_Escape:
+									root.destroy();
+									break;
+							}
+						}
+					}
 
-                    Image {
-                        anchors.fill: parent
-                        sourceSize.width: 64
-                        sourceSize.height: 64
-                        fillMode: Image.PreserveAspectFit
-                        asynchronous: true
-                        smooth: true
+				}
+			}
+		}
+	}
 
-                        source: {
-                            if (!model.icon) return ""
-                            if (model.icon.indexOf("/") !== -1) return "file://" + model.icon
-                            return "image://icon/" + model.icon
-                        }
-                        
-                        property bool hasFallenBack: false
-                        
-                        onStatusChanged: {
-                            if (status === Image.Error && !hasFallenBack) {
-                                hasFallenBack = true
-                                source = "image://icon/application-x-executable"
-                            }
-                        }
-                    }
-                }
-
-                Text {
-                    text: root.highlightText(model.name, searchBox.text)
-                    textFormat: Text.StyledText 
-                    color: delegateItem.ListView.isCurrentItem ? Colorscheme.on_primary : Colorscheme.on_surface
-                    font.pixelSize: 16
-                    font.bold: false 
-                    Layout.fillWidth: true
-                }
-            }
-        }
-    }
-
-    function runSelectedApp() {
-        if (filteredApps.count > 0 && appsList.currentIndex >= 0) {
-            let cmd = filteredApps.get(appsList.currentIndex).exec
-            launchProcess.command = ["bash", "-c", "nohup " + cmd + " > /dev/null 2>&1 &"]
-            launchProcess.running = true
-            root.requestCloseLauncher() 
-        }
-    }
-    
-    Process { 
-        id: launchProcess
-        onExited: running = false 
-    }
 }

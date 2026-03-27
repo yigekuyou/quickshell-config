@@ -4,11 +4,11 @@ import org.kde.kirigami as Kirigami
 import qs.Modules.Launcher
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Controls
 
 Variants {
 	model: Quickshell.screens
 	PanelWindow {
-		LauncherManager{}
 		id: panelWindow
 		WlrLayershell.namespace:"panelWindow"
 		WlrLayershell.layer: WlrLayer.Top
@@ -31,7 +31,7 @@ Variants {
 			bottom: isExpanded ? Kirigami.Units.smallSpacing : 0
 		}
 		color: "transparent"
-		implicitWidth: isExpanded ? layout.implicitWidth:modelData.width
+		implicitWidth: layout.implicitWidth
 		implicitHeight: isExpanded ? layout.implicitHeight : triggerHeight
 		Behavior on implicitHeight {
 			SequentialAnimation {
@@ -45,18 +45,9 @@ Variants {
 			}
 
 		}
-		Behavior on implicitWidth {
-			SequentialAnimation {
-				PauseAnimation {
-					duration: isExpanded ? 300 : 0
-				}
 
-				PropertyAction {}
-
-				// 如果是收起，变窄后可以加个占位等待，确保和高度动画同步结束（可选）
-				PauseAnimation {
-					duration: isExpanded ? 0 : 300
-				}			}
+		LauncherManager{
+			id:launcher
 		}
 		MouseArea {
 			anchors.fill: parent
@@ -68,6 +59,7 @@ Variants {
 				panelWindow.isExpanded = true
 			}
 			onExited: hideTimer.start()
+		}
 		Kirigami.ShadowedRectangle {
 			anchors.fill: parent
 			color: Kirigami.Theme.backgroundColor
@@ -77,14 +69,23 @@ Variants {
 			shadow.size:isExpanded ? Kirigami.Units.smallSpacing :0
 			shadow.color: Qt.rgba(0, 0, 0, 0.3)
 			shadow.yOffset: 2
-		RowLayout{
-			id:layout
-			anchors.centerIn: parent
-			spacing: Kirigami.Units.mediumSpacing
-			anchors.margins: Kirigami.Units.smallSpacing
-			Panelapp{}
-		}
+			RowLayout{
+				id:layout
+				anchors.centerIn: parent
+				spacing: Kirigami.Units.mediumSpacing
+				anchors.margins: Kirigami.Units.smallSpacing
+				Button {
+					id: menuButton
+					icon.name: "start-here"
+					flat: true
+
+					onClicked: {
+						launcher.createlauncher()
+						hideTimer.stop()
+					}
+				}
+				Panelapp{}
+			}
 		}
 	}
-}
 }

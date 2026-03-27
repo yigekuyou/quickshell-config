@@ -14,6 +14,43 @@ Singleton {
 		DesktopEntries.applicationsChanged; // 建立绑定
 		return [...DesktopEntries.applications.values];
 	}
+	readonly property var allCategories: {
+		const entries = allEntries;
+		let cats = new Set();
+		entries.forEach(entry => {
+			if (entry.categories) {
+				entry.categories.forEach(c => cats.add(c));
+			}
+		});
+		// 返回排序后的类别列表，并在开头加上 "All"
+		return ["All", ...Array.from(cats).sort()];
+	}
+	property alias categories: categorizedApps
+
+	ScriptModel {
+		id: categorizedApps
+		objectProp: "name" // 这里的 name 指的是类别名称 (如 "Development", "Office")
+		values: {
+			const entries = allEntries;
+			const cats = allCategories; // 获取已有的 ["All", "Category1", ...]
+
+			return cats.map(cat => {
+				// 为每个类别过滤应用
+				const appsInCategory = entries.filter(entry => {
+					if (cat === "All") return true;
+
+					return entry.categories && entry.categories.includes(cat);
+				}).sort((a, b) => a.name.localeCompare(b.name));
+
+				// 返回一个包含类别名和该线下所有应用的数组的对象
+				return {
+
+					name: cat,
+					apps: appsInCategory
+				};
+			});
+		}
+	}
 	ScriptModel {
 		id: filteredApps
 		objectProp: "id"
