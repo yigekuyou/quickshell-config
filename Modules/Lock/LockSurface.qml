@@ -10,7 +10,7 @@ import qs.Modules.Wallpaper.WallpaperContent
 import Quickshell.Services.Pam
 
 Kirigami.Page {
-	signal unlocked()
+	signal unlocked();
 	anchors.fill: parent
 	background: LockWallpaper{}
 	ColumnLayout {
@@ -103,11 +103,13 @@ Kirigami.Page {
 	MouseArea {
 		anchors.fill: parent
 		hoverEnabled: true
-		onPositionChanged: {clockTimer.restart();clockContainer.visible=true}
+		onPositionChanged: {
+			clockTimer.restart();
+			clockContainer.visible=true
+		}
 		onClicked: {
 			if (!pam.active) {
 				pam.start();
-				failureLabel.opacity = 0
 			}
 		}
 	}

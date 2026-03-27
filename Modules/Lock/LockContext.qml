@@ -6,9 +6,10 @@ import QtQuick.Controls
 import QtQuick.Layouts
 
 Kirigami.FormLayout{
-    signal success()
-    signal failed()
-    signal start()
+    signal success();
+    signal failed();
+    signal start();
+    signal abort();
     property bool active: passwordField.visible
 
     onFailed:{
@@ -20,7 +21,10 @@ Kirigami.FormLayout{
 	    }
 	    passwordField.forceActiveFocus();
 	    failureLabel.opacity = 0
-	}
+    }
+    onAbort:{
+	    pam.abort();
+}
     PamContext {
         id: pam
         // 指向 pam 文件夹的绝对路径
