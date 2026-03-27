@@ -10,7 +10,8 @@ Singleton {
     property list<Notification> temporaryNotifications: []
     property list<Notification> sortedTemopraryNotifications: sortNotifications(temporaryNotifications)
     property bool dnd: false
-    property int notifnumber: 3
+    property real notiftimeout: 300000
+    property int notifnumber: 5
 
     onDndChanged: {
         if (dnd) {
@@ -65,9 +66,16 @@ Singleton {
         imageSupported: true
         keepOnReload: true
 
-        onNotification: function (notification) {
+        onNotification: (notification)=> {
             notification.tracked = true;
-
+	    var timer = Qt.createQmlObject('import QtQuick; Timer {}', this);
+	    timer.interval = (notification.expireTimeout > 0) ?notification.expireTimeout:root.notiftimeout;
+	    timer.repeat = false;
+	    timer.triggered.connect(function() {
+		    notification.expire();
+		    timer.destroy();
+	    });
+	    timer.start();
             if (!root.dnd && notification.urgency != NotificationUrgency.Critical) {
                 root.temporaryNotifications.unshift(notification);
             } else if (notification.urgency == NotificationUrgency.Critical) {

@@ -60,11 +60,6 @@ SlideWindow {
 
 			    // 2. 中间文字区域 (关键：必须 fillWidth 才能触发换行)
 				    RowLayout {
-					    Label {
-						    text: modelData.expireTimeout || "现在"
-						    color: Kirigami.Theme.disabledTextColor
-						    font.pointSize: Kirigami.Theme.smallFont.pointSize
-					    }
 					    // 删除按钮
 					    ToolButton {
 						    icon.name: "window-close"

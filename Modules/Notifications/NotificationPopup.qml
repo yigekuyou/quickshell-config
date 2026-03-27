@@ -12,7 +12,7 @@ PopupWindow {
 	id: popup
 	implicitWidth: 350
 	property real targetYOffset: 0
-	implicitHeight: contentLayout.implicitHeight + (Kirigami.Units.gridUnit * 2)
+	implicitHeight: notif.implicitHeight + (Kirigami.Units.gridUnit * 2)
 	// --- 接口属性 ---
 	property int index
 	property var notificationData:NotificationManager.sortedTemopraryNotifications[index]// 对应 Quickshell 的 Notification 对象
@@ -62,11 +62,6 @@ PopupWindow {
 
 				// 2. 中间文字区域 (关键：必须 fillWidth 才能触发换行)
 				RowLayout {
-					Label {
-						text: modelData.expireTimeout || "现在"
-						color: Kirigami.Theme.disabledTextColor
-						font.pointSize: Kirigami.Theme.smallFont.pointSize
-					}
 					ToolButton {
 						icon.name: "view-more-symbolic"
 						flat: true
@@ -82,7 +77,7 @@ PopupWindow {
 						// 动态加载来自 notificationData 的 actions
 						parent: Overlay.overlay
 						Instantiator {
-							model: notificationData.actions
+							model: notificationData.actions?notificationData.actions:[]
 							onObjectAdded: (index, object) => actionMenu.insertItem(index, object)
 							onObjectRemoved: (index, object) => actionMenu.removeItem(object)
 							delegate: MenuItem {
