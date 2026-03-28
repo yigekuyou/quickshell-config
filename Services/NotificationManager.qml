@@ -7,8 +7,6 @@ Singleton {
     id: root
     property list<Notification> mergedNotifications: notificationsServer.trackedNotifications.values
     readonly property bool isNotifMode: NotificationManager.temporaryNotifications.length > 0
-    property list<Notification> temporaryNotifications: []
-    readonly property list<Notification> sortedTemopraryNotifications: sortNotifications(temporaryNotifications)
     property bool dnd: false
     property real notiftimeout: 5
     property int notifnumber: 5
@@ -19,7 +17,6 @@ Singleton {
             root.temporaryNotifications = [];
         }
     }
-
     // 监听通知服务器的通知列表变化
     Connections {
 	    target: notificationsServer
@@ -41,20 +38,7 @@ Singleton {
 	    return 0;
         });
     }
-    function dismiss(notification, parmanent = false) {
-        const index = root.temporaryNotifications.indexOf(notification);
-
-        if (index !== -1) {
-            root.temporaryNotifications.splice(index, 1);
-        }
-
-        if (parmanent) {
-            notification.dismiss();
-        }
-    }
     function dismissAll() {
-        temporaryNotifications = [];
-
         const notifications = [...notificationsServer.trackedNotifications.values];
 
         notifications.forEach(n => {

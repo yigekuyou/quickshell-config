@@ -11,11 +11,11 @@ import org.kde.kirigami as Kirigami
 PopupWindow {
 	id: popup
 	implicitWidth: Kirigami.Units.gridUnit*18
-	property real targetYOffset: 0
+	property real targetYOffset: index * implicitHeight +(Kirigami.Units.gridUnit * 2)
 	implicitHeight: notif.implicitHeight + (Kirigami.Units.gridUnit * 2)
 	// --- 接口属性 ---
 	required property int index
-	property var notificationData:NotificationManager.sortedTemopraryNotifications[index]// 对应 Quickshell 的 Notification 对象
+	required property var notificationData
 	visible: true
 	color: "transparent"
 	mask: null
@@ -36,6 +36,7 @@ PopupWindow {
 
 	anchor.rect.x: Math.round(0)
 	anchor.rect.y: Math.round(targetYOffset)
+
 	// 进场和出场动画		// Kirigami 卡片作为主体
 	Kirigami.Card{
 		id:content
@@ -61,7 +62,7 @@ PopupWindow {
 				flat: true
 				implicitWidth: Kirigami.Units.gridUnit
 				implicitHeight: Kirigami.Units.gridUnit
-				onClicked: NotificationManager.dismiss(notificationData,false)
+				onClicked: destroy()
 
 				contentItem: Kirigami.Icon {
 					source: "window-close"

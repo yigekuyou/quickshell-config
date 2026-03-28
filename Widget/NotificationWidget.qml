@@ -64,7 +64,7 @@ SlideWindow {
 					    ToolButton {
 						    icon.name: "window-close"
 						    flat: true
-						    onClicked: NotificationManager.dismiss(modelData, true)
+						    onClicked: modelData.dismiss()
 					    }
 				    Menu {
 					    id: actionMenu
