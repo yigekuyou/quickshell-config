@@ -10,7 +10,7 @@ Singleton {
     property list<Notification> temporaryNotifications: []
     readonly property list<Notification> sortedTemopraryNotifications: sortNotifications(temporaryNotifications)
     property bool dnd: false
-    property real notiftimeout: 6
+    property real notiftimeout: 5 *60
     property int notifnumber: 5
     property int exitDuration: 300
     property var timeQueue: []
@@ -58,11 +58,11 @@ Singleton {
 	    requestExit();
 	    Qt.callLater(function() {
 		    let now = Date.now();
-
+console.log(now)
 		    while (root.temporaryNotifications.length > 0) {
-			    let lastItem = root.timeQueue[root.temporaryNotifications.length - 1];
+			    let lastItem = root.timeQueue[timeQueue.findIndex(item => item.id === root.temporaryNotifications[length-1].id)];
 
-			    if (now - lastItem.t > 5000) {
+			    if (now - lastItem.t > 5) {
 				    // 已经过期，从队列弹出
 				    root.temporaryNotifications.pop();
 			    } else {
@@ -98,7 +98,7 @@ Singleton {
     }
     Timer {
 	    id:tempnotif
-	    interval: 1000; running: (temporaryNotifications.length>0); repeat: true
+	    interval: 1000; running: (root.temporaryNotifications.length >0); repeat: true
 	    onTriggered:{
 		    closenotif()
 	}
@@ -117,10 +117,10 @@ Singleton {
 		    while (root.timeQueue.length > 0) {
 			    let lastItem = root.timeQueue[root.timeQueue.length - 1];
 
-			    if (now - lastItem.t > root.timeoutMs) {
+			    if (now - lastItem.t > root.notiftimeout) {
 				    // 已经过期，从计时队列弹出
 				    root.timeQueue.pop();
-				   mergedNotifications.find(item => item.id === lastItem.id).dismiss()
+				   root.dismiss(mergedNotifications.find(item => item.id === lastItem.id),true)
 			    } else {
 				    // 如果最老的一条都没过期，后面的肯定也没过期，直接跳出
 				    break;
