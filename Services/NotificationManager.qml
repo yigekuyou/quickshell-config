@@ -18,7 +18,10 @@ Singleton {
             root.temporaryNotifications = [];
         }
     }
-
+    function removeNotificationById(targetId) {
+	    index = temporaryNotifications.findIndex(item => item.id !== targetId);
+	    temporaryNotifications.splice(index, 1);
+    }
     function sortNotifications(notifications) {
         notifications = notifications.slice().filter(item => item != null);
 

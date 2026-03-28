@@ -56,6 +56,8 @@ PopupWindow {
 				border.width: 2
 				layer.enabled: true
 			}
+			onClicked:NotificationManager.removeNotificationById(notificationData.id)
+
 			trailing: RowLayout {
 				id: notifLayout
 				spacing: Kirigami.Units.mediumSpacing
