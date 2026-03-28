@@ -34,7 +34,7 @@ PopupWindow {
 		if (manager) manager._updatePositions();
 	}
 	// 进场和出场动画		// Kirigami 卡片作为主体
-	Kirigami.AbstractCard{
+	Kirigami.Card{
 		id:content
 		anchors.fill: parent
 		icon.name:notificationData.image || notificationData.appIcon || notificationData.appName.toLowerCase()
@@ -54,23 +54,19 @@ PopupWindow {
 			level: 2
 			text: notificationData.appName
 			}
-			Kirigami.ActionToolBar {
-				Layout.fillWidth:true
+			Button {
+				flat: true
+				implicitWidth: Kirigami.Units.gridUnit
+				implicitHeight: Kirigami.Units.gridUnit
+				onClicked: NotificationManager.removeNotificationById(notificationData.id)
 
-				actions: [
-			Kirigami.Action {
-				icon.name: "window-close-symbolic"
-				onTriggered: {
-					NotificationManager.removeNotificationById(notificationData.id)
-					if(NotificationManager.sortedTemopraryNotifications.length<=index)
-						popup.destroy();
+				contentItem: Kirigami.Icon {
+					source: "window-close"
+					color: parent.hovered ? Kirigami.Theme.negativeTextColor : Kirigami.Theme.disabledTextColor
 				}
-					}
-
-				]
 			}
 		}
-		FormCard.FormButtonDelegate {
+		contentItem:FormCard.FormButtonDelegate {
 			id:notif
 			icon.name:notificationData.image || notificationData.appIcon || notificationData.appName.toLowerCase()
 			description:notificationData.body
