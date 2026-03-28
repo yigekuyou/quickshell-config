@@ -10,7 +10,7 @@ Singleton {
     property list<Notification> temporaryNotifications: []
     readonly property list<Notification> sortedTemopraryNotifications: sortNotifications(temporaryNotifications)
     property bool dnd: false
-    property real notiftimeout: 5 *60 *1000
+    property real notiftimeout: 5
     property int notifnumber: 5
     property int exitDuration: 300
     signal requestExit()
@@ -26,18 +26,23 @@ Singleton {
     // 监听通知服务器的通知列表变化
     Connections {
 	    target: notificationsServer
-	    onNotification: (notification)=> {
+	    enabled: notificationsServer !== null
+	    onNotification: function (notification) {
 		    notification.tracked = true;
-		    if (elapsedTimer.elapsed() >= 1 && !root.dnd && notification.urgency != NotificationUrgency.Critical) {
+		    if (elapsedTimer.elapsed() >= 0.1 && !root.dnd && notification.urgency != NotificationUrgency.Critical) {
 			    root.temporaryNotifications.push(notification);
+			    let timeout = root.notiftimeout*60 *1000;
+			    let timer = Qt.createQmlObject("import QtQuick; Timer {}", root);
 
-			    var timer = Qt.createQmlObject('import QtQuick; Timer { interval: 10000; repeat: false; }', root) as Timer;
-			    timer.interval=root.notiftimeout
-			    timer.onTriggered.connect(function () { // qmllint disable missing-property
-				    root.dismiss(notification, false);
-				    timer.destroy();
-			    });
-			    timer.start()
+			    if (timer) {
+				    timer.interval = timeout;
+				    timer.repeat = false;
+				    timer.triggered.connect(function() {
+					    root.dismiss(notification, true);
+					    timer.destroy();
+				    });
+				    timer.start();
+			    }
 		    if (!root.dnd && notification.urgency != NotificationUrgency.Critical) {
 			    root.temporaryNotifications.unshift(notification);
 		    } else if (notification.urgency == NotificationUrgency.Critical) {
@@ -92,6 +97,6 @@ Singleton {
         bodySupported: true
         bodyMarkupSupported: false
         imageSupported: true
-        keepOnReload: true
+        keepOnReload: false
     }
 }
