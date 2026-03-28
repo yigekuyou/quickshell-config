@@ -44,7 +44,7 @@ PopupWindow {
 			spacing: Kirigami.Units.smallSpacing
 
 			Kirigami.Icon {
-				source:  notificationData.appName.toLowerCase()||notificationData.appIcon||notificationData.image
+				source:  notificationData.appIcon||notificationData.appIcon||notificationData.image
 				implicitWidth: Kirigami.Units.gridUnit
 				implicitHeight: Kirigami.Units.gridUnit
 			}
