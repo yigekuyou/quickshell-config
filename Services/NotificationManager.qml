@@ -10,90 +10,32 @@ Singleton {
     property list<Notification> temporaryNotifications: []
     readonly property list<Notification> sortedTemopraryNotifications: sortNotifications(temporaryNotifications)
     property bool dnd: false
-    property real notiftimeout: 5
+    property real notiftimeout: 6
     property int notifnumber: 5
     property int exitDuration: 300
-    property var timers: ({})
-
+    property var timeQueue: []
     signal requestExit()
     onDndChanged: {
         if (dnd) {
             root.temporaryNotifications = [];
         }
     }
+    property var timers: ({})
 
     // 监听通知服务器的通知列表变化
     Connections {
 	    target: notificationsServer
 	    onNotification: (notification)=> {
 		    notification.tracked = true;
+		    root.timeQueue.unshift({
+			    "id": notification.id,
+			    "t": Date.now()
+		    });
 		    if (!root.dnd && notification.urgency != NotificationUrgency.Critical) {
 			    root.temporaryNotifications.unshift(notification);
 		    } else if (notification.urgency == NotificationUrgency.Critical) {
 			    root.temporaryNotifications.unshift(notification);
 		    }
-		    if (root.temporaryNotifications.length > root.notifnumber) {
-			    root.temporaryNotifications.pop();
-		    }
-		    root.startTimerFor(notification);
-	    }
-    }
-    function setTimeout(callback, delay) {
-	    if (delay <= 0) {
-		    callback();
-		    return null;
-	    }
-
-	    // 动态创建一个 Timer 组件
-	    // arg1: QML 字符串, arg2: 父对象, arg3: 用于调试的名称
-	    let timer = Qt.createQmlObject(`
-	    import QtQuick 2.0
-	    Timer {
-		    interval: ${delay};
-		    running: true;
-		    repeat: false;
-		    onTriggered: {
-			    callback();
-			    destroy(); // 执行完后自动销毁自己，释放内存
-		    }
-	    }
-	    `, root, "DynamicTimer");
-
-	    // 绑定 callback 逻辑
-	    timer.triggered.connect(callback);
-	    return timer;
-    }
-
-    function clearTimeout(timerId) {
-	    if (timerId) {
-		    timerId.stop();
-		    timerId.destroy();
-	    }
-    }
-    function startTimerFor(notification) {
-	    stopTimerFor(notification.id);
-	    let timeoutMs = notification.expireTimeout * 1000;
-	    // 如果客户端没给时间 (<0)，使用默认设置 (分钟转毫秒)
-	    if (timeoutMs <= 0) {
-		    timeoutMs = notiftimeout * 60 * 1000;
-	    }
-
-	    let timerId = setTimeout(function() {
-		    console.log("Notification expired:", notification.id);
-
-		    // 从本地暂存列表移除
-		    removeNotificationById(notification.id);
-			notification.expire();
-		    delete timers[notification.id];
-	    }, timeoutMs);
-
-	    timers[notification.id] = timerId;
-    }
-
-    function stopTimerFor(id) {
-	    if (timers[id]) {
-		    clearTimeout(timers[id]);
-		    delete timers[id];
 	    }
     }
     function removeNotificationById(targetId) {
@@ -134,11 +76,13 @@ Singleton {
 
         if (parmanent) {
             notification.dismiss();
+	    timeQueue.splice(timeQueue.findIndex(item => item.id === notification.id),1);
         }
     }
 
     function dismissAll() {
         temporaryNotifications = [];
+	timeQueue=[]
 
         const notifications = [...notificationsServer.trackedNotifications.values];
 
@@ -148,10 +92,41 @@ Singleton {
     }
     Timer {
 	    id:tempnotif
-	    interval: 5000; running: (temporaryNotifications.length>0); repeat: true
+	    interval: 1000; running: (temporaryNotifications.length>0); repeat: true
 	    onTriggered:{
 		    closenotif()
 	}
+    }
+    Timer {
+	    interval: 500
+	    running: true
+	    repeat: true
+	    onTriggered: {
+		    if (root.timeQueue.length === 0) return;
+
+		    let now = Date.now();
+		    let changed = false;
+
+		    // 3. 轮询检查尾部（老数据）
+		    // 使用 while 处理同一时间内可能过期的多条通知
+		    while (root.timeQueue.length > 0) {
+			    let lastItem = root.timeQueue[root.timeQueue.length - 1];
+
+			    if (now - lastItem.t > root.timeoutMs) {
+				    // 已经过期，从计时队列弹出
+				    root.timeQueue.pop();
+
+				    // 4. 调用服务端或清理接口来移除只读列表中的项
+				    // 假设通知服务器有关闭接口，或者发出一个信号让 UI 刷新
+				    notificationsServer.closeNotification(lastItem.id);
+
+				    changed = true;
+			    } else {
+				    // 如果最老的一条都没过期，后面的肯定也没过期，直接跳出
+				    break;
+			    }
+		    }
+	    }
     }
     NotificationServer {
         id: notificationsServer
