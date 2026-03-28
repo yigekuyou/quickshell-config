@@ -33,7 +33,7 @@ Singleton {
 		    } else if (notification.urgency == NotificationUrgency.Critical) {
 			    root.temporaryNotifications.unshift(notification);
 		    }
-		    if (root.temporaryNotifications.length>notifnumber) {
+		    if (root.temporaryNotifications.length>root.notifnumber) {
 			    temporaryNotifications.pop();
 		    }
 	    }
@@ -84,6 +84,5 @@ Singleton {
         bodyMarkupSupported: false
         imageSupported: true
         keepOnReload: true
-
     }
 }

@@ -21,7 +21,9 @@ PopupWindow {
 	mask: null
 	// --- 信号 ---
 	signal reload()
+	property alias timereload: timereload
 	Timer {
+		id:timereload
 		interval: 1000  ; running:true; repeat: true
 		onTriggered:{
 			reload()
@@ -32,9 +34,8 @@ PopupWindow {
 	anchor.edges: Edges.Top | Edges.Right
 	anchor.gravity: Edges.Bottom
 
-	property var pos : mapToItem(parentWindow.contentItem, 0, parentWindow.height+30);
-	anchor.rect.x: Math.round(pos.x)
-	anchor.rect.y: Math.round(pos.y+ targetYOffset)
+	anchor.rect.x: Math.round(0)
+	anchor.rect.y: Math.round(targetYOffset)
 	onHeightChanged: {
 		if (manager) manager._updatePositions();
 	}
