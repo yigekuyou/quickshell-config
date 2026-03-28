@@ -10,7 +10,7 @@ Singleton {
     property list<Notification> temporaryNotifications: []
     readonly property list<Notification> sortedTemopraryNotifications: sortNotifications(temporaryNotifications)
     property bool dnd: false
-    property real notiftimeout: 5 *60
+    property real notiftimeout: 5 *60 *1000
     property int notifnumber: 5
     property int exitDuration: 300
     property var timeQueue: []
@@ -35,6 +35,7 @@ Singleton {
 			    root.temporaryNotifications.push(notification);
 
 			    var timer = Qt.createQmlObject('import QtQuick; Timer { interval: 10000; repeat: false; }', root) as Timer;
+			    timer.interval=root.notiftimeout
 			    timer.onTriggered.connect(function () { // qmllint disable missing-property
 				    root.dismiss(notification, false);
 				    timer.destroy();
