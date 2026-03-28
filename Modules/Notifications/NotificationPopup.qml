@@ -36,9 +36,6 @@ PopupWindow {
 
 	anchor.rect.x: Math.round(0)
 	anchor.rect.y: Math.round(targetYOffset)
-	onHeightChanged: {
-		if (manager) manager._updatePositions();
-	}
 	// 进场和出场动画		// Kirigami 卡片作为主体
 	Kirigami.Card{
 		id:content
