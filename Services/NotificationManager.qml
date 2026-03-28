@@ -8,7 +8,7 @@ Singleton {
     property list<Notification> mergedNotifications: notificationsServer.trackedNotifications.values
     readonly property bool isNotifMode: NotificationManager.temporaryNotifications.length > 0
     property list<Notification> temporaryNotifications: []
-    property list<Notification> sortedTemopraryNotifications: sortNotifications(temporaryNotifications)
+    readonly property list<Notification> sortedTemopraryNotifications: sortNotifications(temporaryNotifications)
     property bool dnd: false
     property real notiftimeout: 300000
     property int notifnumber: 5
@@ -28,10 +28,15 @@ Singleton {
             }
             if (b.id > a.id) return 1;
 	    if (b.id < a.id) return -1;
+
 	    return 0;
         });
     }
-
+    function closenotif() {
+	    for (let i = temporaryNotifications.length ; i >= notifnumber; i--) {
+		    temporaryNotifications.pop();
+	    }
+    }
     function dismiss(notification, parmanent = false) {
         const index = root.temporaryNotifications.indexOf(notification);
 
@@ -53,7 +58,14 @@ Singleton {
             n.dismiss();
         });
     }
-
+    Timer {
+	    id:tempnotif
+	    interval: 5000; running: true; repeat: true
+	    onTriggered:{
+		    closenotif()
+		    temporaryNotifications.pop();
+	}
+    }
     NotificationServer {
         id: notificationsServer
         actionsSupported: true
@@ -81,9 +93,7 @@ Singleton {
             } else if (notification.urgency == NotificationUrgency.Critical) {
                 root.temporaryNotifications.unshift(notification);
             }
-            if (temporaryNotifications.length > root.notifnumber) {
-		    temporaryNotifications.pop();
-	    }
+
         }
     }
 }
