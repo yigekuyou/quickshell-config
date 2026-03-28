@@ -65,6 +65,7 @@ PanelWindow {
 						case Qt.Key_Up:
 							resultsList.decrementCurrentIndex();
 							break;
+						case Qt.Key_Return:
 						case Qt.Key_Enter: // 通常建议同时处理小键盘的回车
 							LauncherService.launch(resultsList.currentIndex);
 							popudroot.destroy();
@@ -128,6 +129,17 @@ PanelWindow {
 					}
 					Keys.onPressed: (event) => {
 						switch (event.key) {
+							case Qt.Key_Down:
+								resultsList.incrementCurrentIndex();
+								break;
+							case Qt.Key_Up:
+								resultsList.decrementCurrentIndex();
+								break;
+							case Qt.Key_Return:
+							case Qt.Key_Enter: // 通常建议同时处理小键盘的回车
+								LauncherService.launch(resultsList.currentIndex);
+								popudroot.destroy();
+								break;
 							case Qt.Key_Escape:
 								popudroot.destroy();
 								break;
