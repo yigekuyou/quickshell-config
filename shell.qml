@@ -14,5 +14,6 @@ ShellRoot {
 	}
 	Bar {}
 	LoadWall{}
+	LoadLock{}
 	Panel{}
 }

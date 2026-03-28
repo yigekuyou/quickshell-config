@@ -16,8 +16,6 @@ Scope {
         running: true
         command: ["pkill", "kdekd6"]
     }
-    LockManager{}
-
     Process {
         id: wallpaperProcess
         running: other
