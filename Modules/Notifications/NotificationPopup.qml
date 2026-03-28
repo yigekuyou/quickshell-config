@@ -35,6 +35,7 @@ PopupWindow {
 	}
 	// 进场和出场动画		// Kirigami 卡片作为主体
 	Kirigami.AbstractCard{
+		id:content
 		anchors.fill: parent
 		icon.name:notificationData.image || notificationData.appIcon || notificationData.appName.toLowerCase()
 		header: RowLayout {
@@ -69,7 +70,7 @@ PopupWindow {
 				]
 			}
 		}
-		   contentItem: FormCard.FormButtonDelegate {
+		FormCard.FormButtonDelegate {
 			id:notif
 			icon.name:notificationData.image || notificationData.appIcon || notificationData.appName.toLowerCase()
 			description:notificationData.body
@@ -118,7 +119,8 @@ PopupWindow {
 					}
 				}
 			}
-
+		   }
+	}
 		// --- 状态动画 ---
 		Component.onCompleted: entranceAnim.start()
 
@@ -134,8 +136,6 @@ PopupWindow {
 			NumberAnimation { target: content; property: "scale"; to: 0.8; duration: 200 }
 			onFinished: popup.exitFinished()
 		}
-	}
-	}
 	function startExit() {
 		exitAnim.start();
 	}

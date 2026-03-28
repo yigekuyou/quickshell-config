@@ -34,6 +34,17 @@ QtObject {
 				}
 			}
 		}
+		function onRequestExit(){
+			const dataList = NotificationManager.sortedTemopraryNotifications;
+			const currentWinCount = manager.popupWindows.length;
+			const newDataCount = dataList.length;
+			//如果数据源减少了，销毁多余的窗口
+			if (newDataCount < currentWinCount) {
+				for (let i = currentWinCount - 1; i >= newDataCount; i--) {
+					manager._destroyWindowAtIndex(i);
+				}
+			}
+		}
 	}
 	function _createWindowForIndex(idx, data) {
 		const win = popupComponent.createObject(null, {

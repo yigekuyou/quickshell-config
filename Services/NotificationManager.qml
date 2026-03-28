@@ -12,15 +12,19 @@ Singleton {
     property bool dnd: false
     property real notiftimeout: 300000
     property int notifnumber: 5
-
+    property int exitDuration: 300
+    signal requestExit()
     onDndChanged: {
         if (dnd) {
             root.temporaryNotifications = [];
         }
     }
     function removeNotificationById(targetId) {
-	    let index = temporaryNotifications.findIndex(item => item.id === targetId);
+	    requestExit();
+	    Qt.callLater(function() {
+	let index = temporaryNotifications.findIndex(item => item.id === targetId);
 	    temporaryNotifications.splice(index, 1);
+	    });
     }
     function sortNotifications(notifications) {
         notifications = notifications.slice().filter(item => item != null);
