@@ -60,7 +60,7 @@ Singleton {
     }
     Timer {
 	    id:tempnotif
-	    interval: 5000; running: true; repeat: true
+	    interval: 5000; running: (temporaryNotifications.length); repeat: true
 	    onTriggered:{
 		    closenotif()
 		    temporaryNotifications.pop();
@@ -92,6 +92,9 @@ Singleton {
 		    notification.expire();
 		    delete timerMap[notification.id];
 		    timer.destroy();
+	    });
+	    notification.closed.connect((reason) => {
+		    timerMap[notification.id].destroy();
 	    });
 	    timerMap[notification.id] = timer
 	    timer.start();
