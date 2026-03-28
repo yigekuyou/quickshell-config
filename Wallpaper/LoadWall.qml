@@ -13,7 +13,7 @@ Scope {
 	}
     Process {
         id: kded6
-        running: false
+        running: true
         command: ["pkill", "kdekd6"]
     }
 
@@ -21,11 +21,10 @@ Scope {
 	    id: wallLoader
 	    activeAsync: !other
 	    Wallpaper{}
-
     }
     LazyLoader {
 	    id: wallpaper
-	    activeAsync: !other
+	    activeAsync: other
 	    Process {
 		    id: wallpaperProcess
 		    running: true
@@ -36,9 +35,6 @@ Scope {
 			    "DRI_PRIME": "1",
 			    "QSG_RHI_BACKEND": "opengl"
 		    })
-		    stdout: StdioCollector {
-			    onStreamFinished: console.log(`Wallpaper Process Output: ${this.text}`)
-		    }
 	    }
     }
 }

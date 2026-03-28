@@ -37,7 +37,7 @@ Variants {
         color: "transparent"
         implicitHeight: Math.max(Sizes.barHeight+Kirigami.Units.smallSpacing )
 	LazyLoader {
-		loading: true
+		activeAsync:true
         PopupWindow {
 		anchor.window: barWindow
 		anchor.edges: Edges.Top
