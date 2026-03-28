@@ -24,7 +24,7 @@ PopupWindow {
 	property alias timereload: timereload
 	Timer {
 		id:timereload
-		interval: 1000  ; running:true; repeat: true
+		interval: 5000  ; running:true; repeat: true
 		onTriggered:{
 			reload()
 		}
