@@ -57,10 +57,12 @@ Singleton {
     function closenotif() {
 	    requestExit();
 	    Qt.callLater(function() {
+		    let now = Date.now();
+
 		    while (root.temporaryNotifications.length > 0) {
 			    let lastItem = root.timeQueue[root.temporaryNotifications.length - 1];
 
-			    if (now - lastItem.t > root.timeoutMs) {
+			    if (now - lastItem.t > 5000) {
 				    // 已经过期，从队列弹出
 				    root.temporaryNotifications.pop();
 			    } else {
@@ -109,7 +111,6 @@ Singleton {
 		    if (root.timeQueue.length === 0) return;
 
 		    let now = Date.now();
-		    let changed = false;
 
 		    // 3. 轮询检查尾部（老数据）
 		    // 使用 while 处理同一时间内可能过期的多条通知
