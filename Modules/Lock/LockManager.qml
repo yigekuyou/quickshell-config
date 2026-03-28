@@ -5,6 +5,7 @@ import Quickshell.Io
 import qs.Services
 import Quickshell.Services.Pam
 import qs.Config
+import Quickshell.Hyprland
 
 Item {
     readonly property bool other: {
@@ -23,7 +24,7 @@ Item {
         }
     }
     IdleMonitor {
-        enabled: Idle.idledpms && lockLoader.active && lockLoader.item.locked
+        enabled: Idle.idledpms && (lockLoader.status === Loader.Ready) && lockLoader.item.locked
         timeout: Idle.dpmsTimeout
         onIsIdleChanged: {
             if (isIdle)
@@ -39,7 +40,7 @@ Item {
         }
     }
     IdleMonitor {
-        enabled: Idle.idlelock && !lockLoader.active && !other
+        enabled: Idle.idlelock && !(lockLoader.status === Loader.Ready) && !other
         timeout: Idle.idlelocktime
         onIsIdleChanged: {
             if (isIdle) {
