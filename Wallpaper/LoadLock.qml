@@ -86,7 +86,7 @@ Scope {
     IpcHandler {
 	    target: "lock"
 	    function open() {
-	    lock.exec(lock.command);
+	    lock.startDetached();
 	    lockLoader=true
 	    }
 	    function close(){

@@ -7,5 +7,7 @@ import qs.Modules.Wallpaper.WallpaperContent
 import qs.Modules.Lock
 
 ShellRoot {
+	Variants {model: Quickshell.screens
 	Wallpaper{}
+	}
 }
