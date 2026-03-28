@@ -16,7 +16,6 @@ ShellRoot {
 		activeAsync:true
 		Bar{}
 	}
-	LoadWall{}
-	LoadLock{}
+	Load{}
 	Panel{}
 }

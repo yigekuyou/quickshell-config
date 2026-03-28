@@ -7,6 +7,9 @@ import qs.Modules.Wallpaper.WallpaperContent
 import Quickshell.Wayland
 Scope {
 	property bool lockLoader: false
+		readonly property bool other: {
+		return (Quickshell.env("QSG_RHI_BACKEND").toLowerCase() === "vulkan") === (WallpaperPath.wallpaperType === "scene");
+	}
 	readonly property bool opengl: {
 		return (Quickshell.env("QSG_RHI_BACKEND").toLowerCase() === "vulkan") === (WallpaperLock.wallpaperType === "scene");
 	}
@@ -94,10 +97,15 @@ Scope {
 				"QSG_RHI_BACKEND": "opengl"
 			})
 		}
-
 	}
-	readonly property bool other: {
-		return (Quickshell.env("QSG_RHI_BACKEND").toLowerCase() === "vulkan") === (WallpaperPath.wallpaperType === "scene");
+	LazyLoader {
+		id: notifLoader
+		activeAsync:true
+		Process {
+			running: true
+			// 1. 设置执行文件路径
+			command: ["qs", "--path", Quickshell.env("XDG_CONFIG_HOME") + "/quickshell/Wallpaper/Notif.qml"]
+		}
 	}
     Process {
         id: kded6
@@ -109,6 +117,10 @@ Scope {
 	    id: wallLoader
 	    activeAsync: !other
 	    Wallpaper{}
+    }
+
+    LazyLoader {
+	    activeAsync: true
     }
     LazyLoader {
 	    id: wallpaper

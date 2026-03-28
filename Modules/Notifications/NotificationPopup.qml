@@ -10,7 +10,7 @@ import org.kde.kirigami as Kirigami
 // 保持使用 PopupWindow 作为顶层容器
 PopupWindow {
 	id: popup
-	implicitWidth: 350
+	implicitWidth: Kirigami.Units.gridUnit*18
 	property real targetYOffset: 0
 	implicitHeight: notif.implicitHeight + (Kirigami.Units.gridUnit * 2)
 	// --- 接口属性 ---

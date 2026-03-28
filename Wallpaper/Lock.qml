@@ -27,7 +27,6 @@ ShellRoot {
 				}
 				return "ALREADY_LOCKED";
 		}
-
 	}
 }
 

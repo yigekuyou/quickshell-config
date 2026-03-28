@@ -1,8 +1,7 @@
 import QtQuick
 import Quickshell
 import qs.Config
-import qs.Widget
-import qs.Modules.Notifications
+import Quickshell.Io
 
 Rectangle {
     id: root
@@ -17,12 +16,10 @@ Rectangle {
     implicitWidth: icon.contentWidth + 20
 
     // --- 交互区域 ---
-    NotificationWidget {
-        id: notifPanel
-        visible: false
-    }
-    NotificationPopupManager {
-	    id: notificationManager
+    Process {
+	    id: notif
+	    running: false
+	    command: ["qs", "--path", Quickshell.env("XDG_CONFIG_HOME") + "/quickshell/Wallpaper/Notif.qml", "ipc", "call", "notif", "open"]
     }
     MouseArea {
         anchors.fill: parent
@@ -30,7 +27,7 @@ Rectangle {
         
         // 3. 点击切换开关
         onClicked: {
-            notifPanel.visible = !notifPanel.visible
+            notif.startDetached();
         }
     }
 
