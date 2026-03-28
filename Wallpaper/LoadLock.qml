@@ -51,27 +51,8 @@ Scope {
 				Quickshell.execDetached(["systemctl", "suspend"]);
 		}
 	}
-    Process {
-        id: opengllockProcess
-        running: false
-        // 1. 设置执行文件路径
-        command: ["qs", "--path", Quickshell.env("XDG_CONFIG_HOME") + "/quickshell/Wallpaper/Lock.qml"]
-        // 3. 设置环境变量
-        environment: ({
-		"QSLOCK": "1",
-                "DRI_PRIME": "1",
-                "QSG_RHI_BACKEND": "opengl"
-            })
-    }
-    Process {
-	    id: vulkanProcess
-	    running: false
-	    // 1. 设置执行文件路径
-	    command: ["qs", "--path", Quickshell.env("XDG_CONFIG_HOME") + "/quickshell/Wallpaper/Lock.qml"]
-	    environment: ({
-		    "QSLOCK": "1"
-	    })
-    }
+
+
     Process {
 	    id: lock
 	    running: false
@@ -86,5 +67,36 @@ Scope {
 	    function close(){
 		    lockLoader=false
 	}
+    }
+    LazyLoader {
+	    id: vkLoader
+	    activeAsync:!opengl
+	    Process {
+		    id: vulkanProcess
+		    running: true
+		    // 1. 设置执行文件路径
+		    command: ["qs", "--path", Quickshell.env("XDG_CONFIG_HOME") + "/quickshell/Wallpaper/Lock.qml"]
+		    environment: ({
+			    "QSLOCK": "1"
+		    })
+	    }
+
+    }
+    LazyLoader {
+	    id: glLoader
+	    activeAsync:opengl
+	    Process {
+		    id: opengllockProcess
+		    running: true
+		    // 1. 设置执行文件路径
+		    command: ["qs", "--path", Quickshell.env("XDG_CONFIG_HOME") + "/quickshell/Wallpaper/Lock.qml"]
+		    // 3. 设置环境变量
+		    environment: ({
+			    "QSLOCK": "1",
+			    "DRI_PRIME": "1",
+			    "QSG_RHI_BACKEND": "opengl"
+		    })
+	    }
+
     }
 }

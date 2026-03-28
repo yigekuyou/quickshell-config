@@ -28,7 +28,7 @@ Scope {
 	    activeAsync: !other
 	    Process {
 		    id: wallpaperProcess
-		    running: false
+		    running: true
 		    // 1. 设置执行文件路径
 		    command: ["qs", "--path", Quickshell.env("XDG_CONFIG_HOME") + "/quickshell/Wallpaper/Wall.qml"]
 		    // 3. 设置环境变量
