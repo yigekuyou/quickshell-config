@@ -62,9 +62,6 @@ Scope {
                 "DRI_PRIME": "1",
                 "QSG_RHI_BACKEND": "opengl"
             })
-        stdout: StdioCollector {
-            onStreamFinished: console.log(`lock Process Output: ${this.text}`)
-        }
     }
     Process {
 	    id: vulkanProcess
@@ -74,9 +71,6 @@ Scope {
 	    environment: ({
 		    "QSLOCK": "1"
 	    })
-	    stdout: StdioCollector {
-		    onStreamFinished: console.log(`lock Process Output: ${this.text}`)
-	    }
     }
     Process {
 	    id: lock

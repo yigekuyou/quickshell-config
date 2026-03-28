@@ -13,7 +13,9 @@ Kirigami.Page {
 	signal unlocked();
 	signal sendSleepSignal();
 	anchors.fill: parent
-	background: LockWallpaper{}
+	background: LockWallpaper{
+		id:wallpaper
+	}
 	ColumnLayout {
 		anchors.fill: parent
 		spacing: 0 // 建议设为0，通过内部子项的 Layout.margins 控制间距
@@ -116,6 +118,8 @@ Kirigami.Page {
 
 			if (!pam.active) {
 				pam.start();
+				wallpaper.pause()
+
 			}
 		}
 		Keys.onPressed: (event) => {
