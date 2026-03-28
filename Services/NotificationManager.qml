@@ -19,7 +19,7 @@ Singleton {
         }
     }
     function removeNotificationById(targetId) {
-	    index = temporaryNotifications.findIndex(item => item.id !== targetId);
+	    let index = temporaryNotifications.findIndex(item => item.id === targetId);
 	    temporaryNotifications.splice(index, 1);
     }
     function sortNotifications(notifications) {

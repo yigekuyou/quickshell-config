@@ -117,31 +117,25 @@ SlideWindow {
 		    text: modelData.name || "未知设备"
 		    description:  `${WifiSecurityType.toString(modelData.security)} | ${Math.round(modelData.signalStrength * 100)}%`
 
-                trailing: RowLayout {
-                    id: wifiLayout
-                    // 连接/断开 按钮组
-                    RowLayout {
-                        Button {
-                            visible: !modelData.connected
-                            text: "连接"
-                            highlighted: true
-                            onClicked: modelData.connect()
-                        }
-
-                        Button {
-                            visible: modelData.connected
-                            text: "断开"
-                            onClicked: modelData.disconnect()
-                        }
-
-                        ToolButton {
-                            icon.name: "edit-delete"
-                            visible: modelData.known
-                            onClicked: modelData.forget()
-                            ToolTip.text: "忘记网络"
-                        }
-                    }
-                }
+		    trailing: Kirigami.ActionToolBar {
+			    actions: [
+				    Kirigami.Action {
+					    visible: !modelData.connected
+					    text: qsTr("连接")
+					    onTriggered: modelData.connect()
+				    },
+				    Kirigami.Action {
+					    visible: modelData.connected
+					    text: qsTr("断开")
+					    onTriggered: modelData.disconnect()
+				    },
+				    Kirigami.Action {
+					    icon.name: "edit-delete"
+					    visible: modelData.known
+					    onTriggered: modelData.forget()
+				    }
+			    ]
+		    }
             }
         }
     }

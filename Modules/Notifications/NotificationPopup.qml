@@ -14,7 +14,7 @@ PopupWindow {
 	property real targetYOffset: 0
 	implicitHeight: notif.implicitHeight + (Kirigami.Units.gridUnit * 2)
 	// --- 接口属性 ---
-	property int index
+	required property int index
 	property var notificationData:NotificationManager.sortedTemopraryNotifications[index]// 对应 Quickshell 的 Notification 对象
 	visible: true
 	color: "transparent"
@@ -33,18 +33,44 @@ PopupWindow {
 	onHeightChanged: {
 		if (manager) manager._updatePositions();
 	}
-	// 进场和出场动画
-	Control {
-		id: content
+	// 进场和出场动画		// Kirigami 卡片作为主体
+	Kirigami.AbstractCard{
 		anchors.fill: parent
-		opacity: 0
-		scale: 0.9
-		spacing: Kirigami.Units.largeSpacing
-		// Kirigami 卡片作为主体
-		FormCard.FormButtonDelegate {
+		icon.name:notificationData.image || notificationData.appIcon || notificationData.appName.toLowerCase()
+		header: RowLayout {
+			Layout.fillWidth: true
+			Layout.margins: Kirigami.Units.smallSpacing
+			spacing: Kirigami.Units.smallSpacing
+
+			Kirigami.Icon {
+				source: notificationData.appIcon || "dialog-information"
+				implicitWidth: Kirigami.Units.gridUnit
+				implicitHeight: Kirigami.Units.gridUnit
+			}
+
+			Kirigami.Heading {
+				Layout.fillWidth:true
+			level: 2
+			text: notificationData.appName
+			}
+			Kirigami.ActionToolBar {
+				Layout.fillWidth:true
+
+				actions: [
+			Kirigami.Action {
+				icon.name: "window-close-symbolic"
+				onTriggered: {
+					NotificationManager.removeNotificationById(notificationData.id)
+					if(NotificationManager.sortedTemopraryNotifications.length<=index)
+						popup.destroy();
+				}
+					}
+
+				]
+			}
+		}
+		   contentItem: FormCard.FormButtonDelegate {
 			id:notif
-			anchors.fill: parent
-			anchors.margins: Kirigami.Units.smallSpacing
 			icon.name:notificationData.image || notificationData.appIcon || notificationData.appName.toLowerCase()
 			description:notificationData.body
 			text: notificationData.summary
@@ -56,7 +82,6 @@ PopupWindow {
 				border.width: 2
 				layer.enabled: true
 			}
-			onClicked:NotificationManager.removeNotificationById(notificationData.id)
 
 			trailing: RowLayout {
 				id: notifLayout
@@ -94,8 +119,6 @@ PopupWindow {
 				}
 			}
 
-		}
-
 		// --- 状态动画 ---
 		Component.onCompleted: entranceAnim.start()
 
@@ -112,7 +135,7 @@ PopupWindow {
 			onFinished: popup.exitFinished()
 		}
 	}
-
+	}
 	function startExit() {
 		exitAnim.start();
 	}
