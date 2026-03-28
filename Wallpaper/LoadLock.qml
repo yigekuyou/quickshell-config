@@ -53,7 +53,7 @@ Scope {
 	}
     Process {
         id: opengllockProcess
-        running: opengl
+        running: false
         // 1. 设置执行文件路径
         command: ["qs", "--path", Quickshell.env("XDG_CONFIG_HOME") + "/quickshell/Wallpaper/Lock.qml"]
         // 3. 设置环境变量
@@ -65,7 +65,7 @@ Scope {
     }
     Process {
 	    id: vulkanProcess
-	    running: !opengl
+	    running: false
 	    // 1. 设置执行文件路径
 	    command: ["qs", "--path", Quickshell.env("XDG_CONFIG_HOME") + "/quickshell/Wallpaper/Lock.qml"]
 	    environment: ({
@@ -85,7 +85,6 @@ Scope {
 	    }
 	    function close(){
 		    lockLoader=false
-
 	}
     }
 }
