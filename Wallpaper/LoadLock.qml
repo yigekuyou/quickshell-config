@@ -34,8 +34,9 @@ Scope {
 		timeout: Idle.idlelocktime
 		onIsIdleChanged: {
 			if (isIdle) {
-				if (!lockLoader.active) {
-					lockLoader.active = true;
+				if (!lockLoader) {
+					lockLoader = true;
+					lock.exec(lock.command);
 					return "LOCKED";
 				}
 				return "ALREADY_LOCKED";
