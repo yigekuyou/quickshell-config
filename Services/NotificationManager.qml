@@ -36,6 +36,9 @@ Singleton {
 		    } else if (notification.urgency == NotificationUrgency.Critical) {
 			    root.temporaryNotifications.unshift(notification);
 		    }
+		    if (root.temporaryNotifications.length>notifnumber) {
+			    temporaryNotifications.pop();
+		    }
 	    }
     }
     function sortNotifications(notifications) {
@@ -54,10 +57,18 @@ Singleton {
     function closenotif() {
 	    requestExit();
 	    Qt.callLater(function() {
-	    for (let i = temporaryNotifications.length ; i >= notifnumber; i--) {
-		    temporaryNotifications.pop();
-	    }
-	    temporaryNotifications.pop();
+		    while (root.temporaryNotifications.length > 0) {
+			    let lastItem = root.timeQueue[root.temporaryNotifications.length - 1];
+
+			    if (now - lastItem.t > root.timeoutMs) {
+				    // 已经过期，从队列弹出
+				    root.temporaryNotifications.pop();
+			    } else {
+				    // 如果最老的一条都没过期，后面的肯定也没过期，直接跳出
+				    break;
+			    }
+		    }
+
 	    });
     }
     function dismiss(notification, parmanent = false) {
@@ -108,12 +119,7 @@ Singleton {
 			    if (now - lastItem.t > root.timeoutMs) {
 				    // 已经过期，从计时队列弹出
 				    root.timeQueue.pop();
-
-				    // 4. 调用服务端或清理接口来移除只读列表中的项
-				    // 假设通知服务器有关闭接口，或者发出一个信号让 UI 刷新
-				    notificationsServer.closeNotification(lastItem.id);
-
-				    changed = true;
+				   mergedNotifications.find(item => item.id === lastItem.id).dismiss()
 			    } else {
 				    // 如果最老的一条都没过期，后面的肯定也没过期，直接跳出
 				    break;
