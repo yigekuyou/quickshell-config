@@ -11,7 +11,7 @@ ShellRoot {
 		PanelWindow {
 			id: barWindow
 			WlrLayershell.namespace:"notifPanel"
-			WlrLayershell.layer: WlrLayer.Background
+			WlrLayershell.layer: WlrLayer.Bottom
 			required property var modelData
 			screen: modelData
 			anchors {
