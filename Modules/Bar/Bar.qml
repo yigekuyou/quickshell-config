@@ -47,7 +47,7 @@ Variants {
 
 		visible: true
 		mask: null
-		implicitWidth: island.width + 10
+		implicitWidth: island.width + Kirigami.Units.smallSpacing
 		implicitHeight: Math.max(Sizes.barHeight, island.height )
 		color: "transparent"
 			DynamicIsland {
@@ -64,30 +64,34 @@ Variants {
                 top: parent.top
                 left: parent.left
                 right: parent.right
+                bottom:parent.bottom
             }
             height: barWindow.barHeight
 
             // --- 左侧组件 ---
             RowLayout {
-                anchors {
-                    left: parent.left
-                    leftMargin: 10
-                }
-                spacing: 10
-                Workspaces {}
+		    anchors.left: parent.left
+		    anchors.top:parent.top
+		    anchors.verticalCenter: parent.verticalCenter
+		    anchors.leftMargin: Kirigami.Units.largeSpacing
+		    spacing: Kirigami.Units.smallSpacing
                 Cava {}
             }
-
             // --- 中间：灵动岛 ---
+            RowLayout {
+		    anchors.centerIn: parent
+		    anchors.top:parent.top
+		    spacing: Kirigami.Units.mediumSpacing
+		    Workspaces {}
 
+	    }
             RowLayout {
                 // 钉在右边
-                anchors {
-                    right: parent.right
-                    rightMargin: 10
-                }
-                spacing: 10
-
+		    anchors.top:parent.top
+		    anchors.right: parent.right
+		    anchors.verticalCenter: parent.verticalCenter
+		    anchors.rightMargin: Kirigami.Units.largeSpacing
+		    spacing: Kirigami.Units.smallSpacing
                 SysMonitor {
                     Layout.alignment: Qt.AlignVCenter
                 }
