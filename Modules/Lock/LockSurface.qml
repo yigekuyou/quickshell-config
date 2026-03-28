@@ -6,7 +6,6 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import qs.Services
 import qs.Config
-import qs.Modules.Wallpaper.WallpaperContent
 import Quickshell.Services.Pam
 import Quickshell.Hyprland
 

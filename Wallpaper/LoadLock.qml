@@ -9,12 +9,12 @@ import Quickshell.Wayland
 
 
 Scope {
-	readonly property bool lockLoader: false
+	property bool lockLoader: false
 	readonly property bool opengl: {
 		return (Quickshell.env("QSG_RHI_BACKEND").toLowerCase() === "vulkan") === (WallpaperLock.wallpaperType === "scene");
 	}
 	IdleMonitor {
-		enabled: Idle.idledpms && (lockLoader) && lockLoader.item.locked
+		enabled: Idle.idledpms && (lockLoader)
 		timeout: Idle.dpmsTimeout
 		onIsIdleChanged: {
 			if (isIdle)
@@ -30,7 +30,7 @@ Scope {
 		}
 	}
 	IdleMonitor {
-		enabled: Idle.idlelock && !lockLoader && !other
+		enabled: Idle.idlelock && !lockLoader
 		timeout: Idle.idlelocktime
 		onIsIdleChanged: {
 			if (isIdle) {
