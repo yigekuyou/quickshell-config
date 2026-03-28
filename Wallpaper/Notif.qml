@@ -10,8 +10,8 @@ ShellRoot {
 	Variants {model: Quickshell.screens
 		PanelWindow {
 			id: barWindow
-			WlrLayershell.namespace:"barWindow"
-			WlrLayershell.layer: WlrLayer.Bottom
+			WlrLayershell.namespace:"notifPanel"
+			WlrLayershell.layer: WlrLayer.Background
 			required property var modelData
 			screen: modelData
 			anchors {
