@@ -44,7 +44,7 @@ PopupWindow {
 			spacing: Kirigami.Units.smallSpacing
 
 			Kirigami.Icon {
-				source:  notificationData.appIcon||notificationData.appIcon||notificationData.image
+				source:  notificationData.appName.toLowerCase()||notificationData.appIcon||notificationData.image
 				implicitWidth: Kirigami.Units.gridUnit
 				implicitHeight: Kirigami.Units.gridUnit
 			}
@@ -58,7 +58,7 @@ PopupWindow {
 				flat: true
 				implicitWidth: Kirigami.Units.gridUnit
 				implicitHeight: Kirigami.Units.gridUnit
-				onClicked: NotificationManager.removeNotificationById(notificationData.id)
+				onClicked: NotificationManager.dismiss(notificationData)
 
 				contentItem: Kirigami.Icon {
 					source: "window-close"
