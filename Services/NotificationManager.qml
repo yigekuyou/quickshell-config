@@ -76,7 +76,6 @@ Singleton {
 		    closenotif()
 	}
     }
-    property var timerMap: ({})
     NotificationServer {
         id: notificationsServer
         actionsSupported: true
@@ -87,33 +86,14 @@ Singleton {
         bodySupported: true
         bodyMarkupSupported: false
         imageSupported: true
-        keepOnReload: false
-
+        keepOnReload: true
         onNotification: (notification)=> {
             notification.tracked = true;
-	    if (timerMap[notification.id]) {
-		    timerMap[notification.id].stop();
-		    timerMap[notification.id].destroy();
-	    }
-	    var timer = Qt.createQmlObject('import QtQuick; Timer {}', this);
-	    timer.interval = (notification.expireTimeout > 0) ?notification.expireTimeout:root.notiftimeout;
-	    timer.repeat = false;
-	    timer.triggered.connect(function() {
-		    notification.expire();
-		    delete timerMap[notification.id];
-		    timer.destroy();
-	    });
-	    notification.closed.connect((reason) => {
-		    timerMap[notification.id].destroy();
-	    });
-	    timerMap[notification.id] = timer
-	    timer.start();
             if (!root.dnd && notification.urgency != NotificationUrgency.Critical) {
                 root.temporaryNotifications.unshift(notification);
             } else if (notification.urgency == NotificationUrgency.Critical) {
                 root.temporaryNotifications.unshift(notification);
             }
-
         }
     }
 }

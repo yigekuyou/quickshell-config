@@ -37,14 +37,14 @@ PopupWindow {
 	Kirigami.Card{
 		id:content
 		anchors.fill: parent
-		icon.name:notificationData.image || notificationData.appIcon || notificationData.appName.toLowerCase()
+		icon.name:notificationData.appIcon || notificationData.appName.toLowerCase()
 		header: RowLayout {
 			Layout.fillWidth: true
 			Layout.margins: Kirigami.Units.smallSpacing
 			spacing: Kirigami.Units.smallSpacing
 
 			Kirigami.Icon {
-				source: notificationData.appIcon || "dialog-information"
+				source:  notificationData.appName.toLowerCase()||notificationData.appIcon||notificationData.image
 				implicitWidth: Kirigami.Units.gridUnit
 				implicitHeight: Kirigami.Units.gridUnit
 			}
