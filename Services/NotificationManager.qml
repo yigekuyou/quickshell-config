@@ -40,9 +40,13 @@ Singleton {
         });
     }
     function closenotif() {
+	    requestExit();
+	    Qt.callLater(function() {
 	    for (let i = temporaryNotifications.length ; i >= notifnumber; i--) {
 		    temporaryNotifications.pop();
 	    }
+	    temporaryNotifications.pop();
+	    });
     }
     function dismiss(notification, parmanent = false) {
         const index = root.temporaryNotifications.indexOf(notification);
@@ -67,10 +71,9 @@ Singleton {
     }
     Timer {
 	    id:tempnotif
-	    interval: 5000; running: (temporaryNotifications.length); repeat: true
+	    interval: 5000; running: (temporaryNotifications.length>0); repeat: true
 	    onTriggered:{
 		    closenotif()
-		    temporaryNotifications.pop();
 	}
     }
     property var timerMap: ({})
