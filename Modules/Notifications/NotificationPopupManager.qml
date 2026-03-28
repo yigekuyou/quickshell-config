@@ -10,6 +10,9 @@ QtObject {
 
 	property Component popupComponent: Component {
 		NotificationPopup {
+			onReload:{
+				manager._destroyWindowAtIndex(manager.popupWindows.length-1);
+			}
 		}
 	}
 

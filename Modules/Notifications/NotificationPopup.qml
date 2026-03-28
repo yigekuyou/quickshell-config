@@ -20,8 +20,13 @@ PopupWindow {
 	color: "transparent"
 	mask: null
 	// --- 信号 ---
-	signal exitFinished()
-
+	signal reload()
+	Timer {
+		interval: 1000  ; running:true; repeat: true
+		onTriggered:{
+			reload()
+		}
+	}
 	// --- 窗口定位逻辑 (根据你的要求) ---
 	anchor.window: barWindow
 	anchor.edges: Edges.Top | Edges.Right
@@ -58,7 +63,7 @@ PopupWindow {
 				flat: true
 				implicitWidth: Kirigami.Units.gridUnit
 				implicitHeight: Kirigami.Units.gridUnit
-				onClicked: NotificationManager.dismiss(notificationData)
+				onClicked: NotificationManager.dismiss(notificationData,false)
 
 				contentItem: Kirigami.Icon {
 					source: "window-close"
