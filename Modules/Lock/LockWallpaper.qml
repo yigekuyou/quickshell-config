@@ -7,6 +7,25 @@ import Quickshell
 import Quickshell.Io
 
 Item {
+	function pause() {
+		if (mainLoader.item) {
+			if (active) {
+				// 2. 如果 active 为 true，尝试调用子组件的 play()
+				if (typeof mainLoader.item.play === "function") {
+					mainLoader.item.play();
+				}
+			}
+	}
+	}
+	function play() {
+		if (mainLoader.item) {
+			if (active) {
+				if (typeof mainLoader.item.pause === "function") {
+					mainLoader.item.pause();
+				}
+			}
+		}
+	}
 	anchors.fill: parent
 	readonly property bool isVulkan: Quickshell.env("QSG_RHI_BACKEND") === "vulkan"
 	Component {
