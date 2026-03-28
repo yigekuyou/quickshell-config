@@ -2,7 +2,6 @@ import QtQuick
 import Quickshell
 import Quickshell.Wayland
 import qs.Config
-import Quickshell.Hyprland
 
 WlSessionLock {
 	signal unlocked()

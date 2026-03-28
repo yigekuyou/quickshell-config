@@ -12,7 +12,10 @@ import qs.Wallpaper
 ShellRoot {
 	Variants {model: Quickshell.screens
 	}
-	Bar {}
+	LazyLoader {
+		activeAsync:true
+		Bar{}
+	}
 	LoadWall{}
 	LoadLock{}
 	Panel{}

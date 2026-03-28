@@ -87,7 +87,7 @@ Singleton {
         bodySupported: true
         bodyMarkupSupported: false
         imageSupported: true
-        keepOnReload: true
+        keepOnReload: false
 
         onNotification: (notification)=> {
             notification.tracked = true;
