@@ -89,7 +89,9 @@ Scope {
 	    lock.exec(lock.command);
 	    lockLoader=true
 	    }
-	    function close()
-	    lockLoader=false
+	    function close(){
+		    lockLoader=false
+
+	}
     }
 }
