@@ -13,15 +13,12 @@ Singleton {
     property real notiftimeout: 5 *60 *1000
     property int notifnumber: 5
     property int exitDuration: 300
-    property var timeQueue: []
     signal requestExit()
     onDndChanged: {
         if (dnd) {
             root.temporaryNotifications = [];
         }
     }
-    property var timers: ({})
-
     ElapsedTimer {
 	    id: elapsedTimer
     }
@@ -31,7 +28,7 @@ Singleton {
 	    target: notificationsServer
 	    onNotification: (notification)=> {
 		    notification.tracked = true;
-		    if (elapsedTimer.elapsed() >= 0.1 && !root.dnd && notification.urgency != NotificationUrgency.Critical) {
+		    if (elapsedTimer.elapsed() >= 1 && !root.dnd && notification.urgency != NotificationUrgency.Critical) {
 			    root.temporaryNotifications.push(notification);
 
 			    var timer = Qt.createQmlObject('import QtQuick; Timer { interval: 10000; repeat: false; }', root) as Timer;
@@ -74,12 +71,10 @@ Singleton {
 
         if (parmanent) {
             notification.dismiss();
-	    timeQueue.splice(timeQueue.findIndex(item => item.id === notification.id),1);
         }
     }
     function dismissAll() {
         temporaryNotifications = [];
-	timeQueue=[]
 
         const notifications = [...notificationsServer.trackedNotifications.values];
 
