@@ -22,12 +22,24 @@ Singleton {
     }
     property var timers: ({})
 
+    ElapsedTimer {
+	    id: elapsedTimer
+    }
 
     // 监听通知服务器的通知列表变化
     Connections {
 	    target: notificationsServer
 	    onNotification: (notification)=> {
 		    notification.tracked = true;
+		    if (elapsedTimer.elapsed() >= 0.1 && !root.dnd && notification.urgency != NotificationUrgency.Critical) {
+			    root.temporaryNotifications.push(notification);
+
+			    var timer = Qt.createQmlObject('import QtQuick; Timer { interval: 10000; repeat: false; }', root) as Timer;
+			    timer.onTriggered.connect(function () { // qmllint disable missing-property
+				    root.dismiss(notification, false);
+				    timer.destroy();
+			    });
+			    timer.start()
 		    if (!root.dnd && notification.urgency != NotificationUrgency.Critical) {
 			    root.temporaryNotifications.unshift(notification);
 		    } else if (notification.urgency == NotificationUrgency.Critical) {
@@ -37,6 +49,7 @@ Singleton {
 			    temporaryNotifications.pop();
 		    }
 	    }
+    }
     }
     function sortNotifications(notifications) {
         notifications = notifications.slice().filter(item => item != null);

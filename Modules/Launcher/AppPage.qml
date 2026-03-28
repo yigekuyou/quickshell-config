@@ -115,13 +115,6 @@ Kirigami.ShadowedRectangle {
 								font.pointSize: Kirigami.Units.gridUnit * 0.5
 							}
 						}
-						Keys.onPressed: (event) => {
-							switch (event.key) {
-								case Qt.Key_Escape:
-									root.destroy();
-									break;
-							}
-						}
 					}
 
 				}
