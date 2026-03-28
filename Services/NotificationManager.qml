@@ -19,9 +19,6 @@ Singleton {
             root.temporaryNotifications = [];
         }
     }
-    ElapsedTimer {
-	    id: elapsedTimer
-    }
 
     // 监听通知服务器的通知列表变化
     Connections {
@@ -29,30 +26,7 @@ Singleton {
 	    enabled: notificationsServer !== null
 	    onNotification: function (notification) {
 		    notification.tracked = true;
-		    if (elapsedTimer.elapsed() >= 0.1 && !root.dnd && notification.urgency != NotificationUrgency.Critical) {
-			    root.temporaryNotifications.push(notification);
-			    let timeout = root.notiftimeout*60 *1000;
-			    let timer = Qt.createQmlObject("import QtQuick; Timer {}", root);
-
-			    if (timer) {
-				    timer.interval = timeout;
-				    timer.repeat = false;
-				    timer.triggered.connect(function() {
-					    root.dismiss(notification, true);
-					    timer.destroy();
-				    });
-				    timer.start();
-			    }
-		    if (!root.dnd && notification.urgency != NotificationUrgency.Critical) {
-			    root.temporaryNotifications.unshift(notification);
-		    } else if (notification.urgency == NotificationUrgency.Critical) {
-			    root.temporaryNotifications.unshift(notification);
-		    }
-		    if (root.temporaryNotifications.length>root.notifnumber) {
-			    temporaryNotifications.pop();
-		    }
 	    }
-    }
     }
     function sortNotifications(notifications) {
         notifications = notifications.slice().filter(item => item != null);

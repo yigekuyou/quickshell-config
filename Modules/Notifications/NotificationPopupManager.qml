@@ -7,8 +7,19 @@ Item {
 	id: manager
 	property var popupWindows: []
 	property int spacing: Kirigami.Units.smallSpacing
+	Connections {
+		target: NotificationManager.notificationsServer
+		enabled: NotificationManager.notificationsServer !== null
+		onNotification: function (notification) {
+			if (!NotificationManager.dnd && notification.urgency != NotificationUrgency.Critical) {
+				NotificationManager.temporaryNotifications.unshift(notification);
+			} else if (notification.urgency == NotificationUrgency.Critical) {
+				NotificationManager.temporaryNotifications.unshift(notification);
+			}
+		}
+	}
 	Instantiator {
-		model: NotificationManager.temporaryNotifications
+		model: NotificationManager.sortedTemopraryNotifications
 		delegate: NotificationPopup {
 			// 这里可以直接访问 model 中的数据，例如 model.title
 			index: index
