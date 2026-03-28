@@ -12,6 +12,7 @@ QtObject {
 		NotificationPopup {
 			onReload:{
 				manager._destroyWindowAtIndex(manager.popupWindows.length-1);
+				NotificationManager.dismiss(NotificationManager.sortedTemopraryNotifications.length-1,false)
 			}
 		}
 	}
