@@ -7,7 +7,7 @@ import qs.Config
 import org.kde.kirigami as Kirigami
 // 1. 导入 Widget 目录
 import qs.Widget
-
+import Qt.labs.animation
 Kirigami.ShadowedRectangle {
     id: root
 
@@ -38,18 +38,7 @@ Kirigami.ShadowedRectangle {
 		    audioPanel.visible = !audioPanel.visible
 	    }
     }
-    WheelHandler {
-	    // 可以根据需要设置 orientation: Qt.Vertical (默认就是垂直)
-	    onWheel: (wheel) => {
-		    const step = 0.05
-		    let newVol = Volume.sinkVolume
 
-		    if (wheel.angleDelta.y > 0) newVol += step
-			    else newVol -= step
-
-				    Volume.setSinkVolume(newVol)
-	    }
-    }
 
 
 

@@ -19,7 +19,7 @@ Kirigami.AbstractCard {
     : ramGroup.implicitWidth + Kirigami.Units.largeSpacing * 2
     implicitHeight: Sizes.barHeight
     padding: Kirigami.Units.smallSpacing
-    background: Rectangle {
+    background: Kirigami.ShadowedRectangle {
 	    color: Kirigami.Theme.backgroundColor
 	    opacity: 0.5
 	    radius: Kirigami.Units.smallSpacing

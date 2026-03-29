@@ -29,8 +29,14 @@ Kirigami.AbstractCard {
 		}
 		switch (PowerProfiles.degradationReason){
 			case PerformanceDegradationReason.None:
-			warning=false
-			break;
+				warning=false
+				break;
+			case PerformanceDegradationReason.LapDetected:
+				warning=true
+				break;
+			case PerformanceDegradationReason.HighTemperature:
+				warning=true
+				break;
 		}
 	}
 	Connections {
@@ -97,7 +103,6 @@ Kirigami.AbstractCard {
 				color:Kirigami.Theme.activeTextColor
 				implicitHeight:Kirigami.Units.iconSizes.small
 				implicitWidth: implicitHeight
-
 			}
 		}
 		RowLayout{
@@ -109,7 +114,7 @@ Kirigami.AbstractCard {
 				implicitHeight:Kirigami.Units.iconSizes.small
 			}
 		}
-		RowLayout{
+		RowLayout {
 			spacing: Kirigami.Units.smallSpacing
 			visible: expanded //
 			Kirigami.Icon {
@@ -124,6 +129,11 @@ Kirigami.AbstractCard {
 					}
 				}
 			}
+			TapHandler {
+				onTapped: {
+					PowerProfiles.profile=PowerProfile.Performance
+				}
+			}
 		}
 		RowLayout{
 			visible: expanded //
@@ -134,12 +144,14 @@ Kirigami.AbstractCard {
 				color:Kirigami.Theme.activeTextColor
 				implicitHeight:Kirigami.Units.iconSizes.small
 				implicitWidth: implicitHeight
-				TapHandler {
-					onTapped: {
-						PowerProfiles.profile=PowerProfile.Balanced
-					}
+
+			}
+			TapHandler {
+				onTapped: {
+					PowerProfiles.profile=PowerProfile.Balanced
 				}
 			}
+
 		}
 		RowLayout{
 			visible: expanded //
@@ -150,10 +162,10 @@ Kirigami.AbstractCard {
 				color:Kirigami.Theme.activeTextColor
 				implicitHeight:Kirigami.Units.iconSizes.small
 				implicitWidth: implicitHeight
-				TapHandler {
-					onTapped: {
-						PowerProfiles.profile=PowerProfile.PowerSaver
-					}
+			}
+			TapHandler {
+				onTapped: {
+					PowerProfiles.profile=PowerProfile.PowerSaver
 				}
 			}
 		}
