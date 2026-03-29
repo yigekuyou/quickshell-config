@@ -2,6 +2,7 @@ import Quickshell.Services.SystemTray
 import QtQuick
 import QtQuick.Layouts
 import qs.Config
+import org.kde.kirigami as Kirigami
 
 Rectangle {
     id: root

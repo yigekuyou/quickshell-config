@@ -138,14 +138,13 @@ Kirigami.AbstractCard {
     // ================= 4. 交互区域 =================
     ToolTip.visible: mouseArea.containsMouse
     ToolTip.text: expanded ? "Click to collapse" : "Click to expand details"
-    MouseArea {
-        anchors.fill: parent
-        cursorShape: Qt.PointingHandCursor
-        onClicked: {
-            root.expanded = !root.expanded;
-        }
-    }
 
+    TapHandler {
+	    acceptedButtons: Qt.LeftButton
+	    onTapped: {
+		    root.expanded = !root.expanded;
+	    }
+    }
     // ================= 5. 布局内容 =================
     contentItem: RowLayout {
         id: contentLayout
