@@ -99,6 +99,9 @@ Kirigami.AbstractCard {
 		Layout.fillWidth: true
 		Layout.alignment: Qt.AlignRight
 		RowLayout{
+			RowLayout{
+				layoutDirection: Qt.RightToLeft
+			anchors.right: parent.right
 			Kirigami.Icon {
 				id:warn
 				visible: warning //
@@ -107,17 +110,12 @@ Kirigami.AbstractCard {
 				implicitHeight:Kirigami.Units.iconSizes.small
 				implicitWidth: implicitHeight
 			}
-		}
-		RowLayout{
-			spacing: Kirigami.Units.smallSpacing
-			Layout.fillWidth: true
 			Kirigami.Icon {
 				id:nowpower
 				color:Kirigami.Theme.activeTextColor
 				implicitHeight:Kirigami.Units.iconSizes.small
 				implicitWidth: implicitHeight
 			}
-		}
 		Kirigami.Separator {
 			implicitWidth: 1
 			Layout.fillHeight: true
@@ -133,6 +131,8 @@ Kirigami.AbstractCard {
 			Behavior on opacity { NumberAnimation { duration: 200 } }
 			// 4. 逻辑控制：如果你的音乐组件未展开，隐藏分割线
 			visible: root.expanded
+		}
+		}
 		}
 		RowLayout {
 			spacing: Kirigami.Units.smallSpacing
