@@ -4,144 +4,159 @@ import QtQuick.Controls
 import Quickshell
 import Quickshell.Io
 import qs.Config
+import Quickshell.Services.UPower
+import org.kde.kirigami as Kirigami
 
-Rectangle {
-    id: root
+Kirigami.AbstractCard {
+	implicitHeight: Sizes.barHeight
+	// ============================================================
+	// 1. 属性定义
+	// ============================================================
+	property bool expanded: false
+	property bool warning: true
+	headerOrientation: Qt.Horizontal
+	Component.onCompleted: {
+		switch (PowerProfiles.profile) {
+			case PowerProfile.Performance:
+				nowpower.source=performance.source
+				break;
+			case PowerProfile.PowerSaver:
+				nowpower.source=powerSaver.source
+				break;
+			case PowerProfile.Balanced:
+				nowpower.source=balanced.source
+				break;
+		}
+		switch (PowerProfiles.degradationReason){
+			case PerformanceDegradationReason.None:
+			warning=false
+			break;
+		}
+	}
+	Connections {
+		target: PowerProfiles
+		function onProfileChanged() {
+			switch (PowerProfiles.profile) {
+				case PowerProfile.Performance:
+					nowpower.source=performance.source
+					break;
+				case PowerProfile.PowerSaver:
+					nowpower.source=powerSaver.source
+					break;
+				case PowerProfile.Balanced:
+					nowpower.source=balanced.source
+					break;
+			}
+		}
 
-    // ============================================================
-    // 样式配置
-    // ============================================================
-    color: "#80" + Colorscheme.background.toString().substring(1)
-    radius: Sizes.cornerRadius             
-    
-    property bool expanded: false
-    property string currentProfile: "balanced" 
+		// 当 degradationReason 属性改变时触发
+		function onDegradationReasonChanged() {
+			switch (PowerProfiles.degradationReason){
+				case PerformanceDegradationReason.None:
+					warning=false
+					break;
+				case PerformanceDegradationReason.LapDetected:
+					warning=true
+					break;
+				case PerformanceDegradationReason.HighTemperature:
+					warning=true
+					break;
+			}
+		}
+	}
+	padding: Kirigami.Units.smallSpacing
+	background: Kirigami.ShadowedRectangle {
+		color: Kirigami.Theme.backgroundColor
+		opacity: 0.5
+		radius: Kirigami.Units.smallSpacing
+		border.color: Kirigami.Theme.focusColor
+		border.width: root.activeFocus ? 1 : 0
+	}
+	Behavior on implicitWidth {
+		NumberAnimation { duration: Kirigami.Units.longDuration; easing.type: Easing.OutQuart }
+	}
+	HoverHandler {
+		cursorShape: Qt.PointingHandCursor
+	}
+	TapHandler {
+		acceptedButtons: Qt.LeftButton
+		onTapped: {
+			if(PowerProfiles.hasPerformanceProfile){
+				expanded = !expanded
+			}
+		}
+	}
+	contentItem:RowLayout{
+		id:layout
+		layoutDirection: Qt.RightToLeft
+		RowLayout{
+			Kirigami.Icon {
+				id:warn
+				visible: warning //
+				source:"emblem-warning"
+				color:Kirigami.Theme.activeTextColor
+				implicitHeight:Kirigami.Units.iconSizes.small
+				implicitWidth: implicitHeight
 
-    property int barHeight: Sizes.barHeight        
-    property int collapsedWidth: 36   
+			}
+		}
+		RowLayout{
+			visible: !expanded //
+			spacing: Kirigami.Units.smallSpacing
+			Kirigami.Icon {
+				id:nowpower
+				color:Kirigami.Theme.activeTextColor
+				implicitHeight:Kirigami.Units.iconSizes.small
+			}
+		}
+		RowLayout{
+			spacing: Kirigami.Units.smallSpacing
+			visible: expanded //
+			Kirigami.Icon {
+				id:performance
+				source:"power-profile-performance-symbolic"
+				color:Kirigami.Theme.activeTextColor
+				implicitHeight:Kirigami.Units.iconSizes.small
+				implicitWidth: implicitHeight
+				TapHandler {
+					onTapped: {
+						PowerProfiles.profile=PowerProfile.Performance
+					}
+				}
+			}
+		}
+		RowLayout{
+			visible: expanded //
+			spacing: Kirigami.Units.smallSpacing
+			Kirigami.Icon {
+				id:balanced
+				source:"power-profile-balanced-symbolic"
+				color:Kirigami.Theme.activeTextColor
+				implicitHeight:Kirigami.Units.iconSizes.small
+				implicitWidth: implicitHeight
+				TapHandler {
+					onTapped: {
+						PowerProfiles.profile=PowerProfile.Balanced
+					}
+				}
+			}
+		}
+		RowLayout{
+			visible: expanded //
+			spacing: Kirigami.Units.smallSpacing
+			Kirigami.Icon {
+				id:powerSaver
+				source:"power-profile-power-saver-symbolic"
+				color:Kirigami.Theme.activeTextColor
+				implicitHeight:Kirigami.Units.iconSizes.small
+				implicitWidth: implicitHeight
+				TapHandler {
+					onTapped: {
+						PowerProfiles.profile=PowerProfile.PowerSaver
+					}
+				}
+			}
+		}
+	}
 
-    // 【修改点 1】缩短展开后的总宽度
-    // 之前是 120，现在改为 108。虽然间距大了，但通过减少边缘留白，整体更短更紧凑。
-    property int expandedWidth: 108   
-
-    implicitWidth: width 
-    implicitHeight: height
-
-    width: expanded ? expandedWidth : collapsedWidth
-    height: barHeight
-    
-    Behavior on width { NumberAnimation { duration: 300; easing.type: Easing.OutQuart } }
-
-    // ============================================================
-    // 逻辑 (不变)
-    // ============================================================
-    Process {
-        id: getProc
-        command: ["powerprofilesctl", "get"]
-        stdout: SplitParser {
-            onRead: (data) => {
-                let val = data.trim();
-                if (val !== "") root.currentProfile = val;
-            }
-        }
-    }
-
-    function setProfile(mode) {
-        root.currentProfile = mode;
-        let cmd = "powerprofilesctl set " + mode;
-        setProc.command = ["bash", "-c", cmd];
-        setProc.running = true;
-        root.expanded = false;
-    }
-
-    Process { id: setProc }
-
-    Timer {
-        interval: 5000; running: true; repeat: true; triggeredOnStart: true
-        onTriggered: getProc.running = true
-    }
-
-    QtObject {
-        id: style
-        function getIcon(mode) {
-            switch(mode) {
-                case "performance": return "󱐋";
-                case "power-saver": return "";
-                default: return ""; 
-            }
-        }
-        function getColor(mode) {
-            switch(mode) {
-                case "performance": return "#FFD700";
-                case "power-saver": return "#90EE90";
-                default: return "#ffffff"; 
-            }
-        }
-    }
-
-    // ============================================================
-    // 布局与交互
-    // ============================================================
-    MouseArea {
-        anchors.fill: parent
-        enabled: !root.expanded
-        cursorShape: Qt.PointingHandCursor
-        onClicked: { getProc.running = true; root.expanded = true; }
-    }
-
-    Timer {
-        id: autoCloseTimer
-        interval: 3000; running: root.expanded
-        onTriggered: root.expanded = false
-    }
-
-    Item {
-        anchors.fill: parent
-        clip: true 
-
-        // 收起状态
-        Text {
-            anchors.centerIn: parent
-            text: style.getIcon(root.currentProfile)
-            color: style.getColor(root.currentProfile)
-            font.family: Sizes.fontIcon
-            font.pixelSize: 16 
-            
-            visible: !root.expanded
-            opacity: root.expanded ? 0 : 1
-            Behavior on opacity { NumberAnimation { duration: 200 } }
-        }
-
-        // 展开状态
-        RowLayout {
-            anchors.centerIn: parent
-            
-            // 【修改点 2】增大图标间距
-            // 从 8 改为 15，视觉上图标更分散，更容易点击
-            spacing: 15 
-            
-            opacity: root.expanded ? 1 : 0
-            visible: opacity > 0
-            Behavior on opacity { NumberAnimation { duration: 200 } }
-
-            Text {
-                text: ""
-                color: root.currentProfile === "power-saver" ? "#90EE90" : "#555"
-                font.family: "Symbols Nerd Font"; font.pixelSize: 16
-                MouseArea { anchors.fill: parent; onClicked: { autoCloseTimer.restart(); root.setProfile("power-saver") } }
-            }
-            Text {
-                text: ""
-                color: root.currentProfile === "balanced" ? "#ffffff" : "#555"
-                font.family: "Symbols Nerd Font"; font.pixelSize: 16
-                MouseArea { anchors.fill: parent; onClicked: { autoCloseTimer.restart(); root.setProfile("balanced") } }
-            }
-            Text {
-                text: "󱐋"
-                color: root.currentProfile === "performance" ? "#FFD700" : "#555"
-                font.family: "Symbols Nerd Font"; font.pixelSize: 16
-                MouseArea { anchors.fill: parent; onClicked: { autoCloseTimer.restart(); root.setProfile("performance") } }
-            }
-        }
-    }
 }

@@ -8,8 +8,8 @@ Kirigami.Icon {
 	id: root
 	source:  modelData.icon
 	required property var modelData
-	implicitWidth: 24
-	implicitHeight: 24
+	implicitHeight:Kirigami.Units.iconSizes.small
+	implicitWidth:implicitHeight
 	HoverHandler {
 		cursorShape: Qt.PointingHandCursor
 	}
