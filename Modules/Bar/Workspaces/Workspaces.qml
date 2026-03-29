@@ -50,7 +50,7 @@ Kirigami.ShadowedRectangle {
                     anchors.centerIn: parent
                     implicitHeight: Kirigami.Units.iconSizes.small
                     implicitWidth: implicitHeight
-                    source: ws.active ? "notification-progress-active-symbolic" : (ws ? "notification-progress-inactive-symbolic" : "notification-progress-inactive-symbolic")
+                    source: ws ? (ws.active ? "notification-progress-active-symbolic" :"notification-progress-inactive-symbolic") : "notification-progress-inactive-symbolic"
                     color: ws.active ? Kirigami.Theme.highlightColor : (ws ? Kirigami.Theme.activeTextColor : Kirigami.Theme.textColor)
 
                     Behavior on color {
