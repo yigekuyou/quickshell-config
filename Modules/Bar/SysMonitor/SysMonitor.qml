@@ -15,8 +15,6 @@ Kirigami.AbstractCard {
     property int barHeight: Sizes.barHeight
 
     // 动态宽度：展开显示全部，收起只显示 RAM
-    implicitWidth: expanded ? contentLayout.implicitWidth + Kirigami.Units.largeSpacing * 2
-    : ramGroup.implicitWidth + Kirigami.Units.largeSpacing * 2
     implicitHeight: Sizes.barHeight
     padding: Kirigami.Units.smallSpacing
     background: Kirigami.ShadowedRectangle {
@@ -136,8 +134,6 @@ Kirigami.AbstractCard {
     }
 
     // ================= 4. 交互区域 =================
-    ToolTip.visible: mouseArea.containsMouse
-    ToolTip.text: expanded ? "Click to collapse" : "Click to expand details"
     HoverHandler {
 	    cursorShape: Qt.PointingHandCursor
     }
@@ -198,8 +194,6 @@ Kirigami.AbstractCard {
 	// --- GPU (展开显示) ---
 	RowLayout {
 		visible: root.expanded
-		opacity: root.expanded ? 1 : 0
-		Layout.alignment: Qt.AlignVCenter
 		spacing: Kirigami.Units.smallSpacing
 		Layout.preferredWidth: visible ? -1 : 0
 
@@ -214,7 +208,6 @@ Kirigami.AbstractCard {
 			text: root.gpuLoad + "% | " + root.gpuPower + "W"
 		}
 
-		Behavior on opacity { NumberAnimation { duration: Kirigami.Units.shortDuration } }
 	}
     }
 }
