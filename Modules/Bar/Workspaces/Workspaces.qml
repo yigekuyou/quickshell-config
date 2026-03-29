@@ -15,27 +15,6 @@ Kirigami.ShadowedRectangle {
 
 	property Item activeItem: null
 
-	// --- 滑动的高亮块 ---
-	Rectangle {
-		id: indicator
-		implicitHeight: Sizes.barHeight/2
-
-		x: layout.x + (root.activeItem ? root.activeItem.x : 0)
-		y: (root.activeItem ? root.activeItem.y : 0)
-
-		width: root.activeItem ? root.activeItem.width : 0
-
-		radius: Sizes.cornerRadius
-
-		// 之前修改的高亮色
-		color: Qt.alpha(Kirigami.Theme.activeTextColor,0.5)
-
-		Behavior on x { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
-		Behavior on width { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
-
-		Behavior on color { ColorAnimation { duration: 200 } }
-	}
-
 	RowLayout {
 		id: layout
 		anchors.centerIn: parent
@@ -59,7 +38,7 @@ Kirigami.ShadowedRectangle {
 				anchors.centerIn:parent
 				implicitHeight:Kirigami.Units.iconSizes.small
 				implicitWidth:implicitHeight
-				source:delegateRoot.active ? "notification-progress-active-symbolic"  : (ws ? "radio-checked-symbolic" : "radio-symbolic")
+				source:delegateRoot.active ? "notification-progress-active-symbolic"  : (ws ? "notification-progress-inactive-symbolic" : "notification-progress-inactive-symbolic")
 				color: delegateRoot.active ? Kirigami.Theme.highlightColor  : (ws ? Kirigami.Theme.activeTextColor : Kirigami.Theme.textColor)
 
 				Behavior on color { ColorAnimation { duration: 200 }
