@@ -23,6 +23,9 @@ Kirigami.ShadowedRectangle {
 	    running: false
 	    command: ["qs", "--path", Quickshell.env("XDG_CONFIG_HOME") + "/quickshell/Wallpaper/Notif.qml", "ipc", "call", "notif", "open"]
     }
+    HoverHandler {
+	    cursorShape: Qt.PointingHandCursor
+    }
     TapHandler {
 	    acceptedButtons: Qt.LeftButton
 	    onTapped: {

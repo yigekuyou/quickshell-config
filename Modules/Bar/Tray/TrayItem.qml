@@ -10,7 +10,9 @@ Kirigami.Icon {
 	required property var modelData
 	implicitWidth: 24
 	implicitHeight: 24
-
+	HoverHandler {
+		cursorShape: Qt.PointingHandCursor
+	}
 	TapHandler {
 		acceptedButtons: Qt.LeftButton
 		onTapped: {

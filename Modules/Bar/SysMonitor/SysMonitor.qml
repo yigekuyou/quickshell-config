@@ -138,7 +138,9 @@ Kirigami.AbstractCard {
     // ================= 4. 交互区域 =================
     ToolTip.visible: mouseArea.containsMouse
     ToolTip.text: expanded ? "Click to collapse" : "Click to expand details"
-
+    HoverHandler {
+	    cursorShape: Qt.PointingHandCursor
+    }
     TapHandler {
 	    acceptedButtons: Qt.LeftButton
 	    onTapped: {

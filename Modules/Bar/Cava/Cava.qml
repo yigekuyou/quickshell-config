@@ -28,7 +28,9 @@ Kirigami.ShadowedRectangle {
     implicitHeight: Sizes.barHeight
 
     Behavior on implicitWidth { NumberAnimation { duration: 300; easing.type: Easing.OutQuart } }
-        
+    HoverHandler {
+	    cursorShape: Qt.PointingHandCursor
+    }
         TapHandler {
 		acceptedButtons: Qt.LeftButton
 		onTapped: {

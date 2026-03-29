@@ -20,14 +20,13 @@ Kirigami.ShadowedRectangle {
         id: layout
         anchors.centerIn: parent
         spacing: 5
-
         Repeater {
             model: 10
             delegate: Kirigami.ShadowedRectangle {
                 id: delegateRoot
                 property var ws: WindowManager.windowsets.find(w => w.coordinates.includes(index + 1))
                 property bool active: ws ? ws.active : false
-                implicitWidth: active ? (numText.implicitWidth + 24) : (numText.implicitWidth + 12)
+                implicitWidth: numText.implicitWidth
 
                 onActiveChanged: {
                     if (active)
@@ -58,18 +57,23 @@ Kirigami.ShadowedRectangle {
 			    level: 4
 			    color: Kirigami.Theme.disabledTextColor
 		    }
+		    HoverHandler {
+			    enabled:ws?ws.canActivate:false
+			    cursorShape: Qt.PointingHandCursor
+		    }
+		    TapHandler {
+			    onTapped: {
+				    if (ws && ws.canActivate) {
+					    ws.activate();
+				    }
+			    }
+		    }
                     Behavior on color {
                         ColorAnimation {
                             duration: 200
                         }
                     }
-                    TapHandler {
-                        onTapped: {
-                            if (ws && ws.canActivate) {
-                                ws.activate();
-                            }
-                        }
-                    }
+
                 }
             }
         }

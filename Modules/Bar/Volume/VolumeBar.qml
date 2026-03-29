@@ -30,28 +30,28 @@ Kirigami.ShadowedRectangle {
     }
 
     // --- 交互区域 ---
-    MouseArea {
-        anchors.fill: parent
-        cursorShape: Qt.PointingHandCursor
-        
-        // 允许滚轮调节音量 (保持不变)
-        onWheel: (wheel) => {
-            const step = 0.05
-            let newVol = Volume.sinkVolume
-            
-            if (wheel.angleDelta.y > 0) newVol += step
-            else newVol -= step
-
-            Volume.setSinkVolume(newVol)
-        }
-
-        // 3. 点击切换小组件开关
-        onClicked: {
-            // 原来是: Quickshell.execDetached(["pavucontrol"])
-            // 现在改为:
-            audioPanel.visible = !audioPanel.visible
-        }
+    HoverHandler {
+	    cursorShape: Qt.PointingHandCursor
     }
+    TapHandler {
+	    onTapped: {
+		    audioPanel.visible = !audioPanel.visible
+	    }
+    }
+    WheelHandler {
+	    // 可以根据需要设置 orientation: Qt.Vertical (默认就是垂直)
+	    onWheel: (wheel) => {
+		    const step = 0.05
+		    let newVol = Volume.sinkVolume
+
+		    if (wheel.angleDelta.y > 0) newVol += step
+			    else newVol -= step
+
+				    Volume.setSinkVolume(newVol)
+	    }
+    }
+
+
 
     // --- 内容布局 (保持不变) ---
     RowLayout {
