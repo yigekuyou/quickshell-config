@@ -43,7 +43,8 @@ Variants {
 		anchor.edges: Edges.Top
 		anchor.gravity: Edges.Bottom
 		anchor.rect.x: Math.round(modelData.width / 2)
-		anchor.rect.y: Math.round(0)
+		anchor.rect.y: Math.round(Sizes.barHeight/2+Kirigami.Units.smallSpacing)
+
 
 		visible: true
 		mask: null
@@ -79,7 +80,7 @@ Variants {
             }
             // --- 中间：灵动岛 ---
             RowLayout {
-		    anchors.centerIn: parent
+		    anchors.horizontalCenter: parent.horizontalCenter
 		    anchors.top:parent.top
 		    spacing: Kirigami.Units.mediumSpacing
 		    Workspaces {}

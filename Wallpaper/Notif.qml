@@ -19,7 +19,7 @@ ShellRoot {
 				right: true
 			}
 			color: "transparent"
-			implicitHeight: Math.max(Sizes.barHeight+Kirigami.Units.smallSpacing )
+			implicitHeight: 0
 		NotificationWidget {
 			id: notifPanel
 			visible: false

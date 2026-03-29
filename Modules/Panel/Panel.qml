@@ -20,7 +20,7 @@ Variants {
 		screen: modelData
 		Timer {
 			id: hideTimer
-			interval: 500 // 鼠标离开半秒后收起
+			interval: 5000 // 鼠标离开半秒后收起
 			running:isExpanded
 			onTriggered: panelWindow.isExpanded = false
 		}

@@ -14,7 +14,7 @@ PopupWindow {
 	anchor.window: panelWindow
 	anchor.edges: Edges.Bottom
 	anchor.gravity: Edges.Top
-	property var pos : mapToItem(parentWindow.contentItem, 0, parentWindow.height);
+	property var pos : mapToItem(parentWindow.contentItem, parentWindow.width/2,0);
 	anchor.rect.x: Math.round(pos.x)
 	anchor.rect.y: Math.round(pos.y)
 	grabFocus: true
