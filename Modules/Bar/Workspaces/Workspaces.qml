@@ -52,7 +52,12 @@ Kirigami.ShadowedRectangle {
                     implicitWidth: implicitHeight
                     source: ws ? (ws.active ? "notification-progress-active-symbolic" :"notification-progress-inactive-symbolic") : "notification-progress-inactive-symbolic"
                     color: ws.active ? Kirigami.Theme.highlightColor : (ws ? Kirigami.Theme.activeTextColor : Kirigami.Theme.textColor)
-
+		    Kirigami.Heading {
+			    anchors.centerIn: parent // 基线对齐
+			    text: ws?index+1: ""
+			    level: 4
+			    color: Kirigami.Theme.disabledTextColor
+		    }
                     Behavior on color {
                         ColorAnimation {
                             duration: 200
@@ -60,7 +65,6 @@ Kirigami.ShadowedRectangle {
                     }
                     TapHandler {
                         onTapped: {
-                            console.log(ws);
                             if (ws && ws.canActivate) {
                                 ws.activate();
                             }
