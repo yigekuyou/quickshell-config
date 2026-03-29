@@ -1,7 +1,6 @@
 import QtQuick
 import Quickshell
 import Quickshell.Services.SystemTray
-import Quickshell.Widgets // 包含 PopupWindow
 import qs.Config
 import org.kde.kirigami as Kirigami
 
