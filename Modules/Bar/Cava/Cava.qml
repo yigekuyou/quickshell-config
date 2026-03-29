@@ -29,11 +29,12 @@ Kirigami.ShadowedRectangle {
 
     Behavior on implicitWidth { NumberAnimation { duration: 300; easing.type: Easing.OutQuart } }
         
-        MouseArea {
-            anchors.fill: parent
-            cursorShape: Qt.PointingHandCursor
-            onClicked: root.expanded = !root.expanded
-        }
+        TapHandler {
+		acceptedButtons: Qt.LeftButton
+		onTapped: {
+			expanded = !root.expanded
+		}
+	}
 
         RowLayout {
 		id:widthfull

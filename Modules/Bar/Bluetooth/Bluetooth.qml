@@ -34,16 +34,13 @@ Kirigami.ShadowedRectangle {
     }
 
     // --- 交互区域 ---
-    MouseArea {
-        anchors.fill: parent
-        cursorShape: Qt.PointingHandCursor
-
-        // --- 【3】 修改点击逻辑 ---
-        onClicked: {
-            // 切换面板的开关状态
-            bluetoothPanel.visible = !bluetoothPanel.visible;
-        }
+    TapHandler {
+	    acceptedButtons: Qt.LeftButton
+	    onTapped: {
+		    bluetoothPanel.visible = !bluetoothPanel.visible;
+	    }
     }
+
 RowLayout {
 	id: layout
 	anchors.centerIn: parent

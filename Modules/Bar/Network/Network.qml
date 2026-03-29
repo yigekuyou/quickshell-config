@@ -34,16 +34,13 @@ Kirigami.ShadowedRectangle {
     }
 
     // --- 交互区域 ---
-    MouseArea {
-        anchors.fill: parent
-        cursorShape: Qt.PointingHandCursor
-        hoverEnabled: true
-        // --- 【3】 修改点击逻辑 ---
-        onClicked: {
-            // 切换面板的开关状态
-            wifiPanel.visible = !wifiPanel.visible;
-        }
+        TapHandler {
+	    acceptedButtons: Qt.LeftButton
+	    onTapped: {
+		    wifiPanel.visible = !wifiPanel.visible;
+	    }
     }
+
         RowLayout {
 		id: layout
             anchors.centerIn: parent
