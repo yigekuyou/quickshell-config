@@ -34,6 +34,9 @@ Kirigami.ShadowedRectangle {
     }
 
     // --- 交互区域 ---
+    HoverHandler {
+	    cursorShape: Qt.PointingHandCursor
+    }
         TapHandler {
 	    acceptedButtons: Qt.LeftButton
 	    onTapped: {
