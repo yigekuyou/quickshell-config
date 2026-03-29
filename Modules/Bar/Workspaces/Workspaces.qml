@@ -54,7 +54,7 @@ Kirigami.ShadowedRectangle {
                     color: ws ? (ws.active ? Kirigami.Theme.highlightColor: Kirigami.Theme.activeTextColor ): Kirigami.Theme.textColor
 		    Kirigami.Heading {
 			    anchors.centerIn: parent // 基线对齐
-			    text: ws?index+1: ""
+			    text: ws?ws.coordinates[0]: ""
 			    level: 4
 			    color: Kirigami.Theme.disabledTextColor
 		    }
