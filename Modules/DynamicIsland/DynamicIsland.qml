@@ -124,27 +124,18 @@ Kirigami.ShadowedRectangle {
         }
     }
     TapHandler {
-	    enabled: !isAuthMode
-	    cursorShape: Qt.PointingHandCursor
-	    // 注意：TapHandler 默认只接受左键，需要显式指定
-	    acceptedButtons: Qt.LeftButton | Qt.MiddleButton
-
-	    onTapped: (eventPoint, button) => {
-		    if (button === Qt.MiddleButton) {
-			    if (currentPlayer)
-				    root.showLyrics = !root.showLyrics;
-
-			    if (root.showLyrics)
-				    root.expanded = false;
-		    } else {
-			    // 处理左键或其他非中键逻辑
-			    if (root.showDashboard)
-				    root.showDashboard = false;
-			    else if (root.showLyrics)
-				    root.showLyrics = false;
-			    else
-				    root.expanded = !root.expanded;
-		    }
+	    acceptedButtons: Qt.MiddleButton
+	    onTapped: {
+		    if (currentPlayer) root.showLyrics = !root.showLyrics;
+		    if (root.showLyrics) root.expanded = false;
+	    }
+    }
+    TapHandler {
+	    acceptedButtons: Qt.LeftButton
+	    onTapped: {
+		    if (root.showDashboard) root.showDashboard = false;
+		    else if (root.showLyrics) root.showLyrics = false;
+		    else root.expanded = !root.expanded;
 	    }
     }
     Item {
