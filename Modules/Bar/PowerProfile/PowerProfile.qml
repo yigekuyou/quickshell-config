@@ -13,7 +13,7 @@ Kirigami.AbstractCard {
     // ============================================================
     // 1. 属性定义
     // ============================================================
-    property bool expanded: false
+    property bool powerexpanded: false
     property bool warning: true
     headerOrientation: Qt.Horizontal
     Component.onCompleted: {
@@ -88,14 +88,6 @@ Kirigami.AbstractCard {
     HoverHandler {
         cursorShape: Qt.PointingHandCursor
     }
-    TapHandler {
-        acceptedButtons: Qt.LeftButton
-        onTapped: {
-            if (PowerProfiles.hasPerformanceProfile) {
-                expanded = !expanded;
-            }
-        }
-    }
     contentItem: RowLayout {
         id: layout
         layoutDirection: Qt.RightToLeft
@@ -125,6 +117,14 @@ Kirigami.AbstractCard {
                     color: Kirigami.Theme.activeTextColor
                     implicitHeight: Kirigami.Units.iconSizes.small
                     implicitWidth: implicitHeight
+                    TapHandler {
+			    acceptedButtons: Qt.LeftButton
+			    onTapped: {
+				    if (PowerProfiles.hasPerformanceProfile) {
+					    powerexpanded = !powerexpanded;
+				    }
+			    }
+		    }
                 }
                 Kirigami.Separator {
                     implicitWidth: 1
@@ -144,13 +144,13 @@ Kirigami.AbstractCard {
                         }
                     }
                     // 4. 逻辑控制：如果你的音乐组件未展开，隐藏分割线
-                    visible: root.expanded
+                    visible: root.powerexpanded
                 }
             }
         }
         RowLayout {
             spacing: Kirigami.Units.smallSpacing
-            visible: expanded //
+            visible: powerexpanded //
             Kirigami.Icon {
                 id: performance
                 source: "power-profile-performance-symbolic"
@@ -170,7 +170,7 @@ Kirigami.AbstractCard {
             }
         }
         RowLayout {
-            visible: expanded //
+            visible: powerexpanded //
             spacing: Kirigami.Units.smallSpacing
             Kirigami.Icon {
                 id: balanced
@@ -186,7 +186,7 @@ Kirigami.AbstractCard {
             }
         }
         RowLayout {
-            visible: expanded //
+            visible: powerexpanded //
             spacing: Kirigami.Units.smallSpacing
             Kirigami.Icon {
                 id: powerSaver
