@@ -7,50 +7,65 @@ import com.github.yigekuyou.lyrics  // 保持原有 C++ 扩展导入
 
 Singleton {
 	id: root
-	readonly property var players:QMpris.Mpris.players.values.filter(p => p.isPlaying)
+	readonly property var players:QMpris.Mpris.players
 	property var player
 	// The data model other QML files will bind to
-	readonly property alias lyricsWTimes: lyricsWTimes
+	readonly property alias playerManager: playerManager
 	ListModel {
 		id: lyricsWTimes
 	}
-	onPlayersChanged: {
-		if (players.length === 0) {
-			player = null;
-			reset();
-		}
-	}
 	// 原有的 Mpris 逻辑对象
 	Instantiator {
+		id: playerManager
 		model: players
-		delegate: Mpris {
+		delegate: Item{
+			property var mprisData: modelData
+			property string identity: modelData.identity
+			property ListModel lyricsModel: ListModel {}
+			property var  connections: Connections {
+				target: mprisInstance
+				function onAsTextChanged() {
+					parseLyric(mprisInstance.asText, lyricsModel)
+				}
+			}
+			property Connections statusConn: Connections {
+				target: mprisData
+				onIsPlayingChanged: {
+					if (mprisData.isPlaying) {
+						player = mprisData
+					}
+				}
+				Component.onCompleted: {
+					// 调用方法获取文本
+					if (mprisData.isPlaying) {
+						player = mprisData
+					}
+
+				}
+			}
 			function handleAsTextChanged(){
-				reset()
+				lyricsWTimes.clear();
 				if (asText === ""){
 					// Use metadata title if lyrics are missing
 					let title = modelData.metadata["xesam:title"] || "Unknown Track"
-					lyricsWTimes.append({time: 0, lyric: title})
-				}parseLyric(asText)
-				player=modelData
+					lyricsModel.append({time: 0, lyric: title})
+				}parseLyric(asText,lyricsModel)
 			}
+			property Mpris mprisInstance:Mpris {
 			Component.onCompleted: {
 				// 调用方法获取文本
 				findAndGetAsText(modelData.identity)
-				if (!player || player === modelData || (asText !== "" && lyricsWTimes.count === 0)) {
-					handleAsTextChanged()
-				}
-			}
-			onAsTextChanged:{
-				if (!player || player === modelData || (asText !== "" && lyricsWTimes.count === 0)) {
 					handleAsTextChanged()
 				}
 			}
 		}
-
+	onObjectAdded: (index, object) => {
+		if (!player) player = object
 	}
-
-
-
+	onObjectRemoved: (index, object) => {
+		if (player === object) player = null
+	}
+}
 	/**
 	 *  Parse the lyric file and convert it to a list of dictionaries. Each dictionary contains a timestamp and the corresponding lyric.
 	 *  The format of the lyric file is as follows:
@@ -63,8 +78,9 @@ Singleton {
 	 *  [00:02.15]あきらめないで 手を伸ばせばヒカリが射す
 	 *  [00:02.15]请不要放弃 如果伸出手的话 就会有光芒洒落
 	 */
-	function parseLyric(lrcFile) {
+	function parseLyric(lrcFile,lyricsWTimes) {
 		// console.log(lrcFile)
+		lyricsWTimes.clear();
 		var lrcList = lrcFile.split("\n");
 		for (var i = 0; i < lrcList.length; i++) {
 			// 找到第一个 ']' 的位置
@@ -99,9 +115,5 @@ Singleton {
 		var parsedMicrosecond = (minutes * 60 + seconds) * 1000000
 		return parsedMicrosecond;
 	}
-	function reset() {
-		lyricsWTimes.clear();
-	}
-
 }
 
