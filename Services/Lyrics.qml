@@ -14,6 +14,12 @@ Singleton {
 	ListModel {
 		id: lyricsWTimes
 	}
+	onPlayersChanged: {
+		if (players.length === 0) {
+			player = null;
+			reset();
+		}
+	}
 	// 原有的 Mpris 逻辑对象
 	Instantiator {
 		model: players
