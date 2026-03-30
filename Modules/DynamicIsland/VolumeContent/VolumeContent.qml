@@ -2,6 +2,8 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import qs.Config
+import org.kde.kirigami as Kirigami
+
 Item {
     id: root
 
@@ -60,7 +62,7 @@ Item {
                 // 拖动时禁用动画，看着更跟手；非拖动(系统调节)时启用动画
                 Behavior on width { 
                     enabled: !dragArea.pressed
-                    NumberAnimation { duration: 80 } 
+                    NumberAnimation { duration: Kirigami.Units.veryLongDuration }
                 }
             }
 

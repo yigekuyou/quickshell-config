@@ -39,7 +39,7 @@ Kirigami.ShadowedRectangle {
 
                 Behavior on implicitWidth {
                     NumberAnimation {
-                        duration: 250
+                        duration: Kirigami.Units.longDuration
                         easing.type: Easing.OutQuad
                     }
                 }
@@ -70,7 +70,7 @@ Kirigami.ShadowedRectangle {
 		    }
                     Behavior on color {
                         ColorAnimation {
-                            duration: 200
+                            duration: Kirigami.Units.longDuration
                         }
                     }
 

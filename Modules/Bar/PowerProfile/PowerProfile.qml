@@ -128,7 +128,7 @@ Kirigami.AbstractCard {
 			// 3. 颜色：自动使用主题的分隔线颜色（带透明度，不突兀）
 			// 如果你想让它更亮或更暗，可以手动调节 opacity
 			opacity: 0.6
-			Behavior on opacity { NumberAnimation { duration: 200 } }
+			Behavior on opacity { NumberAnimation { duration: Kirigami.Units.longDuration } }
 			// 4. 逻辑控制：如果你的音乐组件未展开，隐藏分割线
 			visible: root.expanded
 		}

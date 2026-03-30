@@ -18,6 +18,9 @@ Variants {
 		property bool isExpanded :true
 		property int triggerHeight: 1
 		screen: modelData
+		BackgroundEffect.blurRegion: Region {
+			item: parent.contentItem
+		}
 		Timer {
 			id: hideTimer
 			interval: 5000 // 鼠标离开半秒后收起

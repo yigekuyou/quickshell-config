@@ -124,7 +124,7 @@ Kirigami.Card {
 
 				// 给小圆点加个简单的阴影或缩放效果
 				scale: seekMa.pressed ? 1.2 : 1.0
-				Behavior on scale { NumberAnimation { duration: 100 } }
+				Behavior on scale { NumberAnimation { duration: Kirigami.Units.shortDuration } }
 			}
 		}
 

@@ -27,6 +27,9 @@ Variants {
         WlrLayershell.namespace:"barWindow"
         WlrLayershell.layer: WlrLayer.Bottom
         WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
+        BackgroundEffect.blurRegion: Region {
+		item: parent.contentItem
+	}
         required property var modelData
         screen: modelData
         anchors {
@@ -44,13 +47,15 @@ Variants {
 		anchor.gravity: Edges.Bottom
 		anchor.rect.x: Math.round(modelData.width / 2)
 		anchor.rect.y: Math.round(Sizes.barHeight/2+Kirigami.Units.smallSpacing)
-
+		BackgroundEffect.blurRegion: Region {
+			item: parent.contentItem
+		}
 
 		visible: true
 		mask: null
+		color: "transparent"
 		implicitWidth: island.width + Kirigami.Units.smallSpacing
 		implicitHeight: Math.max(Sizes.barHeight, island.height )
-		color: "transparent"
 			DynamicIsland {
 				id: island
 				anchors.horizontalCenter: parent.horizontalCenter

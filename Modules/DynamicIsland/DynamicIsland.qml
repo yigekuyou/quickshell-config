@@ -112,13 +112,13 @@ Kirigami.ShadowedRectangle {
 
         Behavior on opacity {
             NumberAnimation {
-                duration: 250
+                duration: Kirigami.Units.longDuration
                 easing.type: Easing.OutQuad
             }
         }
         Behavior on scale {
             NumberAnimation {
-                duration: 300
+                duration: Kirigami.Units.veryLongDuration
                 easing.type: Easing.OutCubic
             }
         }

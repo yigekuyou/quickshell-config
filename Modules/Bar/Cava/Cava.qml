@@ -27,7 +27,7 @@ Kirigami.ShadowedRectangle {
     implicitWidth: expanded ? autoWidth : collapsedWidth
     implicitHeight: Sizes.barHeight
 
-    Behavior on implicitWidth { NumberAnimation { duration: 300; easing.type: Easing.OutQuart } }
+    Behavior on implicitWidth { NumberAnimation { duration: Kirigami.Units.longDuration; easing.type: Easing.OutQuart } }
     HoverHandler {
 	    cursorShape: Qt.PointingHandCursor
     }
@@ -49,7 +49,7 @@ Kirigami.ShadowedRectangle {
             spacing: Kirigami.Units.smallSpacing
             layoutDirection: Qt.RightToLeft
             // 加上动画，让图标从居中位置滑到右边位置，非常丝滑
-            Behavior on anchors.rightMargin { NumberAnimation { duration: 300; easing.type: Easing.OutQuart } }
+            Behavior on anchors.rightMargin { NumberAnimation { duration: Kirigami.Units.longDuration; easing.type: Easing.OutQuart } }
             
 
             // 1. 图标 (加了 ID 以便计算宽度)
@@ -81,7 +81,7 @@ Kirigami.ShadowedRectangle {
 		    // 3. 颜色：自动使用主题的分隔线颜色（带透明度，不突兀）
 		    // 如果你想让它更亮或更暗，可以手动调节 opacity
 		    opacity: 0.6
-		    Behavior on opacity { NumberAnimation { duration: 200 } }
+		    Behavior on opacity { NumberAnimation { duration: Kirigami.Units.longDuration.shortDuration } }
 		    // 4. 逻辑控制：如果你的音乐组件未展开，隐藏分割线
 		    visible: root.expanded
 	    }
@@ -108,7 +108,7 @@ Kirigami.ShadowedRectangle {
 		    // 3. 颜色：自动使用主题的分隔线颜色（带透明度，不突兀）
 		    // 如果你想让它更亮或更暗，可以手动调节 opacity
 		    opacity: 0.6
-		    Behavior on opacity { NumberAnimation { duration: 200 } }
+		    Behavior on opacity { NumberAnimation { duration: Kirigami.Units.longDuration.shortDuration } }
 		    // 4. 逻辑控制：如果你的音乐组件未展开，隐藏分割线
 		    visible: root.expanded
 	    }
