@@ -106,12 +106,12 @@ Kirigami.AbstractCard {
                 layoutDirection: Qt.RightToLeft
                 anchors.right: parent.right
                 Kirigami.Icon {
-			visible: UPowerDevice.iconName?true:false
-			source: UPowerDevice.iconName
-			color: Kirigami.Theme.activeTextColor
-			implicitHeight: Kirigami.Units.iconSizes.small
-			implicitWidth: implicitHeight
-		}
+                    visible: UPowerDevice.iconName ? true : false
+                    source: UPowerDevice.iconName
+                    color: Kirigami.Theme.activeTextColor
+                    implicitHeight: Kirigami.Units.iconSizes.small
+                    implicitWidth: implicitHeight
+                }
                 Kirigami.Icon {
                     id: warn
                     visible: warning //
