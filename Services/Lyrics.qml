@@ -40,7 +40,6 @@ Singleton {
 					if (mprisData.isPlaying) {
 						player = mprisData
 					}
-
 				}
 			}
 			function handleAsTextChanged(){
@@ -59,12 +58,6 @@ Singleton {
 				}
 			}
 		}
-	onObjectAdded: (index, object) => {
-		if (!player) player = object
-	}
-	onObjectRemoved: (index, object) => {
-		if (player === object) player = null
-	}
 }
 	/**
 	 *  Parse the lyric file and convert it to a list of dictionaries. Each dictionary contains a timestamp and the corresponding lyric.
