@@ -12,9 +12,10 @@ import org.kde.kirigamiaddons.formcard as FormCard
 PopupWindow {
 	id:root
 	anchor.window: panelWindow
+	anchor.item: menuButton
 	anchor.edges: Edges.Bottom
 	anchor.gravity: Edges.Top
-	property var pos : mapToItem(parentWindow.contentItem, parentWindow.width/2,0);
+	property var pos : mapToItem(parentWindow.contentItem, parentWindow.width/2,-Kirigami.Units.gridUnit*3);
 	anchor.rect.x: Math.round(pos.x)
 	anchor.rect.y: Math.round(pos.y)
 	grabFocus: true
@@ -28,6 +29,7 @@ Kirigami.ShadowedRectangle {
 		anchors.fill: parent
 		radius: Kirigami.Units.smallSpacing
 		color:Qt.alpha(Kirigami.Theme.backgroundColor,0.5)
+
 		// 边框使用 Kirigami 标准色
 		shadow.color: Qt.alpha(0, 0, 0, 0.3)
 		shadow.size: 10
@@ -102,6 +104,9 @@ Kirigami.ShadowedRectangle {
 								break;
 						}
 					}
+				}
+				Item{
+					height:Kirigami.Units.gridUnit*2
 				}
 			ScrollView {
 				Layout.fillWidth: true
