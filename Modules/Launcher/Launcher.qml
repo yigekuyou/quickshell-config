@@ -23,10 +23,12 @@ PanelWindow {
 	}
 	WlrLayershell.namespace: "rofi-launcher-overlay"
 	focusable:true
+	color:Qt.alpha(Kirigami.Theme.backgroundColor,0.5)
+
 	Kirigami.ShadowedRectangle {
 		anchors.fill: parent
 		radius: Kirigami.Units.smallSpacing
-		color: Kirigami.Theme.backgroundColor
+		color:Qt.alpha(Kirigami.Theme.backgroundColor,0.5)
 		// 边框使用 Kirigami 标准色
 		shadow.color: Qt.rgba(0, 0, 0, 0.3)
 		shadow.size: 10

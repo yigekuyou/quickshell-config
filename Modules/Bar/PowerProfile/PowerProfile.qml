@@ -173,6 +173,7 @@ Kirigami.AbstractCard {
         RowLayout {
             spacing: Kirigami.Units.smallSpacing
             visible: powerexpanded //
+            layoutDirection: Qt.RightToLeft
             Kirigami.Icon {
                 id: performance
                 source: "power-profile-performance-symbolic"

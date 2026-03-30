@@ -24,14 +24,12 @@ PopupWindow {
 	implicitWidth: Kirigami.Units.gridUnit * 40
 	implicitHeight: Math.max(Sizes.barHeight, Kirigami.Units.gridUnit * 30 )
 	color: "transparent"
-
-
 Kirigami.ShadowedRectangle {
 		anchors.fill: parent
 		radius: Kirigami.Units.smallSpacing
-		color: Kirigami.Theme.backgroundColor
+		color:Qt.alpha(Kirigami.Theme.backgroundColor,0.5)
 		// 边框使用 Kirigami 标准色
-		shadow.color: Qt.rgba(0, 0, 0, 0.3)
+		shadow.color: Qt.alpha(0, 0, 0, 0.3)
 		shadow.size: 10
 		shadow.yOffset: 2
 
@@ -68,6 +66,43 @@ Kirigami.ShadowedRectangle {
 					}
 				}
 			}
+			ColumnLayout{
+				Kirigami.SearchField {
+					id: searchInput
+					Layout.fillWidth: true
+					placeholderText: qsTr("搜索应用...")
+
+					text: LauncherService.searchText=""
+					onTextChanged:{
+						appGrid.currentIndex = 0
+						appGrid.model=LauncherService.model
+						LauncherService.searchText = text
+					}
+
+					// 自动聚焦
+					Component.onCompleted: forceActiveFocus()
+					onVisibleChanged: if (visible) forceActiveFocus()
+
+					// 按键控制逻辑
+					Keys.onPressed: (event) => {
+						switch (event.key) {
+							case Qt.Key_Down:
+								resultsList.incrementCurrentIndex();
+								break;
+							case Qt.Key_Up:
+								resultsList.decrementCurrentIndex();
+								break;
+							case Qt.Key_Return:
+							case Qt.Key_Enter: // 通常建议同时处理小键盘的回车
+								LauncherService.launch(resultsList.currentIndex);
+								popudroot.destroy();
+								break;
+							case Qt.Key_Escape:
+								popudroot.destroy();
+								break;
+						}
+					}
+				}
 			ScrollView {
 				Layout.fillWidth: true
 				Layout.fillHeight: true
@@ -118,6 +153,7 @@ Kirigami.ShadowedRectangle {
 					}
 
 				}
+			}
 			}
 		}
 	}
