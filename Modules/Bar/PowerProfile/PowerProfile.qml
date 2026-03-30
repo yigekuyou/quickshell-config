@@ -14,7 +14,10 @@ Kirigami.AbstractCard {
     // 1. 属性定义
     // ============================================================
     property bool powerexpanded: false
+    property bool warningexpanded: false
+    property bool deviceexpanded: false
     property bool warning: true
+    property var warningText: 0
     headerOrientation: Qt.Horizontal
     Component.onCompleted: {
         switch (PowerProfiles.profile) {
@@ -61,13 +64,16 @@ Kirigami.AbstractCard {
             switch (PowerProfiles.degradationReason) {
             case PerformanceDegradationReason.None:
                 warning = false;
+		warningText=qsTr("无");
                 break;
             case PerformanceDegradationReason.LapDetected:
                 warning = true;
-                break;
+		warningText=qsTr("电量低");
+		break;
             case PerformanceDegradationReason.HighTemperature:
                 warning = true;
-                break;
+		warningText=qsTr("高温");
+		break;
             }
         }
     }
@@ -99,10 +105,18 @@ Kirigami.AbstractCard {
                 anchors.right: parent.right
                 Kirigami.Icon {
                     visible: UPower.displayDevice.ready
-                    source: UPower.displayDevice.onBattery?UPower.displayDevice.iconName:"ac-adapter-symbolic"
+                    source: UPower.displayDevice.onBattery ? UPower.displayDevice.iconName : "ac-adapter-symbolic"
                     color: Kirigami.Theme.activeTextColor
                     implicitHeight: Kirigami.Units.iconSizes.small
                     implicitWidth: implicitHeight
+                    TapHandler {
+                        acceptedButtons: Qt.LeftButton
+                        onTapped: {
+                            if (PowerProfiles.hasPerformanceProfile) {
+                                deviceexpanded = !deviceexpanded;
+                            }
+                        }
+                    }
                 }
                 Kirigami.Icon {
                     id: warn
@@ -111,6 +125,14 @@ Kirigami.AbstractCard {
                     color: Kirigami.Theme.activeTextColor
                     implicitHeight: Kirigami.Units.iconSizes.small
                     implicitWidth: implicitHeight
+                    TapHandler {
+                        acceptedButtons: Qt.LeftButton
+                        onTapped: {
+                            if (PowerProfiles.hasPerformanceProfile) {
+                                warningexpanded = !warningexpanded;
+                            }
+                        }
+                    }
                 }
                 Kirigami.Icon {
                     id: nowpower
@@ -118,13 +140,13 @@ Kirigami.AbstractCard {
                     implicitHeight: Kirigami.Units.iconSizes.small
                     implicitWidth: implicitHeight
                     TapHandler {
-			    acceptedButtons: Qt.LeftButton
-			    onTapped: {
-				    if (PowerProfiles.hasPerformanceProfile) {
-					    powerexpanded = !powerexpanded;
-				    }
-			    }
-		    }
+                        acceptedButtons: Qt.LeftButton
+                        onTapped: {
+                            if (PowerProfiles.hasPerformanceProfile) {
+                                powerexpanded = !powerexpanded;
+                            }
+                        }
+                    }
                 }
                 Kirigami.Separator {
                     implicitWidth: 1
@@ -168,10 +190,6 @@ Kirigami.AbstractCard {
                     PowerProfiles.profile = PowerProfile.Performance;
                 }
             }
-        }
-        RowLayout {
-            visible: powerexpanded //
-            spacing: Kirigami.Units.smallSpacing
             Kirigami.Icon {
                 id: balanced
                 source: "power-profile-balanced-symbolic"
@@ -184,10 +202,6 @@ Kirigami.AbstractCard {
                     PowerProfiles.profile = PowerProfile.Balanced;
                 }
             }
-        }
-        RowLayout {
-            visible: powerexpanded //
-            spacing: Kirigami.Units.smallSpacing
             Kirigami.Icon {
                 id: powerSaver
                 source: "power-profile-power-saver-symbolic"
@@ -201,5 +215,13 @@ Kirigami.AbstractCard {
                 }
             }
         }
+        RowLayout {
+		spacing: Kirigami.Units.smallSpacing
+		visible: warningexpanded //
+		Kirigami.Heading{
+			text:warningText
+			level:5
+		}
+	}
     }
 }
