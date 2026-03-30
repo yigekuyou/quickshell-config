@@ -5,7 +5,6 @@ import QtQuick.Effects
 import QtQuick.Controls
 import Quickshell
 import Quickshell.Io
-import Quickshell.Services.Mpris
 import qs.Config
 import qs.Services
 import qs.Modules.DynamicIsland.LyricsContent
@@ -15,6 +14,7 @@ Item {
     anchors.top: parent.top
     anchors.bottom: parent.bottom
     required property var player
+    required property var lyricsWTimes
     property bool active: player.Playing
     readonly property string trackTitle: player ? player.trackTitle : ""
     readonly property string trackArtist: player ? player.trackArtist : ""
@@ -24,9 +24,9 @@ Item {
     property int currentLyricIndex: 0
     property var mprisCurrentPlayingSongTimeMS:0
     onMprisCurrentPlayingSongTimeMSChanged: {
-	    if (Lyrics.lyricsWTimes.count > 0 && player) {
-		    for (let i = 0; i < Lyrics.lyricsWTimes.count; i++) {
-			    if (Lyrics.lyricsWTimes.get(i).time >= mprisCurrentPlayingSongTimeMS) {
+	    if (lyricsWTimes.count > 0 && player) {
+		    for (let i = 0; i < lyricsWTimes.count; i++) {
+			    if (lyricsWTimes.get(i).time >= mprisCurrentPlayingSongTimeMS) {
 				    root.currentLyricIndex = i > 0 ? i - 1 : 0;
 				    break;
 			    } else {
@@ -100,8 +100,8 @@ onPositionChanged:{
             flickableDirection: Flickable.AutoFlickDirection
             orientation: ListView.Horizontal // 设置为水平滚动
             snapMode: ListView.SnapOneItem
-            cacheBuffer: Lyrics.lyricsWTimes.count
-            model: Lyrics.lyricsWTimes
+            cacheBuffer: lyricsWTimes.count
+            model: lyricsWTimes
             spacing: width
             // 歌词条目的委托
             delegate: Kirigami.Heading {
@@ -114,16 +114,16 @@ onPositionChanged:{
                 color: Kirigami.Theme.textColor
             }
             onCurrentIndexChanged: {
-                if (Lyrics.lyricsWTimes.count > 0 && currentIndex >= 0) {
+                if (lyricsWTimes.count > 0 && currentIndex >= 0) {
                     lyricListView.positionViewAtIndex(currentIndex, ListView.Right);
                     lyricScrollAnimation.stop();
-                    lyricMetrics.text = Lyrics.lyricsWTimes.get(currentIndex).lyric;
+                    lyricMetrics.text = lyricsWTimes.get(currentIndex).lyric;
                     if (lyricMetrics.advanceWidth+Kirigami.Units.smallSpacing > width) {
-                        if (currentIndex + 2 < Lyrics.lyricsWTimes.count) {
-                            lyricScrollAnimation.duration =Math.max(0,(Lyrics.lyricsWTimes.get(currentIndex + 1).time - mprisCurrentPlayingSongTimeMS) / 1000); //这是从计算器里验证的ms
+                        if (currentIndex + 2 < lyricsWTimes.count) {
+                            lyricScrollAnimation.duration =Math.max(0,(lyricsWTimes.get(currentIndex + 1).time - mprisCurrentPlayingSongTimeMS) / 1000); //这是从计算器里验证的ms
                         }
-                        if (currentIndex + 1 === Lyrics.lyricsWTimes.count) {
-                            lyricScrollAnimation.duration = (Lyrics.lyricsWTimes.length - mprisCurrentPlayingSongTimeMS) / 1000;
+                        if (currentIndex + 1 === lyricsWTimes.count) {
+                            lyricScrollAnimation.duration = (lyricsWTimes.length - mprisCurrentPlayingSongTimeMS) / 1000;
                         }
                         lyricScrollAnimation.from = contentX - width;
                         lyricScrollAnimation.to = contentX - width + lyricMetrics.advanceWidth;

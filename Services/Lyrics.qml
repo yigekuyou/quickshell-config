@@ -9,52 +9,46 @@ Singleton {
 	id: root
 	readonly property var players:QMpris.Mpris.players
 	property var player
+	readonly property ListModel activeLyrics: player ? player.lyricsModel : null
 	// The data model other QML files will bind to
 	readonly property alias playerManager: playerManager
-	ListModel {
-		id: lyricsWTimes
-	}
 	// 原有的 Mpris 逻辑对象
+
 	Instantiator {
 		id: playerManager
 		model: players
 		delegate: Item{
+			id: wrapper
 			property var mprisData: modelData
 			property string identity: modelData.identity
 			property ListModel lyricsModel: ListModel {}
-			property var  connections: Connections {
+			Connections {
 				target: mprisInstance
 				function onAsTextChanged() {
-					parseLyric(mprisInstance.asText, lyricsModel)
+					handleAsTextChanged(mprisInstance.asText,lyricsModel)
 				}
 			}
-			property Connections statusConn: Connections {
+			Connections {
 				target: mprisData
 				onIsPlayingChanged: {
 					if (mprisData.isPlaying) {
-						player = mprisData
+						player = wrapper
 					}
 				}
 				Component.onCompleted: {
 					// 调用方法获取文本
 					if (mprisData.isPlaying) {
-						player = mprisData
+						player = wrapper
 					}
 				}
 			}
-			function handleAsTextChanged(){
-				lyricsWTimes.clear();
-				if (asText === ""){
-					// Use metadata title if lyrics are missing
-					let title = modelData.metadata["xesam:title"] || "Unknown Track"
-					lyricsModel.append({time: 0, lyric: title})
-				}parseLyric(asText,lyricsModel)
-			}
+
 			property Mpris mprisInstance:Mpris {
 			Component.onCompleted: {
-				// 调用方法获取文本
+
 				findAndGetAsText(modelData.identity)
-					handleAsTextChanged()
+				handleAsTextChanged(asText,lyricsModel)
+
 				}
 			}
 		}
@@ -72,7 +66,7 @@ Singleton {
 	 *  [00:02.15]请不要放弃 如果伸出手的话 就会有光芒洒落
 	 */
 	function parseLyric(lrcFile,lyricsWTimes) {
-		// console.log(lrcFile)
+		console.log(lyricsWTimes)
 		lyricsWTimes.clear();
 		var lrcList = lrcFile.split("\n");
 		for (var i = 0; i < lrcList.length; i++) {
@@ -107,6 +101,13 @@ Singleton {
 		var seconds = parseFloat(parts[1]);
 		var parsedMicrosecond = (minutes * 60 + seconds) * 1000000
 		return parsedMicrosecond;
+	}
+	function handleAsTextChanged(asText,lyricsWTimes){
+		lyricsWTimes.clear();
+		if (asText === ""){
+			return;
+		}
+		parseLyric(asText,lyricsWTimes);
 	}
 }
 

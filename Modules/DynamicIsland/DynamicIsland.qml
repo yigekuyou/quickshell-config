@@ -1,7 +1,6 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
-import Quickshell.Services.Mpris
 import Quickshell.Services.Pipewire
 import Quickshell.Services.Notifications
 import qs.Services
@@ -31,6 +30,7 @@ Kirigami.ShadowedRectangle {
     property bool showDashboard: false
     property bool expanded: false
     property bool showLyrics: currentPlayer && currentPlayer.isPlaying
+    property var currentPlayer: Lyrics.player
 
     // 简化后的逻辑判定
     property bool isDashboardMode: showDashboard
@@ -156,8 +156,9 @@ Kirigami.ShadowedRectangle {
             active: root.state === "LYRICS"
             LyricsContent {
                 anchors.fill: parent
-                player: root.currentPlayer
+                player: root.currentPlayer.mprisData
                 active: true
+                lyricsWTimes:root.currentPlayer.lyricsModel
             }
         }
         IslandContent {
@@ -173,7 +174,7 @@ Kirigami.ShadowedRectangle {
             MediaContent {
                 anchors.fill: parent
                 anchors.margins: 20
-                player: root.currentPlayer
+                player: root.currentPlayer.mprisData
             }
         }
         IslandContent {
@@ -200,6 +201,4 @@ Kirigami.ShadowedRectangle {
             return "LAUNCHER_TOGGLED";
         }
     }
-
-    property var currentPlayer: Lyrics.player
 }
