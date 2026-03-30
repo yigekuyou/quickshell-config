@@ -66,7 +66,7 @@ Singleton {
 	 *  [00:02.15]请不要放弃 如果伸出手的话 就会有光芒洒落
 	 */
 	function parseLyric(lrcFile,lyricsWTimes) {
-		console.log(lyricsWTimes)
+		//console.log(lyricsWTimes)
 		lyricsWTimes.clear();
 		var lrcList = lrcFile.split("\n");
 		for (var i = 0; i < lrcList.length; i++) {
