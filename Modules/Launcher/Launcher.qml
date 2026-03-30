@@ -12,14 +12,14 @@ import org.kde.kirigamiaddons.formcard as FormCard
 
 PanelWindow {
 	id:popudroot
-	anchors { top: true; left: true; right: true }
+	anchors { left: true; right: true }
 	exclusionMode:ExclusionMode.Ignore
 	property int sideMargin: screen.width / 3
 	implicitHeight: Kirigami.Units.gridUnit * 30
 	margins {
 		left: sideMargin
 		right: sideMargin
-		top: Kirigami.Units.smallSpacing+Sizes.barHeight // 顶部留一点点像素缝隙更美观
+		top: Kirigami.Units.smallSpacing+Sizes.barHeight+Kirigami.Units.gridUnit*2 // 顶部留一点点像素缝隙更美观
 	}
 	WlrLayershell.namespace: "rofi-launcher-overlay"
 	focusable:true
