@@ -106,8 +106,8 @@ Kirigami.AbstractCard {
                 layoutDirection: Qt.RightToLeft
                 anchors.right: parent.right
                 Kirigami.Icon {
-                    visible: UPowerDevice.iconName ? true : false
-                    source: UPowerDevice.iconName
+                    visible: UPower.displayDevice.ready
+                    source: UPower.displayDevice.onBattery?UPower.displayDevice.iconName:"ac-adapter-symbolic"
                     color: Kirigami.Theme.activeTextColor
                     implicitHeight: Kirigami.Units.iconSizes.small
                     implicitWidth: implicitHeight
