@@ -7,45 +7,43 @@ import com.github.yigekuyou.lyrics  // 保持原有 C++ 扩展导入
 
 Singleton {
 	id: root
-	readonly property var player: {
-		let list = QMpris.Mpris.players.values;
-		for (let i = 0; i < list.length; i++) {
-			if (list[i].isPlaying) return list[i];
-		}
-		return list.length > 0 ? list[0] : null;
-	}
-	property string identity : player ? (player.identity || "") : ""
-
+	readonly property var players:QMpris.Mpris.players.values.filter(p => p.isPlaying)
+	property var player
 	// The data model other QML files will bind to
 	readonly property alias lyricsWTimes: lyricsWTimes
-	onIdentityChanged: {
-		if (identity) {
-			lyricSource.findAndGetAsText(identity);
-		}
-	}
 	ListModel {
 		id: lyricsWTimes
 	}
 	// 原有的 Mpris 逻辑对象
-	Mpris {
-		id: lyricSource
-	}
-	function handleAsTextChanged(){
-		reset()
-		if (player){
-			if (lyricSource.asText === ""){
-				// Use metadata title if lyrics are missing
-				let title = player.metadata["xesam:title"] || "Unknown Track"
-				lyricsWTimes.append({time: 0, lyric: title})
-			}parseLyric(lyricSource.asText)
+	Instantiator {
+		model: players
+		delegate: Mpris {
+			function handleAsTextChanged(){
+				reset()
+				if (asText === ""){
+					// Use metadata title if lyrics are missing
+					let title = modelData.metadata["xesam:title"] || "Unknown Track"
+					lyricsWTimes.append({time: 0, lyric: title})
+				}parseLyric(asText)
+				player=modelData
+			}
+			Component.onCompleted: {
+				// 调用方法获取文本
+				findAndGetAsText(modelData.identity)
+				if (!player || player === modelData || (asText !== "" && lyricsWTimes.count === 0)) {
+					handleAsTextChanged()
+				}
+			}
+			onAsTextChanged:{
+				if (!player || player === modelData || (asText !== "" && lyricsWTimes.count === 0)) {
+					handleAsTextChanged()
+				}
+			}
 		}
+
 	}
-	Connections {
-		target: lyricSource
-		function onAsTextChanged() {
-			handleAsTextChanged()
-		}
-	}
+
+
 
 	/**
 	 *  Parse the lyric file and convert it to a list of dictionaries. Each dictionary contains a timestamp and the corresponding lyric.

@@ -12,7 +12,7 @@ import org.kde.kirigamiaddons.formcard as FormCard
 
 PanelWindow {
 	id:popudroot
-	anchors { left: true; right: true }
+	anchors { top:true ;left: true; right: true }
 	exclusionMode:ExclusionMode.Ignore
 	property int sideMargin: screen.width / 3
 	implicitHeight: Kirigami.Units.gridUnit * 30

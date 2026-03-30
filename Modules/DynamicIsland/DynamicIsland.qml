@@ -201,21 +201,5 @@ Kirigami.ShadowedRectangle {
         }
     }
 
-    property var currentPlayer: null
-    Timer {
-        id: stickyTimer
-        interval: 500
-        repeat: true
-        running: Mpris.players.values.length > 0
-        triggeredOnStart: true
-        onTriggered: {
-            let players = Mpris.players.values;
-            if (players.length === 0) {
-                root.currentPlayer = null;
-                return;
-            }
-            let playing = players.find(p => p.isPlaying);
-            root.currentPlayer = playing ? playing : players[0];
-        }
-    }
+    property var currentPlayer: Lyrics.player
 }
