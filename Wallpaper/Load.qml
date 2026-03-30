@@ -77,7 +77,8 @@ Scope {
 			// 1. 设置执行文件路径
 			command: ["qs", "--path", Quickshell.env("XDG_CONFIG_HOME") + "/quickshell/Wallpaper/Lock.qml"]
 			environment: ({
-				"QSLOCK": "1"
+				"QSLOCK": "1",
+				"QS_APP_ID":"org.quickshell.lock"
 			})
 		}
 
@@ -93,6 +94,7 @@ Scope {
 			// 3. 设置环境变量
 			environment: ({
 				"QSLOCK": "1",
+				"QS_APP_ID":"org.quickshell.lock",
 				"DRI_PRIME": "1",
 				"QSG_RHI_BACKEND": "opengl"
 			})
@@ -105,6 +107,9 @@ Scope {
 			running: true
 			// 1. 设置执行文件路径
 			command: ["qs", "--path", Quickshell.env("XDG_CONFIG_HOME") + "/quickshell/Wallpaper/Notif.qml"]
+			environment: ({
+				"QS_APP_ID":"org.quickshell.notif"
+			})
 		}
 	}
     Process {
@@ -133,6 +138,7 @@ Scope {
 		    // 3. 设置环境变量
 		    environment: ({
 			    "DRI_PRIME": "1",
+			    "QS_APP_ID":"org.quickshell.wall",
 			    "QSG_RHI_BACKEND": "opengl"
 		    })
 	    }
