@@ -9,20 +9,20 @@ import qs.Modules.DynamicIsland.LyricsContent
 import qs.Services
 
 Kirigami.CardsListView {
-    model: Lyrics.playerManager.object
+    model: Lyrics.players
     orientation: ListView.Horizontal
     snapMode: ListView.SnapOneItem
+    spacing: Kirigami.Units.largeSpacing
     highlightRangeMode: ListView.StrictlyEnforceRange
     delegate: Kirigami.Card {
-
         background: Rectangle {
             color: "transparent"
             radius: Kirigami.Units.gridUnit
 
             // 如果你希望完全透明，直接用 color: "transparent"
         }
-        property var player: modelData.mprisData
-        property ListModel lyricsModel: modelData.lyricsModel
+        property var player: Lyrics.playerManager.objectAt(index).mprisData
+        property ListModel lyricsModel: Lyrics.playerManager.objectAt(index).lyricsModel
 
         property string artUrl: (player.trackArtUrl) ? player.trackArtUrl : ""
         property string title: (player.trackTitle) ? player.trackTitle : "No Media"
