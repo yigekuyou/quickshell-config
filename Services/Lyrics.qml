@@ -33,9 +33,15 @@ Singleton {
 					if (mprisData.isPlaying) {
 						player = wrapper
 					}
+					if (!player) {
+						player = wrapper
+					}
 				}
 				Component.onCompleted: {
 					// 调用方法获取文本
+					if (!player) {
+						player = wrapper
+					}
 					if (mprisData.isPlaying) {
 						player = wrapper
 					}
