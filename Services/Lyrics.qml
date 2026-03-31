@@ -29,7 +29,7 @@ Singleton {
 			}
 			Connections {
 				target: mprisData
-				onIsPlayingChanged: {
+				function onIsPlayingChanged() {
 					if (mprisData.isPlaying) {
 						player = wrapper
 					}
