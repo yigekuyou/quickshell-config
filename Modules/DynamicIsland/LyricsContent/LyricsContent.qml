@@ -13,8 +13,7 @@ Item {
     anchors.top: parent.top
     anchors.bottom: parent.bottom
     property var player: Lyrics.player.mprisData
-    property ListModel lyricsWTimes :Lyrics.player.lyricsWTimes
-    property bool active: player.Playing
+    property ListModel lyricsWTimes :Lyrics.player.lyricsModel
     readonly property string trackTitle: player ? player.trackTitle : ""
     readonly property string trackArtist: player ? player.trackArtist : ""
     readonly property string playerName: player ? (player.identity || player.busName || "") : ""

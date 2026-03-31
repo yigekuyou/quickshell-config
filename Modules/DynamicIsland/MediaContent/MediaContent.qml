@@ -18,7 +18,7 @@ Kirigami.Card {
 
     }
     property var player :Lyrics.player.mprisData
-    property ListModel lyricsWTimes:Lyrics.player.lyricsModel
+    property ListModel lyricsModel:Lyrics.player.lyricsModel
 
     readonly property bool isActive: root.visible && root.player
 
@@ -87,9 +87,9 @@ Kirigami.Card {
 			implicitHeight:Kirigami.Units.gridUnit
 			implicitWidth:parent.width
 			LyricsText{
-				player:Lyrics.player.mprisData
+				player:root.player
 				anchors.fill: parent
-				lyricsWTimes:Lyrics.player.lyricsModel
+				lyricsWTimes:root.lyricsModel
 			}
 		}
 

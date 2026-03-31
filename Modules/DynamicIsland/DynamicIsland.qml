@@ -156,9 +156,6 @@ Kirigami.ShadowedRectangle {
             active: root.state === "LYRICS"
             LyricsContent {
                 anchors.fill: parent
-                player: root.currentPlayer.mprisData
-                active: true
-                lyricsWTimes:root.currentPlayer.lyricsModel
             }
         }
         IslandContent {
