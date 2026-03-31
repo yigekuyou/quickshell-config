@@ -9,13 +9,13 @@ import qs.Modules.DynamicIsland.LyricsContent
 import qs.Services
 
 Kirigami.CardsListView {
+	spacing: parent.width/5
     model: Lyrics.players
     orientation: ListView.Horizontal
     snapMode: ListView.SnapOneItem
-    spacing: Kirigami.Units.largeSpacing
     highlightRangeMode: ListView.StrictlyEnforceRange
     delegate: Kirigami.Card {
-        background: Rectangle {
+	background: Rectangle {
             color: "transparent"
             radius: Kirigami.Units.gridUnit
 
@@ -223,6 +223,17 @@ Kirigami.CardsListView {
                     ToolTip.text: "下一首"
                 }
             }
+            Item {
+		    id: pageindex
+		    Layout.fillWidth: true
+		    Layout.preferredHeight: Kirigami.Units.gridUnit // 增加感应区域高度，方便手指/鼠标操作
+	    }
         }
+    }
+    PageIndicator {
+	    anchors.bottom: parent.bottom
+	    anchors.horizontalCenter: parent.horizontalCenter
+	    count: parent.count
+	    currentIndex: parent.currentIndex
     }
 }
