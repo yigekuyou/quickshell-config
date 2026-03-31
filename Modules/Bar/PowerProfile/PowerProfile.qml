@@ -256,11 +256,22 @@ Kirigami.AbstractCard {
 					level:5
 					color: Kirigami.Theme.activeTextColor
 				}
-				Kirigami.Heading {
-					id: deviceenergy
-					text:modelData.percentage*100 +"%"
-					level:5
+
+				Kirigami.Icon {
+					id: devicepower
+					source: {
+						if (modelData.iconName=="battery-missing-symbolic"){
+							let level = Math.round((modelData.percentage * 100) / 10) * 10;
+							// 限制范围在 0-100 之间
+							level = Math.max(0, Math.min(100, level));
+							if (level <= 10) return "battery-level-10"; // 通常最低从 10 开始
+							return "battery-level-" + level;
+						}
+						return modelData.iconName
+					}
 					color: Kirigami.Theme.activeTextColor
+					implicitHeight: Kirigami.Units.iconSizes.small
+					implicitWidth: implicitHeight
 				}
 			}
 		}
