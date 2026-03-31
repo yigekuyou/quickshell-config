@@ -10,6 +10,8 @@ import qs.Services
 
 Kirigami.CardsListView {
     anchors.fill: parent
+    leftMargin: 0
+    rightMargin: 0
     spacing: parent.width / 5
     model: Lyrics.players
     orientation: ListView.Horizontal
@@ -22,7 +24,6 @@ Kirigami.CardsListView {
 
             // 如果你希望完全透明，直接用 color: "transparent"
         }
-        width:implicitWidth
         property var activeplayer: Lyrics.playerManager.objectAt(index).mprisData
         property ListModel lyricsModel: Lyrics.playerManager.objectAt(index).lyricsModel
 
