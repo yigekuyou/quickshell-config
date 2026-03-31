@@ -7,7 +7,6 @@ import Quickshell
 import Quickshell.Io
 import qs.Config
 import qs.Services
-import qs.Modules.DynamicIsland.LyricsContent
 import org.kde.kirigami as Kirigami
 Item {
     id: root
@@ -52,7 +51,7 @@ onPositionChanged:{
 	    running: player && player.isPlaying
 	    interval: 200
 	    repeat: true
-	    onTriggered: if (root.active == MprisPlaybackState.Playing){player.positionChanged()}
+	    onTriggered: player.positionChanged()
     }
     Binding {
         target: lyricListView
