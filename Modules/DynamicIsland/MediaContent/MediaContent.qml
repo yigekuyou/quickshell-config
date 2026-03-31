@@ -22,7 +22,7 @@ Kirigami.CardsListView {
 
             // 如果你希望完全透明，直接用 color: "transparent"
         }
-        width:Kirigami.Units.gridUnit *22
+        width:implicitWidth
         property var activeplayer: Lyrics.playerManager.objectAt(index).mprisData
         property ListModel lyricsModel: Lyrics.playerManager.objectAt(index).lyricsModel
 
