@@ -85,7 +85,7 @@ Kirigami.Card {
                 }
                 Item {
 			implicitHeight:Kirigami.Units.gridUnit
-			implicitWidth:parent.width
+			implicitWidth:Kirigami.Units.gridUnit *17
 			LyricsText{
 				player:root.player
 				anchors.fill: parent
