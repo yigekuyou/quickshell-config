@@ -92,15 +92,6 @@ Kirigami.ShadowedRectangle {
         }
     ]
 
-    transitions: Transition {
-        from: "*"
-        to: "*"
-        NumberAnimation {
-            properties: "width,height,radius"
-            duration: Kirigami.Units.longDuration
-            easing.type: Easing.OutCubic
-        }
-    }
     // ================= 内部内容包装器 =================
     component IslandContent: Item {
 	    focus: true
@@ -178,23 +169,6 @@ Kirigami.ShadowedRectangle {
             DashboardContent {
                 anchors.fill: parent
             }
-        }
-    }
-
-    // ================= 逻辑与交互 (保持原功能) =================
-    IpcHandler {
-        target: "island"
-        function dashboard() {
-            root.showDashboard = !root.showDashboard;
-            return "DASHBOARD_TOGGLED";
-        }
-        function wallpaper() {
-            root.showWallpaper = !root.showWallpaper;
-            return "WALLPAPER_TOGGLED";
-        }
-        function launcher() {
-            root.showLauncher = !root.showLauncher;
-            return "LAUNCHER_TOGGLED";
         }
     }
 }
