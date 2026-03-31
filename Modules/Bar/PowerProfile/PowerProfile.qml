@@ -265,7 +265,7 @@ Kirigami.AbstractCard {
 							// 限制范围在 0-100 之间
 							level = Math.max(0, Math.min(100, level));
 							if (level <= 10) return "battery-level-10"; // 通常最低从 10 开始
-							return "battery-level-" + level;
+							return "battery-level-" + level+"-symbolic";
 						}
 						return modelData.iconName
 					}
