@@ -60,8 +60,8 @@ Kirigami.CardsListView {
                     // 没封面时显示的图标
                     Kirigami.Icon {
                         anchors.centerIn: parent
-                        width: 32
-                        height: 32
+                        width: Kirigami.Units.iconSizes.medium
+                        height: Kirigami.Units.iconSizes.medium
                         source: "audio-x-generic"
                         visible: artUrl === "" && status !== Kirigami.Icon.Error
                     }
@@ -87,15 +87,15 @@ Kirigami.CardsListView {
                         opacity: 0.7
                         elide: Text.ElideRight
                     }
-                    Item {
-                        implicitHeight: Kirigami.Units.gridUnit
-                        implicitWidth: Kirigami.Units.gridUnit * 17
                         LyricsText {
                             player: activeplayer
-                            anchors.fill: parent
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            clip: true
+                            implicitHeight: Kirigami.Units.gridUnit
+                            implicitWidth: Kirigami.Units.gridUnit * 17
                             lyricsWTimes: lyricsModel
                         }
-                    }
                 }
             }
             Item {
