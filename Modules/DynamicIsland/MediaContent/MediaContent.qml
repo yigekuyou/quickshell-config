@@ -21,15 +21,15 @@ Kirigami.CardsListView {
 
             // 如果你希望完全透明，直接用 color: "transparent"
         }
-        property var player: Lyrics.playerManager.objectAt(index).mprisData
+        property var activeplayer: Lyrics.playerManager.objectAt(index).mprisData
         property ListModel lyricsModel: Lyrics.playerManager.objectAt(index).lyricsModel
 
-        property string artUrl: (player.trackArtUrl) ? player.trackArtUrl : ""
-        property string title: (player.trackTitle) ? player.trackTitle : "No Media"
-        property string artist: (player.trackArtist) ? player.trackArtist : ""
+        property string artUrl: (activeplayer.trackArtUrl) ? activeplayer.trackArtUrl : ""
+        property string title: (activeplayer.trackTitle) ? activeplayer.trackTitle : "No Media"
+        property string artist: (activeplayer.trackArtist) ? activeplayer.trackArtist : ""
 
         // 进度百分比 (0.0 ~ 1.0)
-        property double progress: (player.length > 0) ? (player.position / player.length) : 0
+        property double progress: (activeplayer.length > 0) ? (activeplayer.position / activeplayer.length) : 0
         padding: Kirigami.Units.largeSpacing
         contentItem: ColumnLayout {
             anchors.fill: parent
@@ -90,7 +90,7 @@ Kirigami.CardsListView {
                         implicitHeight: Kirigami.Units.gridUnit
                         implicitWidth: Kirigami.Units.gridUnit * 17
                         LyricsText {
-                            player: player
+                            player: activeplayer
                             anchors.fill: parent
                             lyricsWTimes: lyricsModel
                         }
@@ -118,7 +118,7 @@ Kirigami.CardsListView {
                         radius: parent.radius
                         color: "white"
                         width: {
-                            if (seekMa.pressed && player.canSeek) {
+                            if (seekMa.pressed && activeplayer.canSeek) {
                                 // 拖动时：强制跟随鼠标，限制在 0 到 总宽 之间
                                 return Math.min(Math.max(0, seekMa.mouseX), trackBg.width);
                             }
@@ -151,28 +151,28 @@ Kirigami.CardsListView {
                     id: seekMa
                     anchors.fill: parent
                     hoverEnabled: true
-                    cursorShape: player.canSeek ? Qt.PointingHandCursor : Qt.ArrowCursor
+                    cursorShape: activeplayer.canSeek ? Qt.PointingHandCursor : Qt.ArrowCursor
 
                     onClicked: {
-                        if (player.canSeek) {
+                        if (activeplayer.canSeek) {
                             // 计算点击位置占总长的比例
                             let pos = Math.min(Math.max(0, mouseX / trackBg.width), 1.0);
-                            // 执行跳转： player.length * 比例
-                            player.position = pos * player.length;
+                            // 执行跳转： activeplayer.length * 比例
+                            activeplayer.position = pos * activeplayer.length;
                         }
                     }
 
                     onPositionChanged: {
-                        if (pressed && player.canSeek) {
-                            // 实时拖动时不需要立即给 player 发送 position（防止性能损耗或爆音）
+                        if (pressed && activeplayer.canSeek) {
+                            // 实时拖动时不需要立即给 activeplayer 发送 position（防止性能损耗或爆音）
                             // 宽度会通过上面的 binding 自动更新
                         }
                     }
 
                     onReleased: {
-                        if (player.canSeek) {
+                        if (activeplayer.canSeek) {
                             let pos = Math.min(Math.max(0, mouseX / trackBg.width), 1.0);
-                            player.position = pos * player.length;
+                            activeplayer.position = pos * activeplayer.length;
                         }
                     }
                 }
@@ -189,8 +189,8 @@ Kirigami.CardsListView {
                     icon.height: Kirigami.Units.gridUnit * 1.2
                     flat: true
                     icon.name: "media-skip-backward-symbolic"
-                    onClicked: if (player)
-                        player.previous()
+                    onClicked: if (activeplayer)
+                        activeplayer.previous()
                     display: AbstractButton.IconOnly
                     ToolTip.visible: hovered
                     ToolTip.text: "上一首"
@@ -201,12 +201,12 @@ Kirigami.CardsListView {
                     // 增大播放按钮
                     icon.width: Kirigami.Units.gridUnit * 2
                     icon.height: Kirigami.Units.gridUnit * 2
-                    icon.name: (player && player.isPlaying) ? "media-playback-pause-symbolic" : "media-playback-start-symbolic"
-                    onClicked: if (player)
-                        player.togglePlaying()
+                    icon.name: (activeplayer && activeplayer.isPlaying) ? "media-playback-pause-symbolic" : "media-playback-start-symbolic"
+                    onClicked: if (activeplayer)
+                        activeplayer.togglePlaying()
                     display: AbstractButton.IconOnly
                     ToolTip.visible: hovered
-                    ToolTip.text: (player && player.isPlaying) ? "暂停" : "播放"
+                    ToolTip.text: (activeplayer && activeplayer.isPlaying) ? "暂停" : "播放"
                 }
 
                 Button {
@@ -216,8 +216,8 @@ Kirigami.CardsListView {
                     icon.height: Kirigami.Units.gridUnit * 1.2
                     flat: true
                     icon.name: "media-skip-forward-symbolic"
-                    onClicked: if (player)
-                        player.next()
+                    onClicked: if (activeplayer)
+                        activeplayer.next()
                     display: AbstractButton.IconOnly
                     ToolTip.visible: hovered
                     ToolTip.text: "下一首"
