@@ -5,6 +5,9 @@ import qs.Config
 import QtQuick.Controls
 import org.kde.kirigami as Kirigami
 import QtQuick.Effects
+import qs.Modules.DynamicIsland.LyricsContent
+import qs.Services
+
 Kirigami.Card {
     id: root
     background: Rectangle {
@@ -14,8 +17,8 @@ Kirigami.Card {
 	    // 如果你希望完全透明，直接用 color: "transparent"
 
     }
-
-    required property var player
+    property var player :Lyrics.player.mprisData
+    property ListModel lyricsWTimes:Lyrics.player.lyricsModel
 
     readonly property bool isActive: root.visible && root.player
 
@@ -73,14 +76,23 @@ Kirigami.Card {
 			elide: Text.ElideRight
 			type: Kirigami.Heading.Type.Primary
 		}
-                Label {
+                Kirigami.Heading {
                     text: root.artist
-                    color: "#aaa"
-                    font.pointSize: Kirigami.Theme.smallFont.pointSize
+                    level: 5
                     Layout.fillWidth: true
                     opacity: 0.7
                     elide: Text.ElideRight
                 }
+                Item {
+			implicitHeight:Kirigami.Units.gridUnit
+			implicitWidth:parent.width
+			LyricsText{
+				player:Lyrics.player.mprisData
+				anchors.fill: parent
+				lyricsWTimes:Lyrics.player.lyricsModel
+			}
+		}
+
             }
         }
         Item {

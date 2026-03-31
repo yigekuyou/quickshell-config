@@ -174,7 +174,6 @@ Kirigami.ShadowedRectangle {
             MediaContent {
                 anchors.fill: parent
                 anchors.margins: 20
-                player: root.currentPlayer.mprisData
             }
         }
         IslandContent {

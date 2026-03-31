@@ -9,7 +9,6 @@ Singleton {
 	id: root
 	readonly property var players:QMpris.Mpris.players
 	property var player
-	readonly property ListModel activeLyrics: player ? player.lyricsModel : null
 	// The data model other QML files will bind to
 	readonly property alias playerManager: playerManager
 	// 原有的 Mpris 逻辑对象
