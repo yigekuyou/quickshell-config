@@ -12,12 +12,6 @@ import org.kde.kirigami as Kirigami
 // 歌词列表
 ListView {
     id: lyricListView
-    preferredHighlightBegin: 0
-    preferredHighlightEnd: width
-    anchors.left: albumCoverContainer.right
-    anchors.right: parent.right
-    anchors.top: parent.top
-    anchors.bottom: parent.bottom
     property var player
     property ListModel lyricsWTimes
     readonly property var position: player ? (player.position * 1000 * 1000 || 0) : 0
