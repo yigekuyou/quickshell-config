@@ -11,6 +11,9 @@ import org.kde.kirigami as Kirigami
 
 Kirigami.CardsListView {
     anchors.fill: parent
+    leftMargin: 0
+    rightMargin: 0
+
     spacing: parent.width / 5
     model: Lyrics.players
     orientation: ListView.Horizontal
