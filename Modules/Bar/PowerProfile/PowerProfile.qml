@@ -224,5 +224,27 @@ Kirigami.AbstractCard {
 			level:5
 		}
 	}
+	RowLayout {
+		spacing: Kirigami.Units.smallSpacing
+		visible: deviceexpanded //
+		Repeater{
+			model:UPower.devices
+			delegate:RowLayout{
+				Kirigami.Heading {
+					id: devicename
+					text:UPowerDeviceType.toString(modelData.type)
+					level:5
+					color: Kirigami.Theme.activeTextColor
+				}
+				Kirigami.Icon {
+					id: devicepower
+					source: modelData.isLaptopBattery ? modelData.iconName: "ac-adapter-symbolic"
+					color: Kirigami.Theme.activeTextColor
+					implicitHeight: Kirigami.Units.iconSizes.small
+					implicitWidth: implicitHeight
+				}
+			}
+		}
+	}
     }
 }
