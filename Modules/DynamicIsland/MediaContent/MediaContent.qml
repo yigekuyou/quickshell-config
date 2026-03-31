@@ -30,7 +30,7 @@ Kirigami.CardsListView {
         property string artist: (activeplayer.trackArtist) ? activeplayer.trackArtist : ""
 
         // 进度百分比 (0.0 ~ 1.0)
-        property double progress: (activeplayer.length > 0) ? (activeplayer.position / activeplayer.length) : 0
+	property double progress: (activeplayer.length > 0) ? Math.min(activeplayer.position / activeplayer.length, 1.0): 0
         padding: Kirigami.Units.largeSpacing
         contentItem: ColumnLayout {
             anchors.fill: parent
@@ -131,9 +131,9 @@ Kirigami.CardsListView {
                     Rectangle {
                         x: progressFill.width - width / 2
                         anchors.verticalCenter: parent.verticalCenter
-                        width: 12
-                        height: 12
-                        radius: 6
+                        width: Kirigami.Units.gridUnit
+                        height: Kirigami.Units.gridUnit
+                        radius: Kirigami.Units.gridUnit/2
                         color: "white"
                         visible: seekMa.containsMouse || seekMa.pressed
 
