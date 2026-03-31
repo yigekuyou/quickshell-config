@@ -24,8 +24,6 @@ Kirigami.CardsListView {
 
             // 如果你希望完全透明，直接用 color: "transparent"
         }
-        anchors.top: parent.top
-        anchors.bottom: parent.bottom
         property var player: Lyrics.playerManager.objectAt(index).mprisData
         property ListModel lyricsWTimes: Lyrics.playerManager.objectAt(index).lyricsModel
         readonly property string trackTitle: player ? player.trackTitle : ""
@@ -41,7 +39,7 @@ Kirigami.CardsListView {
                 id: coverImg
                 source: actived.artUrl
                 visible: actived.artUrl !== ""
-                Layout.preferredHeight: Kirigami.Units.iconSizes.smallMedium
+                Layout.preferredHeight: Kirigami.Units.iconSizes.medium
                 Layout.preferredWidth: Layout.preferredHeight
                 fillMode: Image.PreserveAspectCrop
             }
@@ -54,5 +52,11 @@ Kirigami.CardsListView {
                 clip: true
             }
         }
+    }
+    PageIndicator {
+	    anchors.bottom: parent.bottom
+	    anchors.horizontalCenter: parent.horizontalCenter
+	    count: parent.count
+	    currentIndex: parent.currentIndex
     }
 }
