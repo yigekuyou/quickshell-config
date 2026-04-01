@@ -24,20 +24,19 @@ Kirigami.CardsListView {
 
             // 如果你希望完全透明，直接用 color: "transparent"
         }
-        property var activeplayer: Lyrics.playerManager.objectAt(index).mprisData
-        property ListModel lyricsModel: Lyrics.playerManager.objectAt(index).lyricsModel
-
-        property string artUrl: (activeplayer.trackArtUrl) ? activeplayer.trackArtUrl : ""
-        property string title: (activeplayer.trackTitle) ? activeplayer.trackTitle : "No Media"
-        property string artist: (activeplayer.trackArtist) ? activeplayer.trackArtist : ""
+        readonly property var activeplayer: Lyrics.playerManager.objectAt(index).mprisData
+        readonly property ListModel lyricsModel: Lyrics.playerManager.objectAt(index).lyricsModel
+        readonly property string playername: activeplayer ? (activeplayer.identity || activeplayer.busName || "") : ""
+        readonly property string artUrl: (activeplayer.trackArtUrl) ? activeplayer.trackArtUrl : ""
+        readonly property string title: (activeplayer.trackTitle) ? activeplayer.trackTitle : "No Media"
+        readonly property string artist: (activeplayer.trackArtist) ? activeplayer.trackArtist : ""
 
         // 进度百分比 (0.0 ~ 1.0)
-	property double progress: (activeplayer.length > 0&&activeplayer.position>0) ? Math.min(activeplayer.position / activeplayer.length, 1.0): 0
+        property double progress: (activeplayer.length > 0 && activeplayer.position > 0) ? Math.min(activeplayer.position / activeplayer.length, 1.0) : 0
         padding: Kirigami.Units.largeSpacing
         contentItem: ColumnLayout {
             anchors.fill: parent
             spacing: Kirigami.Units.largeSpacing
-
             // --- 顶部信息栏 (封面 + 歌名) ---
             RowLayout {
                 Layout.fillWidth: true
@@ -51,7 +50,7 @@ Kirigami.CardsListView {
                     radius: Kirigami.Units.smallSpacing
                     color: Kirigami.Theme.backgroundColor
 
-                    Image {
+                    Kirigami.ShadowedImage {
                         anchors.fill: parent
                         source: artUrl
                         fillMode: Image.PreserveAspectCrop
@@ -74,14 +73,22 @@ Kirigami.CardsListView {
                     Layout.fillWidth: true
                     Layout.alignment: Qt.AlignVCenter
                     spacing: 4
-
-                    Kirigami.Heading {
-                        text: title
-                        level: 2
-                        Layout.fillWidth: true
-                        elide: Text.ElideRight
-                        type: Kirigami.Heading.Type.Primary
+                    RowLayout {
+                        Kirigami.Heading {
+                            text: title
+                            level: 2
+                            Layout.fillWidth: true
+                            elide: Text.ElideRight
+                            type: Kirigami.Heading.Type.Primary
+                        }
+                        Kirigami.Heading {
+                            text: playername
+                            level: 5
+                            opacity: 0.7
+                            elide: Text.ElideRight
+                        }
                     }
+
                     Kirigami.Heading {
                         text: artist
                         level: 5
@@ -89,15 +96,15 @@ Kirigami.CardsListView {
                         opacity: 0.7
                         elide: Text.ElideRight
                     }
-                        LyricsText {
-                            player: activeplayer
-                            Layout.fillWidth: true
-                            Layout.fillHeight: true
-                            clip: true
-                            implicitHeight: Kirigami.Units.gridUnit
-                            implicitWidth: Kirigami.Units.gridUnit * 17
-                            lyricsWTimes: lyricsModel
-                        }
+                    LyricsText {
+                        player: activeplayer
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        clip: true
+                        implicitHeight: Kirigami.Units.gridUnit
+                        implicitWidth: Kirigami.Units.gridUnit * 17
+                        lyricsWTimes: lyricsModel
+                    }
                 }
             }
             Item {
@@ -135,7 +142,7 @@ Kirigami.CardsListView {
                         anchors.verticalCenter: parent.verticalCenter
                         width: Kirigami.Units.gridUnit
                         height: Kirigami.Units.gridUnit
-                        radius: Kirigami.Units.gridUnit/2
+                        radius: Kirigami.Units.gridUnit / 2
                         color: "white"
                         visible: seekMa.containsMouse || seekMa.pressed
 

@@ -37,23 +37,54 @@ Kirigami.CardsListView {
         // 专辑封面
         contentItem: RowLayout {
             spacing: Kirigami.Units.mediumSpacing
+            Kirigami.Heading {
+		    text: actived.playerName
+		    level: 5
+		    opacity: 0.7
+		    elide: Text.ElideRight
+	    }
             Kirigami.ShadowedImage {
                 id: coverImg
                 Layout.alignment: Qt.AlignVCenter
                 source: actived.artUrl
-                visible: actived.artUrl !== ""
+                visible: actived.artUrl !== "" && status === Image.Ready
                 Layout.preferredHeight: Kirigami.Units.iconSizes.medium
                 Layout.preferredWidth: Layout.preferredHeight
                 fillMode: Image.PreserveAspectCrop
             }
+            Kirigami.Icon {
+		    Layout.alignment: Qt.AlignVCenter
+		    Layout.preferredHeight: Kirigami.Units.iconSizes.medium
+		    Layout.preferredWidth: Layout.preferredHeight
+		    source: "audio-x-generic"
+		    visible: actived.artUrl === "" && status !== Kirigami.Icon.Error
+	    }
             LyricsText {
                 Layout.alignment: Qt.AlignVCenter
                 player: actived.player
                 lyricsWTimes: actived.lyricsWTimes
+                visible: actived.lyricsWTimes != ""
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 clip: true
             }
+            Kirigami.Heading {
+		    text: actived.trackTitle
+		    level: 2
+		    visible: actived.lyricsWTimes === ""
+		    Layout.fillWidth: true
+		    elide: Text.ElideRight
+		    type: Kirigami.Heading.Type.Primary
+	    }
+	    Kirigami.Heading {
+		    text: actived.trackArtist
+		    level: 5
+		    visible: actived.lyricsWTimes === ""
+		    Layout.fillWidth: true
+		    opacity: 0.7
+		    elide: Text.ElideRight
+	    }
+
         }
     }
     PageIndicator {
