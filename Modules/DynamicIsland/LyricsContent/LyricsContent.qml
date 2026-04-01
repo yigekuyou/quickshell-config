@@ -13,7 +13,7 @@ Kirigami.CardsListView {
     anchors.fill: parent
     leftMargin: 0
     rightMargin: 0
-
+    topMargin: Kirigami.Units.gridUnit
     spacing: parent.width / 5
     model: Lyrics.players
     orientation: ListView.Horizontal
@@ -35,11 +35,11 @@ Kirigami.CardsListView {
         readonly property string artUrl: player ? (player.trackArtUrl || "") : ""
 
         // 专辑封面
-        contentItem:RowLayout {
-		spacing: Kirigami.Units.mediumSpacing
+        contentItem: RowLayout {
+            spacing: Kirigami.Units.mediumSpacing
             Kirigami.ShadowedImage {
-		    Layout.alignment: Qt.AlignVCenter
                 id: coverImg
+                Layout.alignment: Qt.AlignVCenter
                 source: actived.artUrl
                 visible: actived.artUrl !== ""
                 Layout.preferredHeight: Kirigami.Units.iconSizes.medium
@@ -47,7 +47,7 @@ Kirigami.CardsListView {
                 fillMode: Image.PreserveAspectCrop
             }
             LyricsText {
-		    Layout.alignment: Qt.AlignVCenter
+                Layout.alignment: Qt.AlignVCenter
                 player: actived.player
                 lyricsWTimes: actived.lyricsWTimes
                 Layout.fillWidth: true
@@ -57,9 +57,9 @@ Kirigami.CardsListView {
         }
     }
     PageIndicator {
-	    anchors.bottom: parent.bottom
-	    anchors.horizontalCenter: parent.horizontalCenter
-	    count: parent.count
-	    currentIndex: parent.currentIndex
+        anchors.bottom: parent.bottom
+        anchors.horizontalCenter: parent.horizontalCenter
+        count: parent.count
+        currentIndex: parent.currentIndex
     }
 }
