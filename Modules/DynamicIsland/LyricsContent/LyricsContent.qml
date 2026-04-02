@@ -30,10 +30,10 @@ Kirigami.CardsListView {
         }
         property var player: Lyrics.playerManager.objectAt(index).mprisData
         property ListModel lyricsWTimes: Lyrics.playerManager.objectAt(index).lyricsModel
-        readonly property string trackTitle: player ? player.trackTitle : ""
-        readonly property string trackArtist: player ? player.trackArtist : ""
-        readonly property string playerName: player ? (player.identity || player.busName || "") : ""
-        readonly property string artUrl: player ? (player.trackArtUrl || "") : ""
+        readonly property string trackTitle: player.trackTitle ? player.trackTitle : ""
+        readonly property string trackArtist: player.trackArtist ? player.trackArtist : ""
+        readonly property string playerName: player.identity ? (player.identity || player.busName || "") : ""
+        readonly property string artUrl: player.trackArtUrl ? (player.trackArtUrl || "") : ""
 
         // 专辑封面
         contentItem: RowLayout {
