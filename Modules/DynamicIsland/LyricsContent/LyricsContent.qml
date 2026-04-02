@@ -19,6 +19,7 @@ Kirigami.CardsListView {
     orientation: ListView.Horizontal
     snapMode: ListView.SnapOneItem
     highlightRangeMode: ListView.StrictlyEnforceRange
+    interactive: false
     delegate: Kirigami.Card {
         id: actived
         background: Rectangle {
@@ -86,11 +87,5 @@ Kirigami.CardsListView {
 	    }
 
         }
-    }
-    PageIndicator {
-        anchors.bottom: parent.bottom
-        anchors.horizontalCenter: parent.horizontalCenter
-        count: parent.count
-        currentIndex: parent.currentIndex
     }
 }

@@ -14,6 +14,7 @@ import qs.Modules.DynamicIsland.LyricsContent
 import qs.Modules.PolkitAuth
 import org.kde.kirigami as Kirigami
 import QtQuick.Effects
+
 Kirigami.ShadowedRectangle {
     id: root
     focus: true
@@ -37,19 +38,19 @@ Kirigami.ShadowedRectangle {
     property bool isWallpaperMode: !showDashboard
     property bool isLyricsMode: showLyrics && !showDashboard
     property bool isLauncherMode: !showDashboard && !isLyricsMode
-    property bool isAuthMode: (PolkitService.agent.flow)? 1:0
+    property bool isAuthMode: (PolkitService.agent.flow) ? 1 : 0
     // ================= 状态机定义 (MD3 核心) =================
     states: [
-	State {
-	    name: "AUTH"
-	    when: isAuthMode
-	    PropertyChanges {
-		    target: root
-		    width: unit * 30
-		    height: unit * 15
-		    radius: unit * 1.5
-	    }
-	    },
+        State {
+            name: "AUTH"
+            when: isAuthMode
+            PropertyChanges {
+                target: root
+                width: unit * 30
+                height: unit * 15
+                radius: unit * 1.5
+            }
+        },
         State {
             name: "DASHBOARD"
             when: showDashboard
@@ -94,7 +95,7 @@ Kirigami.ShadowedRectangle {
 
     // ================= 内部内容包装器 =================
     component IslandContent: Item {
-	    focus: true
+        focus: true
         property bool active: false
         anchors.fill: parent
         opacity: active ? 1 : 0
@@ -115,19 +116,24 @@ Kirigami.ShadowedRectangle {
         }
     }
     TapHandler {
-	    acceptedButtons: Qt.MiddleButton
-	    onTapped: {
-		    if (currentPlayer) root.showLyrics = !root.showLyrics;
-		    if (root.showLyrics) root.expanded = false;
-	    }
+        acceptedButtons: Qt.MiddleButton
+        onTapped: {
+            if (currentPlayer)
+                root.showLyrics = !root.showLyrics;
+            if (root.showLyrics)
+                root.expanded = false;
+        }
     }
     TapHandler {
-	    acceptedButtons: Qt.LeftButton
-	    onTapped: {
-		    if (root.showDashboard) root.showDashboard = false;
-		    else if (root.showLyrics) root.showLyrics = false;
-		    else root.expanded = !root.expanded;
-	    }
+        acceptedButtons: Qt.LeftButton
+        onTapped: {
+            if (root.showDashboard)
+                root.showDashboard = false;
+            else if (root.showLyrics)
+                root.showLyrics = false;
+            else
+                root.expanded = !root.expanded;
+        }
     }
     Item {
         id: contentContainer
@@ -146,20 +152,22 @@ Kirigami.ShadowedRectangle {
         IslandContent {
             active: root.state === "LYRICS"
             LyricsContent {
+                currentIndex: mediaindex.currentIndex
                 anchors.fill: parent
             }
         }
         IslandContent {
-		active: root.state === "AUTH"
-		PolkitAuthPopupManager{
-			focus: true
-		anchors.fill: parent
-			anchors.margins: 20
-		}
-	}
+            active: root.state === "AUTH"
+            PolkitAuthPopupManager {
+                focus: true
+                anchors.fill: parent
+                anchors.margins: 20
+            }
+        }
         IslandContent {
             active: root.state === "EXPANDED"
             MediaContent {
+                id: mediaindex
                 anchors.fill: parent
                 anchors.margins: 20
             }
