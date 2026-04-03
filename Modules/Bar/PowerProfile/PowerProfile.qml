@@ -96,12 +96,121 @@ Kirigami.AbstractCard {
     }
     contentItem: RowLayout {
         id: layout
+        layoutDirection: Qt.RightToLeft
         Layout.fillWidth: true
         Layout.alignment: Qt.AlignRight
         RowLayout {
+            RowLayout {
+                layoutDirection: Qt.RightToLeft
+                Layout.alignment: Qt.AlignRight
+                Kirigami.Icon {
+                    visible: UPower.displayDevice.ready
+                    source: UPower.displayDevice.onBattery ? UPower.displayDevice.iconName : "ac-adapter-symbolic"
+                    color: Kirigami.Theme.activeTextColor
+                    implicitHeight: Kirigami.Units.iconSizes.small
+                    implicitWidth: implicitHeight
+                    TapHandler {
+                        acceptedButtons: Qt.LeftButton
+                        onTapped: {
+                            if (PowerProfiles.hasPerformanceProfile) {
+                                deviceexpanded = !deviceexpanded;
+                            }
+                        }
+                    }
+                }
+                Kirigami.Icon {
+                    id: warn
+                    visible: warning //
+                    source: "emblem-warning"
+                    color: Kirigami.Theme.activeTextColor
+                    implicitHeight: Kirigami.Units.iconSizes.small
+                    implicitWidth: implicitHeight
+                    TapHandler {
+                        acceptedButtons: Qt.LeftButton
+                        onTapped: {
+                            if (PowerProfiles.hasPerformanceProfile) {
+                                warningexpanded = !warningexpanded;
+                            }
+                        }
+                    }
+                }
+                Kirigami.Icon {
+                    id: nowpower
+                    color: Kirigami.Theme.activeTextColor
+                    implicitHeight: Kirigami.Units.iconSizes.small
+                    implicitWidth: implicitHeight
+                    TapHandler {
+                        acceptedButtons: Qt.LeftButton
+                        onTapped: {
+                            if (PowerProfiles.hasPerformanceProfile) {
+                                powerexpanded = !powerexpanded;
+                            }
+                        }
+                    }
+                }
+                Kirigami.Separator {
+                    implicitWidth: 1
+                    Layout.fillHeight: true
+
+                    // 2. 像素调节：上下留出一点边距，让视觉更精致
+                    Layout.topMargin: Kirigami.Units.smallSpacing
+                    Layout.bottomMargin: Kirigami.Units.smallSpacing
+                    Layout.leftMargin: Kirigami.Units.smallSpacing
+
+                    // 3. 颜色：自动使用主题的分隔线颜色（带透明度，不突兀）
+                    // 如果你想让它更亮或更暗，可以手动调节 opacity
+                    opacity: 0.6
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: Kirigami.Units.longDuration
+                        }
+                    }
+                }
+            }
+        }
+        RowLayout {
             spacing: Kirigami.Units.smallSpacing
-            visible: deviceexpanded //
-            Layout.alignment: Qt.AlignRight
+            visible: powerexpanded //
+            layoutDirection: Qt.RightToLeft
+            Kirigami.Icon {
+                id: performance
+                source: "power-profile-performance-symbolic"
+                color: Kirigami.Theme.activeTextColor
+                implicitHeight: Kirigami.Units.iconSizes.small
+                implicitWidth: implicitHeight
+                TapHandler {
+                    onTapped: {
+                        PowerProfiles.profile = PowerProfile.Performance;
+                    }
+                }
+            }
+
+            Kirigami.Icon {
+                id: balanced
+                source: "power-profile-balanced-symbolic"
+                color: Kirigami.Theme.activeTextColor
+                implicitHeight: Kirigami.Units.iconSizes.small
+                implicitWidth: implicitHeight
+                TapHandler {
+                    onTapped: {
+                        PowerProfiles.profile = PowerProfile.Balanced;
+                    }
+                }
+            }
+
+            Kirigami.Icon {
+                id: powerSaver
+                source: "power-profile-power-saver-symbolic"
+                color: Kirigami.Theme.activeTextColor
+                implicitHeight: Kirigami.Units.iconSizes.small
+                implicitWidth: implicitHeight
+                TapHandler {
+                    onTapped: {
+                        PowerProfiles.profile = PowerProfile.PowerSaver;
+                    }
+                }
+            }
+
             Kirigami.Separator {
                 implicitWidth: 1
                 Layout.fillHeight: true
@@ -120,9 +229,41 @@ Kirigami.AbstractCard {
                     }
                 }
             }
+        }
+        RowLayout {
+            Layout.alignment: Qt.AlignRight
+            spacing: Kirigami.Units.smallSpacing
+            visible: warningexpanded //
+            Kirigami.Heading {
+                text: warningText
+                level: 5
+            }
+        }
+        RowLayout {
+            spacing: Kirigami.Units.smallSpacing
+            visible: deviceexpanded //
+            Layout.alignment: Qt.AlignRight
             Repeater {
                 model: UPower.devices
                 delegate: RowLayout {
+                    Kirigami.Separator {
+                        implicitWidth: 1
+                        Layout.fillHeight: true
+
+                        // 2. 像素调节：上下留出一点边距，让视觉更精致
+                        Layout.topMargin: Kirigami.Units.smallSpacing
+                        Layout.bottomMargin: Kirigami.Units.smallSpacing
+                        Layout.leftMargin: Kirigami.Units.smallSpacing
+
+                        // 3. 颜色：自动使用主题的分隔线颜色（带透明度，不突兀）
+                        // 如果你想让它更亮或更暗，可以手动调节 opacity
+                        opacity: 0.6
+                        Behavior on opacity {
+                            NumberAnimation {
+                                duration: Kirigami.Units.longDuration
+                            }
+                        }
+                    }
                     Kirigami.Heading {
                         id: devicename
                         text: modelData.model
@@ -152,135 +293,6 @@ Kirigami.AbstractCard {
         }
         RowLayout {
             spacing: Kirigami.Units.smallSpacing
-            visible: powerexpanded //
-            Layout.alignment: Qt.AlignRight
-            Kirigami.Separator {
-                implicitWidth: 1
-                Layout.fillHeight: true
-                Layout.topMargin: Kirigami.Units.smallSpacing
-                Layout.bottomMargin: Kirigami.Units.smallSpacing
-                Layout.leftMargin: Kirigami.Units.smallSpacing
-                opacity: 0.6
-                Behavior on opacity {
-                    NumberAnimation {
-                        duration: Kirigami.Units.longDuration
-                    }
-                }
-            }
-            Kirigami.Icon {
-                id: powerSaver
-                source: "power-profile-power-saver-symbolic"
-                color: Kirigami.Theme.activeTextColor
-                implicitHeight: Kirigami.Units.iconSizes.small
-                implicitWidth: implicitHeight
-                TapHandler {
-                    onTapped: {
-                        PowerProfiles.profile = PowerProfile.PowerSaver;
-                    }
-                }
-            }
-
-            Kirigami.Icon {
-                id: balanced
-                source: "power-profile-balanced-symbolic"
-                color: Kirigami.Theme.activeTextColor
-                implicitHeight: Kirigami.Units.iconSizes.small
-                implicitWidth: implicitHeight
-                TapHandler {
-                    onTapped: {
-                        PowerProfiles.profile = PowerProfile.Balanced;
-                    }
-                }
-            }
-            Kirigami.Icon {
-                id: performance
-                source: "power-profile-performance-symbolic"
-                color: Kirigami.Theme.activeTextColor
-                implicitHeight: Kirigami.Units.iconSizes.small
-                implicitWidth: implicitHeight
-                TapHandler {
-                    onTapped: {
-                        PowerProfiles.profile = PowerProfile.Performance;
-                    }
-                }
-            }
         }
-        RowLayout {
-		Layout.alignment: Qt.AlignRight
-		spacing: Kirigami.Units.smallSpacing
-		visible: warningexpanded //
-		Kirigami.Heading {
-			text: warningText
-			level: 5
-		}
-	}
-        RowLayout {
-            Layout.alignment: Qt.AlignRight
-            Kirigami.Separator {
-                implicitWidth: 1
-                Layout.fillHeight: true
-
-                // 2. 像素调节：上下留出一点边距，让视觉更精致
-                Layout.topMargin: Kirigami.Units.smallSpacing
-                Layout.bottomMargin: Kirigami.Units.smallSpacing
-                Layout.leftMargin: Kirigami.Units.smallSpacing
-
-                // 3. 颜色：自动使用主题的分隔线颜色（带透明度，不突兀）
-                // 如果你想让它更亮或更暗，可以手动调节 opacity
-                opacity: 0.6
-                Behavior on opacity {
-                    NumberAnimation {
-                        duration: Kirigami.Units.longDuration
-                    }
-                }
-            }
-            Kirigami.Icon {
-                id: nowpower
-                color: Kirigami.Theme.activeTextColor
-                implicitHeight: Kirigami.Units.iconSizes.small
-                implicitWidth: implicitHeight
-                TapHandler {
-                    acceptedButtons: Qt.LeftButton
-                    onTapped: {
-                        if (PowerProfiles.hasPerformanceProfile) {
-                            powerexpanded = !powerexpanded;
-                        }
-                    }
-                }
-            }
-            Kirigami.Icon {
-                id: warn
-                visible: warning //
-                source: "emblem-warning"
-                color: Kirigami.Theme.activeTextColor
-                implicitHeight: Kirigami.Units.iconSizes.small
-                implicitWidth: implicitHeight
-                TapHandler {
-                    acceptedButtons: Qt.LeftButton
-                    onTapped: {
-                        if (PowerProfiles.hasPerformanceProfile) {
-                            warningexpanded = !warningexpanded;
-                        }
-                    }
-                }
-            }
-            Kirigami.Icon {
-                visible: UPower.displayDevice.ready
-                source: UPower.displayDevice.onBattery ? UPower.displayDevice.iconName : "ac-adapter-symbolic"
-                color: Kirigami.Theme.activeTextColor
-                implicitHeight: Kirigami.Units.iconSizes.small
-                implicitWidth: implicitHeight
-                TapHandler {
-                    acceptedButtons: Qt.LeftButton
-                    onTapped: {
-                        if (PowerProfiles.hasPerformanceProfile) {
-                            deviceexpanded = !deviceexpanded;
-                        }
-                    }
-                }
-            }
-        }
-
-
     }
 }
