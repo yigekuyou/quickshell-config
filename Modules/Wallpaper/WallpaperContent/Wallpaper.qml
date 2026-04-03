@@ -96,8 +96,6 @@ delegate:PanelWindow {
 
 					return mpvComponent;
 				} else {
-					console.log("加载壁纸组件",mediaComponent );
-
 					return mediaComponent;
 				}
 			}
