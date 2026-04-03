@@ -102,7 +102,7 @@ Kirigami.AbstractCard {
         RowLayout {
             RowLayout {
                 layoutDirection: Qt.RightToLeft
-                anchors.right: parent.right
+                Layout.alignment:Qt.AlignRight
                 Kirigami.Icon {
                     visible: UPower.displayDevice.ready
                     source: UPower.displayDevice.onBattery ? UPower.displayDevice.iconName : "ac-adapter-symbolic"
@@ -174,6 +174,7 @@ Kirigami.AbstractCard {
             spacing: Kirigami.Units.smallSpacing
             visible: powerexpanded //
             layoutDirection: Qt.RightToLeft
+            Layout.alignment:Qt.AlignRight
             Kirigami.Icon {
                 id: performance
                 source: "power-profile-performance-symbolic"
@@ -237,6 +238,7 @@ Kirigami.AbstractCard {
 	    }
         }
         RowLayout {
+		Layout.alignment:Qt.AlignRight
 		spacing: Kirigami.Units.smallSpacing
 		visible: warningexpanded //
 		Kirigami.Heading{
@@ -247,6 +249,7 @@ Kirigami.AbstractCard {
 	RowLayout {
 		spacing: Kirigami.Units.smallSpacing
 		visible: deviceexpanded //
+		Layout.alignment:Qt.AlignRight
 		Repeater{
 			model:UPower.devices
 			delegate:RowLayout{
