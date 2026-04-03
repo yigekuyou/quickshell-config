@@ -35,24 +35,30 @@ Kirigami.Card {
                 color: Kirigami.Theme.textColor
             }
             Kirigami.Heading {
-                text: authFlow?.message || "需要身份认证"
+                text: authFlow?.message || qsTr("需要身份认证")
                 level: 3
                 wrapMode: Text.WordWrap
                 Layout.fillWidth: true
             }
         }
-
         Kirigami.FormLayout {
 		Layout.fillWidth: true
-
+		Kirigami.Heading {
+			visible: authFlow && authFlow.identities.length === 1
+			text:   qsTr("认证身份") +":"+authFlow.selectedIdentity.displayName
+			level: 1
+			color: Kirigami.Theme.highlightColor
+			Layout.fillWidth: true
+		}
 		// 身份选择
 		ComboBox {
-			Kirigami.FormData.label: "认证身份:"
-			visible: authFlow && authFlow.identities.length
+			Kirigami.FormData.label: qsTr("认证身份")
+			visible: authFlow && authFlow.identities.length > 1
 			Layout.fillWidth: true
 			model: authFlow ? authFlow.identities : []
 			textRole: "displayName"
 			valueRole: "id"
+			enabled: model.length > 1
 			onActivated: index => {
 				authFlow.selectedIdentity = authFlow.identities[index];
 			}
@@ -61,12 +67,12 @@ Kirigami.Card {
 		// 密码输入
 		TextField {
 			id: passwordField
-			Kirigami.FormData.label: authFlow?.inputPrompt || "密码:"
+			Kirigami.FormData.label:(authFlow?.inputPrompt || qsTr("密码:"))
 			visible: authFlow?.isResponseRequired || false
 			Layout.fillWidth: true
 			echoMode: (authFlow && authFlow.responseVisible) ? TextInput.Normal : TextInput.Password
 			focus: true
-			placeholderText: "请输入密码..."
+			placeholderText:qsTr("请输入密码")
 
 			onAccepted: if (authFlow) authFlow.submit(text)
 
@@ -94,7 +100,6 @@ Kirigami.Card {
 			icon.name: "dialog-cancel"
 			onClicked: {
 				authFlow?.cancelAuthenticationRequest();
-				root.requestClose();
 			}
 		}
 
