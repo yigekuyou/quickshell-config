@@ -114,19 +114,9 @@ Kirigami.Card {
     Connections {
 	    target: authFlow
 	    ignoreUnknownSignals: true
-
-	    function onIsSuccessfulChanged() {
-		    if (authFlow?.isSuccessful) root.requestClose();
-	    }
-
-	    function onIsCancelledChanged() {
-		    if (authFlow?.isCancelled) root.requestClose();
-	    }
-
 	    function onFailedChanged() {
 		    if (authFlow && authFlow.failed) {
 			    passwordField.clear();
-			    shakeAnimation.start(); // 触发抖动
 			    passwordField.forceActiveFocus();
 		    }
 	    }
