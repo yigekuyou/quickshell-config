@@ -48,7 +48,7 @@ Variants {
 		anchor.rect.x: Math.round(modelData.width / 2)
 		anchor.rect.y: Math.round(Sizes.barHeight/2+Kirigami.Units.smallSpacing)
 		BackgroundEffect.blurRegion: Region {
-			item: parent.contentItem
+			item: contentItem
 		}
 
 		visible: true
