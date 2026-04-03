@@ -25,30 +25,6 @@ SlideWindow {
     function getWifiDevice() {
         return [...Networking.devices.values].find(d => d.type === DeviceType.Wifi);
     }
-    Kirigami.PromptDialog {
-	    id: pskDialog
-	    title: qsTr("连接到 %1").arg(targetNetwork.name)
-	    subtitle: qsTr("此网络需要密码")
-	    property var targetNetwork: null
-	    standardButtons: Kirigami.Dialog.Ok | Kirigami.Dialog.Cancel
-
-	    // 绑定确认按钮逻辑
-	    onAccepted: {
-		    if (passwordField.text.length > 0) {
-			    targetNetwork.connectWithPsk(passwordField.text);
-			    passwordField.text = ""; // 清空
-		    }
-	    }
-
-	    // 输入控件
-	    Kirigami.PasswordField {
-		    id: passwordField
-		    placeholderText: qsTr("输入密码...")
-		    implicitWidth: parent.implicitWidth
-		    // 按回车键直接触发 Ok 按钮
-		    onAccepted: pskDialog.accept()
-	    }
-    }
     headerTools: RowLayout {
         Theme {
             id: headerTheme
@@ -138,93 +114,106 @@ SlideWindow {
             visible: root.currentTab === "wifi"
             Layout.fillWidth: true
             FormCard.FormButtonDelegate {
-		    text: modelData.name || "未知设备"
-		    description:  `${WifiSecurityType.toString(modelData.security)} | ${Math.round(modelData.signalStrength * 100)}%`
-		    BusyIndicator {
-			    anchors.fill: parent
-			    running: modelData.stateChanging
-			    visible: running
-		    }
+                text: modelData.name || "未知设备"
+                description: `${WifiSecurityType.toString(modelData.security)} | ${Math.round(modelData.signalStrength * 100)}%`
+                BusyIndicator {
+                    anchors.fill: parent
+                    running: modelData.stateChanging
+                    visible: running
+                }
 
-		    trailing: Row {
-			    ToolButton {
-				    icon.name: modelData.connected ? "network-disconnect" : "network-connect"
-				    // 只有当前项没有连接时才显示“连接”
-				    visible: true
-				    onClicked: {
-					    if (modelData.connected) {
-						    modelData.disconnect();
-					    } else {
-						    modelData.connect();
-					    }
-				    }
-				    ToolTip.visible: hovered
-				    ToolTip.text: modelData.connected ? qsTr("断开连接") : qsTr("连接")
-			    }
-			    Connections {
-				    target: modelData
-				    function onConnectionFailed(reason) {
-					    console.log(ConnectionFailReason.toString(reason))
-					    // 如果失败原因是缺少凭据 (NoSecrets)
-					    if (reason === ConnectionFailReason.NoSecrets) {
-						    pskDialog.targetNetwork = modelData;
-						    pskDialog.open();
-					    }
-				    }
-			    }
-			    ToolButton {
-				    icon.name: "database-change-key"
-				    visible: {
-					    if(!modelData.known) return false;
-					    const security = modelData.security;
-					    const needsPsk = (security === WifiSecurityType.WpaPsk ||
-					    security === WifiSecurityType.Wpa2Psk ||
-					    security === WifiSecurityType.Sae);
-					    return needsPsk
-				}
-				    onClicked: {
-					    pskDialog.targetNetwork = modelData;
-					    pskDialog.open();
-				}
+                trailing: Row {
+                    ToolButton {
+                        icon.name: modelData.connected ? "network-disconnect" : "network-connect"
+                        // 只有当前项没有连接时才显示“连接”
+                        visible: true
+                        onClicked: {
+                            if (modelData.connected) {
+                                modelData.disconnect();
+                            } else {
+                                modelData.connect();
+                            }
+                        }
+                        ToolTip.visible: hovered
+                        ToolTip.text: modelData.connected ? qsTr("断开连接") : qsTr("连接")
+                    }
+                    Connections {
+                        target: modelData
+                        function onConnectionFailed(reason) {
+                            console.log(ConnectionFailReason.toString(reason));
+                            // 如果失败原因是缺少凭据 (NoSecrets)
+                            if (reason === ConnectionFailReason.NoSecrets) {
+                                passwordField.visible = true;
+                                passwordField.status = Kirigami.MessageType.Error;
+                            }
+                        }
+                    }
+                    ToolButton {
+                        icon.name: "database-change-key"
+                        visible: {
+                            if (!modelData.known)
+                                return false;
+                            const security = modelData.security;
+                            const needsPsk = (security === WifiSecurityType.WpaPsk || security === WifiSecurityType.Wpa2Psk || security === WifiSecurityType.Sae);
+                            return needsPsk;
+                        }
+                        onClicked: {
+                            passwordField.visible = !passwordField.visible;
+                        }
 
-				    ToolTip.visible: hovered
-				    ToolTip.text: qsTr("修改密码")
+                        ToolTip.visible: hovered
+                        ToolTip.text: qsTr("修改密码")
+                    }
+                    // 忘记网络按钮
+                    ToolButton {
+                        icon.name: "edit-delete"
+                        visible: modelData.known
+                        onClicked: modelData.forget()
 
-			    }
-			    // 忘记网络按钮
-			    ToolButton {
-				    icon.name: "edit-delete"
-				    visible: modelData.known
-				    onClicked: modelData.forget()
-
-				    ToolTip.visible: hovered
-				    ToolTip.text: qsTr("忘记网络")
-			    }
-		    }
+                        ToolTip.visible: hovered
+                        ToolTip.text: qsTr("忘记网络")
+                    }
+                }
+            }
+            FormCard.FormPasswordFieldDelegate {
+                id: passwordField
+                visible: false
+                label: qsTr("密码")
+                statusMessage: qsTr("连接到 %1").arg(modelData.name)
+                placeholderText: qsTr("请输入密码")
+                showPasswordQuality: true
+                onAccepted: {
+                    if (text.length > 0) {
+                        modelData.connectWithPsk(text);
+                        clear();
+                    }
+                }
             }
         }
     }
 
     // 以太网占位部分
     FormCard.FormCard {
-	    visible: root.currentTab === "wired" ||!Networking.wifiEnabled && root.currentTab === "wifi"
-	    Layout.fillWidth: true
-	    FormCard.FormHeader { title: "有线网络连接" }
-	    Kirigami.PlaceholderMessage {
-		    id:wiredLyout
-		    visible:root.currentTab === "wired"
-		    icon.name: "network-wired"
-		    text: "以太网设置暂不可用"
-		    explanation: "占位符"
-	    }
-	    Kirigami.PlaceholderMessage {
-		    id: offMessage
-		    // 控制显示：当 WiFi 关闭时显示
-		    visible: !Networking.wifiEnabled && root.currentTab === "wifi"
+        visible: root.currentTab === "wired" || !Networking.wifiEnabled && root.currentTab === "wifi"
+        Layout.fillWidth: true
+        FormCard.FormHeader {
+            title: "有线网络连接"
+        }
+        Kirigami.PlaceholderMessage {
+            id: wiredLyout
+            visible: root.currentTab === "wired"
+            icon.name: "network-wired"
+            text: "以太网设置暂不可用"
+            explanation: "占位符"
+        }
+        Kirigami.PlaceholderMessage {
+            id: offMessage
+            // 控制显示：当 WiFi 关闭时显示
+            visible: !Networking.wifiEnabled && root.currentTab === "wifi"
 
-		    icon.name: "network-wireless-off"
-		    text: "Wi-Fi 已关闭"
-		    explanation: "请在上方开关处开启 Wi-Fi 和扫描可用网络。"
-	    }
+            icon.name: "network-wireless-off"
+            text: "Wi-Fi 已关闭"
+            explanation: "请在上方开关处开启 Wi-Fi 和扫描可用网络。"
+        }
     }
 }
