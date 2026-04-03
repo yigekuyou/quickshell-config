@@ -83,7 +83,7 @@ Kirigami.AbstractCard {
         opacity: 0.5
         radius: Kirigami.Units.smallSpacing
         border.color: Kirigami.Theme.focusColor
-        border.width: root.activeFocus ? 1 : 0
+        border.width: activeFocus ? 1 : 0
     }
     Behavior on implicitWidth {
         NumberAnimation {
@@ -166,7 +166,7 @@ Kirigami.AbstractCard {
                         }
                     }
                     // 4. 逻辑控制：如果你的音乐组件未展开，隐藏分割线
-                    visible: root.powerexpanded
+                    visible: powerexpanded
                 }
             }
         }
@@ -232,7 +232,7 @@ Kirigami.AbstractCard {
                     }
                 }
                 // 4. 逻辑控制：如果你的音乐组件未展开，隐藏分割线
-                visible: root.powerexpanded
+                visible: powerexpanded
             }
         }
         RowLayout {
@@ -269,7 +269,7 @@ Kirigami.AbstractCard {
                             }
                         }
                         // 4. 逻辑控制：如果你的音乐组件未展开，隐藏分割线
-                        visible: root.powerexpanded
+                        visible: powerexpanded
                     }
                     Kirigami.Heading {
                         id: devicename
