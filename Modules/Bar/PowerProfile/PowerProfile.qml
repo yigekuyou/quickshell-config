@@ -231,15 +231,6 @@ Kirigami.AbstractCard {
             }
         }
         RowLayout {
-            Layout.alignment: Qt.AlignRight
-            spacing: Kirigami.Units.smallSpacing
-            visible: warningexpanded //
-            Kirigami.Heading {
-                text: warningText
-                level: 5
-            }
-        }
-        RowLayout {
             spacing: Kirigami.Units.smallSpacing
             visible: deviceexpanded //
             Layout.alignment: Qt.AlignRight
@@ -293,6 +284,15 @@ Kirigami.AbstractCard {
         }
         RowLayout {
             spacing: Kirigami.Units.smallSpacing
+            RowLayout {
+		    Layout.alignment: Qt.AlignRight
+		    spacing: Kirigami.Units.smallSpacing
+		    visible: warningexpanded //
+		    Kirigami.Heading {
+			    text: warningText
+			    level: 5
+		    }
+	    }
         }
     }
 }
