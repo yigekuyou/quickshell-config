@@ -178,7 +178,7 @@ SlideWindow {
             FormCard.FormPasswordFieldDelegate {
                 id: passwordField
                 visible: false
-                label: qsTr("密码")
+                label: qsTr("%1 的密码").arg(modelData.name)
                 statusMessage: qsTr("连接到 %1").arg(modelData.name)
                 placeholderText: qsTr("请输入密码")
                 showPasswordQuality: true
