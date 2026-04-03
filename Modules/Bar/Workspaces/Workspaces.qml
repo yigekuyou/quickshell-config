@@ -21,8 +21,8 @@ Kirigami.ShadowedRectangle {
         anchors.centerIn: parent
         spacing: 5
         Repeater {
-		model: WindowManager.windowsets.reduce((max, ws) =>
-		Math.max(max, ...ws.coordinates), -Infinity);
+		model: WindowManager.windowsets.reduce((max, w) =>
+		Math.max(max, w.coordinates[0]), -Infinity);
             delegate: Kirigami.ShadowedRectangle {
                 id: delegateRoot
                 property var ws: WindowManager.windowsets.find(w => w.coordinates.includes(index + 1))
