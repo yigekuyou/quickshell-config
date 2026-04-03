@@ -50,23 +50,21 @@ Kirigami.ShadowedRectangle {
             spacing: Kirigami.Units.mediumSpacing
             Kirigami.Icon {
 		    id: connectivityIcon
+		    visible:(Networking.connectivity !==NetworkConnectivity.Full)
 		    implicitWidth: Kirigami.Units.gridUnit * 0.8
 		    implicitHeight: Kirigami.Units.gridUnit * 0.8
 
 		    // 根据 Networking.connectivity 切换图标和颜色
 		    source: {
 			    switch(Networking.connectivity) {
-				    case NetworkConnectivity.Full:    return "network-status-online";
-				    case NetworkConnectivity.Portal:  return "network-status-locked"; // 需认证
-				    case NetworkConnectivity.Limited: return "network-status-limited";
-				    case NetworkConnectivity.None:    return "network-status-offline";
-				    default:                          return "network-status-question";
+				    case NetworkConnectivity.Portal:  return "network-error-symbolic"; // 需认证
+				    case NetworkConnectivity.Limited: return "network-limited";
+				    case NetworkConnectivity.None:    return "network-offline-symbolic";
+				    case NetworkConnectivity.Unknown: return "network-no-route-symbolic";
 			    }
 		    }
 
 		    color: {
-			    if (Networking.connectivity === NetworkConnectivity.Full)
-				    return Kirigami.Theme.positiveTextColor;
 			    if (Networking.connectivity === NetworkConnectivity.Portal || Networking.connectivity === NetworkConnectivity.Limited)
 				    return Kirigami.Theme.neutralTextColor;
 			    return Kirigami.Theme.negativeTextColor;
