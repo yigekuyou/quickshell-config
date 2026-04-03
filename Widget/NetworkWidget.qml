@@ -25,6 +25,30 @@ SlideWindow {
     function getWifiDevice() {
         return [...Networking.devices.values].find(d => d.type === DeviceType.Wifi);
     }
+    Kirigami.PromptDialog {
+	    id: pskDialog
+	    title: qsTr("连接到 %1").arg(targetNetwork.name)
+	    subtitle: qsTr("此网络需要密码")
+	    property var targetNetwork: null
+	    standardButtons: Kirigami.Dialog.Ok | Kirigami.Dialog.Cancel
+
+	    // 绑定确认按钮逻辑
+	    onAccepted: {
+		    if (passwordField.text.length > 0) {
+			    targetNetwork.connectWithPsk(passwordField.text);
+			    passwordField.text = ""; // 清空
+		    }
+	    }
+
+	    // 输入控件
+	    Kirigami.PasswordField {
+		    id: passwordField
+		    placeholderText: qsTr("输入密码...")
+		    implicitWidth: parent.implicitWidth
+		    // 按回车键直接触发 Ok 按钮
+		    onAccepted: pskDialog.accept()
+	    }
+    }
     headerTools: RowLayout {
         Theme {
             id: headerTheme
@@ -116,6 +140,11 @@ SlideWindow {
             FormCard.FormButtonDelegate {
 		    text: modelData.name || "未知设备"
 		    description:  `${WifiSecurityType.toString(modelData.security)} | ${Math.round(modelData.signalStrength * 100)}%`
+		    BusyIndicator {
+			    anchors.fill: parent
+			    running: modelData.stateChanging
+			    visible: running
+		    }
 
 		    trailing: Row {
 			    ToolButton {
@@ -129,11 +158,20 @@ SlideWindow {
 						    modelData.connect();
 					    }
 				    }
-
 				    ToolTip.visible: hovered
 				    ToolTip.text: modelData.connected ? qsTr("断开连接") : qsTr("连接")
 			    }
-
+			    Connections {
+				    target: modelData
+				    function onConnectionFailed(reason) {
+					    console.log(ConnectionFailReason.toString(reason))
+					    // 如果失败原因是缺少凭据 (NoSecrets)
+					    if (reason === ConnectionFailReason.NoSecrets) {
+						    pskDialog.targetNetwork = modelData;
+						    pskDialog.open();
+					    }
+				    }
+			    }
 			    // 忘记网络按钮
 			    ToolButton {
 				    icon.name: "edit-delete"

@@ -48,28 +48,61 @@ Kirigami.ShadowedRectangle {
 		id: layout
             anchors.centerIn: parent
             spacing: Kirigami.Units.mediumSpacing
+            Kirigami.Icon {
+		    id: connectivityIcon
+		    implicitWidth: Kirigami.Units.gridUnit * 0.8
+		    implicitHeight: Kirigami.Units.gridUnit * 0.8
 
+		    // 根据 Networking.connectivity 切换图标和颜色
+		    source: {
+			    switch(Networking.connectivity) {
+				    case NetworkConnectivity.Full:    return "network-status-online";
+				    case NetworkConnectivity.Portal:  return "network-status-locked"; // 需认证
+				    case NetworkConnectivity.Limited: return "network-status-limited";
+				    case NetworkConnectivity.None:    return "network-status-offline";
+				    default:                          return "network-status-question";
+			    }
+		    }
+
+		    color: {
+			    if (Networking.connectivity === NetworkConnectivity.Full)
+				    return Kirigami.Theme.positiveTextColor;
+			    if (Networking.connectivity === NetworkConnectivity.Portal || Networking.connectivity === NetworkConnectivity.Limited)
+				    return Kirigami.Theme.neutralTextColor;
+			    return Kirigami.Theme.negativeTextColor;
+		    }
+	    }
             Repeater {
                 model: Networking.devices
                 delegate: RowLayout {
 			spacing: Kirigami.Units.smallSpacing
 			id: innerRow
-			readonly property color statusColor: modelData.connected
+			readonly property bool isOnline: modelData.connected && Networking.connectivity === NetworkConnectivity.Full
+			readonly property color statusColor: isOnline
 			? Kirigami.Theme.linkColor
+			: Kirigami.Theme.negativeTextColor			? Kirigami.Theme.linkColor
 			: Kirigami.Theme.negativeTextColor
 
                         Kirigami.Icon {
                             source: (DeviceType.Wifi === modelData.type) ?"network-wireless" : "network-wired"
 			    implicitWidth: Kirigami.Units.gridUnit
 			    implicitHeight: Kirigami.Units.gridUnit
-			    color: statusColor                        }
+			    color: statusColor
+			}
                         Label {
 				text: {
 					if (modelData.type !== DeviceType.Wifi) return "Ethernet";
 					const connectedList = Array.from(modelData.networks.values || [])
 					.filter(net => net.connected);
 					connectedList.sort((a, b) => b.signalStrength - a.signalStrength);
-					return connectedList[0]?.name ?? "未连接";
+
+					let name = connectedList[0]?.name ?? "未连接";
+
+					// 如果有 Portal，在名字后面加个提醒
+					if (modelData.connected && Networking.connectivity === NetworkConnectivity.Portal) {
+						return name + " (需登录)";
+					}
+					return name;
 				}
                             font.bold: true
                             font.pixelSize: Kirigami.Units.gridUnit * 0.8
