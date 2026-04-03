@@ -64,16 +64,16 @@ Kirigami.AbstractCard {
             switch (PowerProfiles.degradationReason) {
             case PerformanceDegradationReason.None:
                 warning = false;
-		warningText=qsTr("无");
+                warningText = qsTr("无");
                 break;
             case PerformanceDegradationReason.LapDetected:
                 warning = true;
-		warningText=qsTr("电量低");
-		break;
+                warningText = qsTr("电量低");
+                break;
             case PerformanceDegradationReason.HighTemperature:
                 warning = true;
-		warningText=qsTr("高温");
-		break;
+                warningText = qsTr("高温");
+                break;
             }
         }
     }
@@ -102,7 +102,7 @@ Kirigami.AbstractCard {
         RowLayout {
             RowLayout {
                 layoutDirection: Qt.RightToLeft
-                Layout.alignment:Qt.AlignRight
+                Layout.alignment: Qt.AlignRight
                 Kirigami.Icon {
                     visible: UPower.displayDevice.ready
                     source: UPower.displayDevice.onBattery ? UPower.displayDevice.iconName : "ac-adapter-symbolic"
@@ -174,7 +174,7 @@ Kirigami.AbstractCard {
             spacing: Kirigami.Units.smallSpacing
             visible: powerexpanded //
             layoutDirection: Qt.RightToLeft
-            Layout.alignment:Qt.AlignRight
+            Layout.alignment: Qt.AlignRight
             Kirigami.Icon {
                 id: performance
                 source: "power-profile-performance-symbolic"
@@ -187,117 +187,116 @@ Kirigami.AbstractCard {
                     }
                 }
             }
-            TapHandler {
-                onTapped: {
-                    PowerProfiles.profile = PowerProfile.Performance;
-                }
-            }
+
             Kirigami.Icon {
                 id: balanced
                 source: "power-profile-balanced-symbolic"
                 color: Kirigami.Theme.activeTextColor
                 implicitHeight: Kirigami.Units.iconSizes.small
                 implicitWidth: implicitHeight
-            }
-            TapHandler {
-                onTapped: {
-                    PowerProfiles.profile = PowerProfile.Balanced;
+                TapHandler {
+                    onTapped: {
+                        PowerProfiles.profile = PowerProfile.Balanced;
+                    }
                 }
             }
+
             Kirigami.Icon {
                 id: powerSaver
                 source: "power-profile-power-saver-symbolic"
                 color: Kirigami.Theme.activeTextColor
                 implicitHeight: Kirigami.Units.iconSizes.small
                 implicitWidth: implicitHeight
-            }
-            TapHandler {
-                onTapped: {
-                    PowerProfiles.profile = PowerProfile.PowerSaver;
+                TapHandler {
+                    onTapped: {
+                        PowerProfiles.profile = PowerProfile.PowerSaver;
+                    }
                 }
             }
+
             Kirigami.Separator {
-		    implicitWidth: 1
-		    Layout.fillHeight: true
+                implicitWidth: 1
+                Layout.fillHeight: true
 
-		    // 2. 像素调节：上下留出一点边距，让视觉更精致
-		    Layout.topMargin: Kirigami.Units.smallSpacing
-		    Layout.bottomMargin: Kirigami.Units.smallSpacing
-		    Layout.leftMargin: Kirigami.Units.smallSpacing
+                // 2. 像素调节：上下留出一点边距，让视觉更精致
+                Layout.topMargin: Kirigami.Units.smallSpacing
+                Layout.bottomMargin: Kirigami.Units.smallSpacing
+                Layout.leftMargin: Kirigami.Units.smallSpacing
 
-		    // 3. 颜色：自动使用主题的分隔线颜色（带透明度，不突兀）
-		    // 如果你想让它更亮或更暗，可以手动调节 opacity
-		    opacity: 0.6
-		    Behavior on opacity {
-			    NumberAnimation {
-				    duration: Kirigami.Units.longDuration
-			    }
-		    }
-		    // 4. 逻辑控制：如果你的音乐组件未展开，隐藏分割线
-		    visible: root.powerexpanded
-	    }
+                // 3. 颜色：自动使用主题的分隔线颜色（带透明度，不突兀）
+                // 如果你想让它更亮或更暗，可以手动调节 opacity
+                opacity: 0.6
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: Kirigami.Units.longDuration
+                    }
+                }
+                // 4. 逻辑控制：如果你的音乐组件未展开，隐藏分割线
+                visible: root.powerexpanded
+            }
         }
         RowLayout {
-		Layout.alignment:Qt.AlignRight
-		spacing: Kirigami.Units.smallSpacing
-		visible: warningexpanded //
-		Kirigami.Heading{
-			text:warningText
-			level:5
-		}
-	}
-	RowLayout {
-		spacing: Kirigami.Units.smallSpacing
-		visible: deviceexpanded //
-		Layout.alignment:Qt.AlignRight
-		Repeater{
-			model:UPower.devices
-			delegate:RowLayout{
-				Kirigami.Separator {
-					implicitWidth: 1
-					Layout.fillHeight: true
+            Layout.alignment: Qt.AlignRight
+            spacing: Kirigami.Units.smallSpacing
+            visible: warningexpanded //
+            Kirigami.Heading {
+                text: warningText
+                level: 5
+            }
+        }
+        RowLayout {
+            spacing: Kirigami.Units.smallSpacing
+            visible: deviceexpanded //
+            Layout.alignment: Qt.AlignRight
+            Repeater {
+                model: UPower.devices
+                delegate: RowLayout {
+                    Kirigami.Separator {
+                        implicitWidth: 1
+                        Layout.fillHeight: true
 
-					// 2. 像素调节：上下留出一点边距，让视觉更精致
-					Layout.topMargin: Kirigami.Units.smallSpacing
-					Layout.bottomMargin: Kirigami.Units.smallSpacing
-					Layout.leftMargin: Kirigami.Units.smallSpacing
+                        // 2. 像素调节：上下留出一点边距，让视觉更精致
+                        Layout.topMargin: Kirigami.Units.smallSpacing
+                        Layout.bottomMargin: Kirigami.Units.smallSpacing
+                        Layout.leftMargin: Kirigami.Units.smallSpacing
 
-					// 3. 颜色：自动使用主题的分隔线颜色（带透明度，不突兀）
-					// 如果你想让它更亮或更暗，可以手动调节 opacity
-					opacity: 0.6
-					Behavior on opacity {
-						NumberAnimation {
-							duration: Kirigami.Units.longDuration
-						}
-					}
-					// 4. 逻辑控制：如果你的音乐组件未展开，隐藏分割线
-					visible: root.powerexpanded
-				}
-				Kirigami.Heading {
-					id: devicename
-					text:modelData.model
-					level:5
-					color: Kirigami.Theme.activeTextColor
-				}
+                        // 3. 颜色：自动使用主题的分隔线颜色（带透明度，不突兀）
+                        // 如果你想让它更亮或更暗，可以手动调节 opacity
+                        opacity: 0.6
+                        Behavior on opacity {
+                            NumberAnimation {
+                                duration: Kirigami.Units.longDuration
+                            }
+                        }
+                        // 4. 逻辑控制：如果你的音乐组件未展开，隐藏分割线
+                        visible: root.powerexpanded
+                    }
+                    Kirigami.Heading {
+                        id: devicename
+                        text: modelData.model
+                        level: 5
+                        color: Kirigami.Theme.activeTextColor
+                    }
 
-				Kirigami.Icon {
-					id: devicepower
-					source: {
-						if (modelData.iconName=="battery-missing-symbolic"){
-							let level = Math.round((modelData.percentage * 100) / 10) * 10;
-							// 限制范围在 0-100 之间
-							level = Math.max(0, Math.min(100, level));
-							if (level <= 10) return "battery-level-10"; // 通常最低从 10 开始
-							return "battery-level-" + level+"-symbolic";
-						}
-						return modelData.iconName
-					}
-					color: Kirigami.Theme.activeTextColor
-					implicitHeight: Kirigami.Units.iconSizes.small
-					implicitWidth: implicitHeight
-				}
-			}
-		}
-	}
+                    Kirigami.Icon {
+                        id: devicepower
+                        source: {
+                            if (modelData.iconName == "battery-missing-symbolic") {
+                                let level = Math.round((modelData.percentage * 100) / 10) * 10;
+                                // 限制范围在 0-100 之间
+                                level = Math.max(0, Math.min(100, level));
+                                if (level <= 10)
+                                    return "battery-level-10"; // 通常最低从 10 开始
+                                return "battery-level-" + level + "-symbolic";
+                            }
+                            return modelData.iconName;
+                        }
+                        color: Kirigami.Theme.activeTextColor
+                        implicitHeight: Kirigami.Units.iconSizes.small
+                        implicitWidth: implicitHeight
+                    }
+                }
+            }
+        }
     }
 }
