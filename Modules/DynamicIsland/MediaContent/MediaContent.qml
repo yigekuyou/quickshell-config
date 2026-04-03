@@ -233,16 +233,13 @@ Kirigami.CardsListView {
                     ToolTip.text: "下一首"
                 }
             }
-            Item {
-                id: pageindex
-                Layout.fillWidth: true
-                Layout.preferredHeight: Kirigami.Units.gridUnit // 增加感应区域高度，方便手指/鼠标操作
-            }
+
         }
     }
     PageIndicator {
         anchors.bottom: parent.bottom
         anchors.horizontalCenter: parent.horizontalCenter
+        implicitHeight: Kirigami.Units.gridUnit * 0.5
         count: parent.count
         currentIndex: parent.currentIndex
     }
