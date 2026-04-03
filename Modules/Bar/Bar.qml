@@ -46,10 +46,10 @@ Variants {
 		anchor.edges: Edges.Top
 		anchor.gravity: Edges.Bottom
 		anchor.rect.x: Math.round(modelData.width / 2)
-		anchor.rect.y: Math.round(Sizes.barHeight/2+Kirigami.Units.smallSpacing)
 		BackgroundEffect.blurRegion: Region {
 			item: contentItem
 		}
+		anchor.margins.top:Math.round(Sizes.barHeight/3+Kirigami.Units.smallSpacing)
 
 		visible: true
 		mask: null
