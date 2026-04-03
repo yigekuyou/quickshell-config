@@ -75,7 +75,7 @@ Kirigami.ShadowedRectangle {
             PropertyChanges {
                 target: root
                 width: unit * 28
-                height: unit * 2.5
+                height: unit * 2
                 radius: unit
             }
         },
