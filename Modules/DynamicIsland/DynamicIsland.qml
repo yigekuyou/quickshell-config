@@ -61,7 +61,7 @@ Kirigami.ShadowedRectangle {
         },
         State {
             name: "EXPANDED"
-            when: expanded
+            when: expanded&&(Lyrics.playerManager.count >0)
             PropertyChanges {
                 target: root
                 width: unit * 24
@@ -71,7 +71,7 @@ Kirigami.ShadowedRectangle {
         },
         State {
             name: "LYRICS"
-            when: showLyrics && !showDashboard
+            when: showLyrics && !showDashboard &&(Lyrics.playerManager.count >0)
             PropertyChanges {
                 target: root
                 width: unit * 28
