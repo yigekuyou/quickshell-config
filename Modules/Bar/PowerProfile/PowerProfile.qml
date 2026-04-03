@@ -285,14 +285,14 @@ Kirigami.AbstractCard {
         RowLayout {
             spacing: Kirigami.Units.smallSpacing
             RowLayout {
-		    Layout.alignment: Qt.AlignRight
-		    spacing: Kirigami.Units.smallSpacing
-		    visible: warningexpanded //
-		    Kirigami.Heading {
-			    text: warningText
-			    level: 5
-		    }
-	    }
+                Layout.alignment: Qt.AlignRight
+                spacing: Kirigami.Units.smallSpacing
+                visible: warningexpanded //
+                Kirigami.Heading {
+                    text: warningText
+                    level: 5
+                }
+            }
         }
     }
 }
