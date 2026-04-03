@@ -30,14 +30,12 @@ Kirigami.ShadowedRectangle {
     // ================= 状态控制变量 =================
     property bool showDashboard: false
     property bool expanded: false
-    property bool showLyrics: currentPlayer && currentPlayer.isPlaying
-    property var currentPlayer: Lyrics.player
+    property bool showLyrics: Lyrics.playerManager.count >0
 
     // 简化后的逻辑判定
     property bool isDashboardMode: showDashboard
     property bool isWallpaperMode: !showDashboard
     property bool isLyricsMode: showLyrics && !showDashboard
-    property bool isLauncherMode: !showDashboard && !isLyricsMode
     property bool isAuthMode: (PolkitService.agent.flow) ? 1 : 0
     // ================= 状态机定义 (MD3 核心) =================
     states: [
@@ -118,7 +116,7 @@ Kirigami.ShadowedRectangle {
     TapHandler {
         acceptedButtons: Qt.MiddleButton
         onTapped: {
-            if (currentPlayer)
+            if (Lyrics.playerManager.count >0)
                 root.showLyrics = !root.showLyrics;
             if (root.showLyrics)
                 root.expanded = false;
@@ -127,11 +125,7 @@ Kirigami.ShadowedRectangle {
     TapHandler {
         acceptedButtons: Qt.LeftButton
         onTapped: {
-            if (root.showDashboard)
-                root.showDashboard = false;
-            else if (root.showLyrics)
-                root.showLyrics = false;
-            else
+            if (Lyrics.playerManager.count >0)
                 root.expanded = !root.expanded;
         }
     }
