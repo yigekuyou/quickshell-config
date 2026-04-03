@@ -16,7 +16,8 @@ Singleton {
     PolkitAgent {
         id: polkitAgent
         onAuthenticationRequestStarted: {
-		console.log("Polkit: 收到验证请求 - ", flow.actionId);
+		//console.log("Polkit: 收到验证请求 - ", flow.actionId);
+		//console.log("Polkit: 收到验证请求 - ", JSON.stringify(flow.selectedIdentity);
 	}
     }
 }
