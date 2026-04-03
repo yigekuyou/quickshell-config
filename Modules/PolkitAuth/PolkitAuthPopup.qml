@@ -51,7 +51,7 @@ Kirigami.Card {
 			visible: authFlow && authFlow.identities.length > 1
 			Layout.fillWidth: true
 			model: authFlow ? authFlow.identities : []
-			textRole: "display" // 假设 identity 对象有 display 属性，否则需根据实际模型调整
+			textRole: authFlow.selectedIdentity // 假设 identity 对象有 display 属性，否则需根据实际模型调整
 			onActivated: index => {
 				authFlow.selectedIdentity = authFlow.identities[index];
 			}
