@@ -48,10 +48,11 @@ Kirigami.Card {
 		// 身份选择
 		ComboBox {
 			Kirigami.FormData.label: "认证身份:"
-			visible: authFlow && authFlow.identities.length > 1
+			visible: authFlow && authFlow.identities.length
 			Layout.fillWidth: true
 			model: authFlow ? authFlow.identities : []
-			textRole: authFlow.selectedIdentity // 假设 identity 对象有 display 属性，否则需根据实际模型调整
+			textRole: "displayName"
+			valueRole: "id"
 			onActivated: index => {
 				authFlow.selectedIdentity = authFlow.identities[index];
 			}
