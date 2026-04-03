@@ -75,7 +75,7 @@ Kirigami.AbstractCard {
     Process {
 	    id: tempProc
 	    // thermal_zone0 通常是 CPU 核心温度，单位是毫摄氏度 (m°C)
-	    command: ["cat", "/sys/class/thermal/thermal_zone0/temp"]
+	    command: ["cat", SysMonitorPath.cpuhwmon]
 	    stdout: SplitParser {
 		    onRead: data => {
 			    if (!data) return
