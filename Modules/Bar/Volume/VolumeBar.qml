@@ -8,6 +8,7 @@ import org.kde.kirigami as Kirigami
 // 1. 导入 Widget 目录
 import qs.Widget
 import Qt.labs.animation
+
 Kirigami.ShadowedRectangle {
     id: root
 
@@ -23,52 +24,64 @@ Kirigami.ShadowedRectangle {
     shadow.yOffset: 2
     border.width: 1
     border.color: Qt.alpha(Kirigami.Theme.dividerColor, 0.3)
-// 实例化混音器小组件
+    // 实例化混音器小组件
     AudioWidget {
         id: audioPanel
         visible: false // 默认关闭
     }
 
     // --- 交互区域 ---
-    HoverHandler {
-	    cursorShape: Qt.PointingHandCursor
+    MouseArea {
+        anchors.fill: parent
+        onWheel: wheel => {
+            const step = 0.05;
+            let newVol = Volume.sinkVolume;
+
+            if (wheel.angleDelta.y > 0)
+                newVol += step;
+            else
+                newVol -= step;
+            Volume.setSinkVolume(newVol);
+        }
     }
-    TapHandler {
-	    onTapped: {
-		    audioPanel.visible = !audioPanel.visible
-	    }
-    }
-
-
-
 
     // --- 内容布局 (保持不变) ---
     RowLayout {
         id: layout
         anchors.centerIn: parent
         spacing: Kirigami.Units.smallSpacing
-
+        HoverHandler {
+            target: parent
+            cursorShape: Qt.PointingHandCursor
+        }
+        TapHandler {
+            onTapped: {
+                audioPanel.visible = !audioPanel.visible;
+            }
+        }
         Kirigami.Icon {
-		Layout.preferredWidth: Kirigami.Units.gridUnit
-		Layout.preferredHeight: Kirigami.Units.gridUnit
+            Layout.preferredWidth: Kirigami.Units.gridUnit
+            Layout.preferredHeight: Kirigami.Units.gridUnit
 
-		// 逻辑：根据 Volume 状态切换系统图标名称
-		source: {
-			if (Volume.isHeadphone) return "audio-headphones"
-				if (Volume.sinkMuted || Volume.sinkVolume <= 0) return "audio-volume-muted"
-					if (Volume.sinkVolume < 0.33) return "audio-volume-low"
-						if (Volume.sinkVolume < 0.66) return "audio-volume-medium"
-							return "audio-volume-high"
-		}
-		color: (Volume.sinkMuted || Volume.sinkVolume <= 0)
-		? Kirigami.Theme.negativeTextColor
-		: Kirigami.Theme.activeTextColor
-	}
+            // 逻辑：根据 Volume 状态切换系统图标名称
+            source: {
+                if (Volume.isHeadphone)
+                    return "audio-headphones";
+                if (Volume.sinkMuted || Volume.sinkVolume <= 0)
+                    return "audio-volume-muted";
+                if (Volume.sinkVolume < 0.33)
+                    return "audio-volume-low";
+                if (Volume.sinkVolume < 0.66)
+                    return "audio-volume-medium";
+                return "audio-volume-high";
+            }
+            color: (Volume.sinkMuted || Volume.sinkVolume <= 0) ? Kirigami.Theme.negativeTextColor : Kirigami.Theme.activeTextColor
+        }
         Label {
-		text: Math.round(Volume.sinkVolume * 100) + "%"
-		font.bold: true
-		font.pixelSize: Kirigami.Units.gridUnit * 0.8
-		color: Kirigami.Theme.textColor
-	}
+            text: Math.round(Volume.sinkVolume * 100) + "%"
+            font.bold: true
+            font.pixelSize: Kirigami.Units.gridUnit * 0.8
+            color: Kirigami.Theme.textColor
+        }
     }
 }
