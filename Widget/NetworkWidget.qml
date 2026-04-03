@@ -172,6 +172,25 @@ SlideWindow {
 					    }
 				    }
 			    }
+			    ToolButton {
+				    icon.name: "database-change-key"
+				    visible: {
+					    if(!modelData.known) return false;
+					    const security = modelData.security;
+					    const needsPsk = (security === WifiSecurityType.WpaPsk ||
+					    security === WifiSecurityType.Wpa2Psk ||
+					    security === WifiSecurityType.Sae);
+					    return needsPsk
+				}
+				    onClicked: {
+					    pskDialog.targetNetwork = modelData;
+					    pskDialog.open();
+				}
+
+				    ToolTip.visible: hovered
+				    ToolTip.text: qsTr("修改密码")
+
+			    }
 			    // 忘记网络按钮
 			    ToolButton {
 				    icon.name: "edit-delete"
