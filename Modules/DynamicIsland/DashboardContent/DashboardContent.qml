@@ -36,11 +36,6 @@ Item {
             }
 
             // 1.2 左下半部分：扁平化的天气 (高度权重 40%)
-            WeatherWidget {
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-                Layout.preferredHeight: 40 
-            }
         }
         
         // 2. 右侧区域：经典的细长长方形课表 (权重 40%)

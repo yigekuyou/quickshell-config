@@ -3,6 +3,7 @@ import Quickshell.Io
 import QtQuick
 import qs.Modules.Lock
 import qs.Config
+import qs.Services
 import qs.Modules.Wallpaper.WallpaperContent
 import Quickshell.Wayland
 Scope {
@@ -30,7 +31,7 @@ Scope {
 		}
 	}
 	IdleMonitor {
-		enabled: Idle.idlelock && !lockLoader
+		enabled: Idle.idlelock && !lockLoader &&(Lyrics.player?(false):true)
 		timeout: Idle.idlelocktime
 		onIsIdleChanged: {
 			if (isIdle) {
