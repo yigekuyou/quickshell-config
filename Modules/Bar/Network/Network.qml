@@ -89,7 +89,6 @@ Kirigami.ShadowedRectangle {
 			}
                         Label {
 				text: {
-					if (modelData.type !== DeviceType.Wifi) return "Ethernet";
 					const connectedList = Array.from(modelData.networks.values || [])
 					.filter(net => net.connected);
 					connectedList.sort((a, b) => b.signalStrength - a.signalStrength);

@@ -25,6 +25,10 @@ SlideWindow {
     function getWifiDevice() {
         return [...Networking.devices.values].find(d => d.type === DeviceType.Wifi);
     }
+    property var wiredDev: getwiredDevice()
+    function getwiredDevice() {
+	    return [...Networking.devices.values].find(d => d.type === DeviceType.Wired);
+    }
     headerTools: RowLayout {
         Theme {
             id: headerTheme
@@ -196,16 +200,38 @@ SlideWindow {
     FormCard.FormCard {
         visible: root.currentTab === "wired" || !Networking.wifiEnabled && root.currentTab === "wifi"
         Layout.fillWidth: true
-        FormCard.FormHeader {
-            title: "有线网络连接"
-        }
-        Kirigami.PlaceholderMessage {
-            id: wiredLyout
-            visible: root.currentTab === "wired"
-            icon.name: "network-wired"
-            text: "以太网设置暂不可用"
-            explanation: "占位符"
-        }
+        Repeater {
+		model: wiredDev ? [...wiredDev.networks.values].sort((a, b) => {
+			if (a.connected !== b.connected)
+				return b.connected - a.connected;
+			return b.device.linkSpeed - a.device.linkSpeed;
+		}) : []
+			FormCard.FormButtonDelegate {
+		                text: modelData.name || "未知设备"
+				description: modelData.device.linkSpeed+ qsTr("Mbps")
+				BusyIndicator {
+					anchors.fill: parent
+					running: modelData.stateChanging
+					visible: running
+				}
+				trailing: Row {
+					ToolButton {
+						icon.name: modelData.connected ? "network-disconnect" : "network-connect"
+						// 只有当前项没有连接时才显示“连接”
+						visible: true
+						onClicked: {
+							if (modelData.connected) {
+								modelData.disconnect();
+							} else {
+								modelData.connect();
+							}
+						}
+						ToolTip.visible: hovered
+						ToolTip.text: modelData.connected ? qsTr("断开连接") : qsTr("连接")
+					}
+				}
+			}
+	}
         Kirigami.PlaceholderMessage {
             id: offMessage
             // 控制显示：当 WiFi 关闭时显示
