@@ -112,7 +112,7 @@ Kirigami.Page {
 		}
 		focus:!pam.active
 		onClicked: {
-			Hyprland.dispatch("dpms on");
+			Hyprland.dispatch('hl.dsp.dpms({action = "enable"})');
 			clockTimer.restart();
 			clockContainer.visible=true
 
@@ -125,7 +125,7 @@ Kirigami.Page {
 		Keys.onPressed: (event) => {
 			if (event.key === Qt.Key_Escape) {
 				// 这里调用你的休眠方法
-				Hyprland.dispatch("dpms off");
+				Hyprland.dispatch('hl.dsp.dpms({action = "disable"})');
 				event.accepted = true;
 			}
 		}
