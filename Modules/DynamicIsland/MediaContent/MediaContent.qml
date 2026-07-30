@@ -96,6 +96,13 @@ Kirigami.CardsListView {
                         opacity: 0.7
                         elide: Text.ElideRight
                     }
+                    Kirigami.Heading {
+                        text: Qt.formatDateTime(new Date(Math.floor(activeplayer.position * 1000)), "mm:ss") + "/" + Qt.formatDateTime(new Date(Math.floor(activeplayer.length * 1000)), "mm:ss")
+                        level: 5
+                        Layout.fillWidth: true
+                        opacity: 0.7
+                        elide: Text.ElideRight
+                    }
                     LyricsText {
                         player: activeplayer
                         Layout.fillWidth: true
@@ -233,7 +240,6 @@ Kirigami.CardsListView {
                     ToolTip.text: "下一首"
                 }
             }
-
         }
     }
     PageIndicator {
