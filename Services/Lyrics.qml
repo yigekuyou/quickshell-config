@@ -126,8 +126,8 @@ Singleton {
             }
 
             mprisInstance: Mpris {
+                serviceName: modelData.dbusName
                 Component.onCompleted: {
-                    connectToServiceByName(modelData.dbusName);
                     handleAsTextChanged(asText, lyricsModel);
                 }
             }
