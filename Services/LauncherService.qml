@@ -3,6 +3,7 @@ pragma Singleton
 import Quickshell
 import Quickshell.Io
 import QtQuick
+import QtCore
 Singleton {
 	id: service
 
@@ -123,6 +124,28 @@ Singleton {
 			return scoredResults.map(item => item.data);
 		}
 	}
+	function exportAllEntriesInfo() {
+		const entries = [...DesktopEntries.applications.values];
+		const exportData = entries.map(entry => ({
+			id: entry.id,
+			name: entry.name,
+			genericName: entry.genericName,
+			comment: entry.comment,
+			command: entry.command,
+			execString: entry.execString,
+			categories: entry.categories,
+			keywords: entry.keywords,
+			runInTerminal: entry.runInTerminal,
+			workingDirectory: entry.workingDirectory
+		}));
+
+		const jsonString = JSON.stringify(exportData, null, 4);
+
+		// 1. 在控制台打印出来
+		console.log(jsonString);
+
+		return jsonString;
+	}
 	function launch(index) {
 		const entry = filteredApps.values[index];
 		if (entry) {
@@ -135,8 +158,28 @@ Singleton {
 					// 如果需要继承当前环境变量，通常不需要设置 environment
 				});
 				} else {
-			entry.execute();
+					const terminal = "kioclient";
+					let cmdName = entry.command[0];
+					let resolvedCmd = cmdName;
+
+					if (!cmdName.startsWith("/")) {
+						// 在系统 PATH 中查找绝对路径
+						let found = StandardPaths.findExecutable(cmdName);
+						if (found !== "") {
+							resolvedCmd = found.toString().replace("file://", ""); // 转为本地路径
+						}
+					}
+
+					// 拼接最终的执行命令数组
+					const fullCommand = [terminal, "exec"].concat([resolvedCmd].concat(entry.command.slice(1)));
+
+					Quickshell.execDetached({
+						command: entry.command,
+						workingDirectory: entry.workingDirectory,
+						// 如果需要继承当前环境变量，通常不需要设置 environment
+					});
 				}
 		}
 	}
+
 }
