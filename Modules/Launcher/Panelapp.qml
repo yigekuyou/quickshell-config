@@ -5,7 +5,7 @@ import qs.Services
 import QtQuick
 import QtQuick.Layouts
 Kirigami.ShadowedRectangle {
-	Layout.alignment:parent
+	Layout.alignment: Qt.AlignVCenter
 
 	radius: Kirigami.Units.gridUnit / 2
 	color: Qt.alpha(Kirigami.Theme.backgroundColor,0.5)

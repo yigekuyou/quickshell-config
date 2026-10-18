@@ -4,6 +4,7 @@ import QtQuick.Controls
 import Quickshell
 import qs.Services
 import qs.Config
+import Quickshell.Io
 import Quickshell.Networking
 import qs.Widget
 import org.kde.kirigami as Kirigami
@@ -25,12 +26,22 @@ Kirigami.ShadowedRectangle {
     // --- 【2】 实例化网络面板 ---
     NetworkWidget {
         id: wifiPanel
+        anchorItem: root
         // 默认是关闭的
         visible: false
 
         // 如果你想让面板的配色跟随全局 Colorscheme，可以在这里覆盖内部属性
         // (前提是 NetworkWidget 内部没有把这些属性写死，而是开放了别名或者属性)
         // 目前你的 NetworkWidget 是自包含配色的，直接用即可。
+    }
+
+
+    // IPC 控制面板（qs ipc call net toggle）
+    IpcHandler {
+        target: "net"
+        function toggle() { wifiPanel.visible = !wifiPanel.visible; }
+        function open() { wifiPanel.visible = true; }
+        function close() { wifiPanel.visible = false; }
     }
 
     // --- 交互区域 ---
@@ -78,7 +89,6 @@ Kirigami.ShadowedRectangle {
 			readonly property bool isOnline: modelData.connected && Networking.connectivity === NetworkConnectivity.Full
 			readonly property color statusColor: isOnline
 			? Kirigami.Theme.linkColor
-			: Kirigami.Theme.negativeTextColor			? Kirigami.Theme.linkColor
 			: Kirigami.Theme.negativeTextColor
 
                         Kirigami.Icon {
@@ -89,6 +99,8 @@ Kirigami.ShadowedRectangle {
 			}
                         Label {
 				text: {
+					if (!modelData || !modelData.networks)
+						return "未连接";
 					const connectedList = Array.from(modelData.networks.values || [])
 					.filter(net => net.connected);
 					connectedList.sort((a, b) => b.signalStrength - a.signalStrength);

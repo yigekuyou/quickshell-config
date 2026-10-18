@@ -166,7 +166,7 @@ SlideWindow {
 				font.bold: true
 			}
 			Label {
-				text: `${Math.floor(appNode.audio.volume * 100)}%`
+				text: `${Math.floor((appNode.audio ? appNode.audio.volume : 0) * 100)}%`
 				font: Kirigami.Theme.smallFont
 			}
                     }
@@ -183,7 +183,7 @@ SlideWindow {
                             height: parent.height
                             width: seekMa.pressed
                             ? Math.min(Math.max(0, seekMa.mouseX), parent.width)
-			    : parent.width * appNode.audio.volume
+			    : parent.width * (appNode.audio ? appNode.audio.volume : 0)
                         radius: parent.radius
 
                         // 【关键修复】这里之前是白色，现在使用了 itemTheme.primary
@@ -208,15 +208,17 @@ SlideWindow {
                             anchors.fill: parent
                             cursorShape: Qt.PointingHandCursor
                             onPressed:{
+                            if (!appNode.audio) return;
 				    let pos = Math.min(Math.max(0, mouse.x / parent.width), 1.0);
 				    appNode.audio.volume = pos
 			    }
 			    onReleased: {
+                            if (!appNode.audio) return;
 					    let pos = Math.min(Math.max(0, mouse.x / parent.width), 1.0);
 					    appNode.audio.volume = pos
 			    }
 			    onPositionChanged: (mouse) => {
-				    if (pressed) {
+				    if (pressed && appNode.audio) {
 					    let pos = Math.min(Math.max(0, mouse.x / parent.width), 1.0);
 					    appNode.audio.volume = pos
 				    }
@@ -226,20 +228,19 @@ SlideWindow {
                 }
                 Button {
 			display: AbstractButton.IconOnly
-			icon.name: appNode.audio.muted ? "audio-volume-muted" : "audio-volume-high"
+			icon.name: (appNode.audio && appNode.audio.muted) ? "audio-volume-muted" : "audio-volume-high"
 			flat: true
-			onClicked: appNode.audio.muted = !appNode.audio.muted
-			icon.color: appNode.audio.muted ? Kirigami.Theme.negativeTextColor : Kirigami.Theme.highlightColor
+			onClicked: if (appNode.audio) appNode.audio.muted = !appNode.audio.muted
+			icon.color: (appNode.audio && appNode.audio.muted) ? Kirigami.Theme.negativeTextColor : Kirigami.Theme.highlightColor
 			ToolTip.delay: Kirigami.Units.toolTipDelay
 			ToolTip.visible: hovered
-			ToolTip.text: appNode.audio.muted ? "解除静音" : "静音"
+			ToolTip.text: (appNode.audio && appNode.audio.muted) ? "解除静音" : "静音"
 		}
             }
         }
 	}
 
     }
-    Layout.alignment: Qt.AlignCenter
     Kirigami.PlaceholderMessage {
 	    visible: appTracker.linkGroups.length === 0
 	    text: "没有正在播放音频的应用"

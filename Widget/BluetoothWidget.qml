@@ -1,6 +1,5 @@
 pragma ComponentBehavior: Bound
 import Quickshell
-import Quickshell.Widgets
 import Quickshell.Bluetooth
 import QtQuick
 import QtQuick.Layouts
@@ -9,176 +8,162 @@ import qs.Config
 import qs.Services
 import qs.Widget.common
 import org.kde.kirigami as Kirigami
-import QtQuick.Controls
 import org.kde.kirigamiaddons.formcard as FormCard
-SlideWindow { //qmllint disable uncreatable-type
+
+SlideWindow {
     id: bluetooth
     title: "蓝牙配置"
     icon: "preferences-system-bluetooth"
-    property list<BluetoothDevice> devices: filterDevices(Bluetooth.defaultAdapter.devices.values) // qmllint disable unresolved-type
 
-    function filterDevices(devices) {
-        devices = devices.filter(item => item.deviceName !== "");
+    readonly property var adapter: Bluetooth.defaultAdapter
 
-        devices = devices.sort((a, b) => {
-            if (a.paired === b.paired) {
+    // 与 NetworkWidget 相同：列表项用 FormCard + AbstractFormDelegate 保持 KDE 外观，
+    // 不使用 FormButtonDelegate（它内部的换行 Label 会在弹窗首次显示时触发布局死循环）。
+    readonly property var devices: {
+        if (!adapter || !adapter.devices)
+            return [];
+        const list = [...adapter.devices.values].filter(item => item.deviceName !== "");
+        list.sort((a, b) => {
+            if (a.paired === b.paired)
                 return a.deviceName.localeCompare(b.deviceName);
-            }
-            return a.bool ? -1 : 1;
+            return a.paired ? -1 : 1;
         });
-
-        return devices;
+        return list;
     }
+
     headerTools: RowLayout {
-        Theme {
-            id: headerTheme
+        spacing: Kirigami.Units.smallSpacing
+
+        ToolButton {
+            id: discoverableButton
+            action: Kirigami.Action {
+                icon.name: (adapter && adapter.discoverable) ? "visibility" : "hint"
+                text: (adapter && adapter.discoverable) ? qsTr("可被发现") : qsTr("隐藏中")
+                checked: adapter ? adapter.discoverable : false
+                checkable: true
+                enabled: adapter !== null
+                onTriggered: {
+                    if (adapter)
+                        adapter.discoverable = !adapter.discoverable;
+                }
+            }
+            display: AbstractButton.IconOnly
+            ToolTip.delay: Qt.styleHints.mousePressAndHoldInterval
+            ToolTip.visible: hovered
+            ToolTip.text: action.text
+            contentItem: Kirigami.Icon {
+                source: discoverableButton.action.icon.name
+                color: discoverableButton.checked ? Kirigami.Theme.highlightColor : Kirigami.Theme.textColor
+            }
         }
 
-        // 刷新按钮
         ToolButton {
-		id: discoverableButton
-		action: Kirigami.Action {
-			// 使用更符合 KDE 规范的图标名
-			icon.name: Bluetooth.defaultAdapter.discoverable ? "visibility" : "hint"
-			text: Bluetooth.defaultAdapter.discoverable ? qsTr("可被发现") : qsTr("隐藏中")
+            id: boolscan
+            action: Kirigami.Action {
+                id: scanAction
+                icon.name: (adapter && adapter.discovering) ? "view-refresh" : "edit-find"
+                text: (adapter && adapter.discovering) ? qsTr("正在扫描...") : qsTr("开始扫描")
+                enabled: adapter !== null
+                onTriggered: {
+                    if (adapter)
+                        adapter.discovering = !adapter.discovering;
+                }
+            }
+            RotationAnimation on rotation {
+                running: adapter ? adapter.discovering : false
+                from: 0
+                to: 360
+                loops: Animation.Infinite
+                duration: 1000
+                onRunningChanged: if (!running) boolscan.rotation = 0
+            }
+            flat: true
+            display: AbstractButton.IconOnly
+            ToolTip.delay: Qt.styleHints.mousePressAndHoldInterval
+            ToolTip.visible: hovered
+            ToolTip.text: scanAction.text
+        }
 
-			// 视觉高亮逻辑
-			checked: Bluetooth.defaultAdapter.discoverable
-			checkable: true
-
-			onTriggered: {
-				Bluetooth.defaultAdapter.discoverable = !Bluetooth.defaultAdapter.discoverable;
-			}
-		}
-
-		// 2. 样式优化
-		// 使用 Kirigami 的显隐逻辑，确保在不同主题下颜色正确
-		display: AbstractButton.IconOnly
-
-		// 3. ToolTip 增强
-		ToolTip.delay: Qt.styleHints.mousePressAndHoldInterval
-		ToolTip.visible: hovered
-		ToolTip.text: action.text
-
-		// 4. 背景与颜色微调
-		contentItem: Kirigami.Icon {
-			source: discoverableButton.action.icon.name
-			// 这种写法比手动判断更符合 Kirigami 的变色机制
-			color: discoverableButton.checked ? Kirigami.Theme.highlightColor : Kirigami.Theme.textColor
-		}
-	}
-	ToolButton {
-		id: boolscan
-
-		// 1. 使用 Action 封装逻辑，方便多处复用（如菜单栏或右键菜单）
-		action: Kirigami.Action {
-			id: scanAction
-			icon.name: Bluetooth.defaultAdapter.discovering ? "view-refresh" : "edit-find"
-			text: Bluetooth.defaultAdapter.discovering ? qsTr("正在扫描...") : qsTr("开始扫描")
-
-			onTriggered: {
-				Bluetooth.defaultAdapter.discovering = !Bluetooth.defaultAdapter.discovering;
-			}
-		}
-		RotationAnimation on rotation {
-			running: Bluetooth.defaultAdapter.discovering
-			from: 0
-			to: 360
-			loops: Animation.Infinite
-			duration: 1000
-			onRunningChanged: if (!running) boolscan.rotation = 0
-		}
-		// 3. 交互细节
-		flat: true
-		display: AbstractButton.IconOnly // 在 Header 中通常只显示图标
-
-		ToolTip.delay: Qt.styleHints.mousePressAndHoldInterval
-		ToolTip.visible: hovered
-		ToolTip.text: scanAction.text
-	}
         Kirigami.Separator {
             Layout.fillHeight: true
         }
 
         Switch {
             id: blueSwitch
-
-            // 状态逻辑
-            enabled: true
-            checked: Bluetooth.defaultAdapter.enabled
-
-            // Kirigami 样式会自动处理颜色（primary color）和禁用状态的灰色
-            // 不需要手动写 Rectangle 的 radius 和 color
-
-            onToggled: {
-                Bluetooth.defaultAdapter.enabled = checked;
-            }
-
+            checked: adapter ? adapter.enabled : false
+            enabled: adapter !== null
+            onToggled: if (adapter) adapter.enabled = checked
             ToolTip.visible: hovered
-            ToolTip.text: !enabled ? qsTr("硬件已禁用") : (checked ? qsTr("蓝牙 已开启") : qsTr("蓝牙 已关闭"))
+            ToolTip.text: adapter === null ? qsTr("没有蓝牙适配器") : (checked ? qsTr("蓝牙 已开启") : qsTr("蓝牙 已关闭"))
         }
     }
+
     Repeater {
-        id: mainColumn
-        Layout.fillWidth: true
-        Layout.margins: 0
         model: bluetooth.devices
-        delegate: FormCard.FormButtonDelegate {
-            required property var modelData
-            // 1. 设置主标题和副标题
-            text: modelData.deviceName || "未知设备"
-	    description: modelData.address
 
-	    // 2. 左侧图标
-	    icon.name: modelData.icon || "bluetooth"
-            leftPadding: 0
-            rightPadding: 0
-            topPadding: 0
-            bottomPadding: 0
-            anchors.margins: 0
-            trailing: RowLayout {
-                // 3. 状态标签
-                Kirigami.Heading {
-                    text: "已配对"
-		    level:4
-                    visible: modelData.paired
-                    color: Kirigami.Theme.disabledTextColor
-                }
+        FormCard.FormCard {
+            id: deviceCard
+            Layout.fillWidth: true
+            property var deviceData: modelData
 
-                // 4. 操作按钮组
-                RowLayout {
+            FormCard.AbstractFormDelegate {
+                id: deviceRow
+                Layout.fillWidth: true
+
+                contentItem: RowLayout {
                     spacing: Kirigami.Units.smallSpacing
 
-                    // 连接/断开按钮
-                    Button {
-                        display: AbstractButton.TextOnly
-                        text: modelData.connected ? "断开" : (modelData.paired ? "连接" : "配对")
+                    Kirigami.Icon {
+                        source: "bluetooth"
+                        implicitWidth: Kirigami.Units.iconSizes.smallMedium
+                        implicitHeight: implicitWidth
+                        color: (deviceCard.deviceData && deviceCard.deviceData.connected) ? Kirigami.Theme.linkColor : Kirigami.Theme.textColor
+                    }
 
-                        // 使用 Kirigami 标准的强调色
-                        palette.buttonText: modelData.connected ? Kirigami.Theme.negativeTextColor : Kirigami.Theme.highlightColor
-
-                        onClicked: {
-                            if (modelData.connected)
-                                modelData.disconnect();
-                            else if (modelData.paired)
-                                modelData.connect();
-                            else
-                                modelData.pair();
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 0
+                        Label {
+                            Layout.fillWidth: true
+                            text: (deviceCard.deviceData && deviceCard.deviceData.deviceName) ? deviceCard.deviceData.deviceName : qsTr("未知设备")
+                            elide: Text.ElideRight
+                            font.bold: !!(deviceCard.deviceData && deviceCard.deviceData.connected)
+                        }
+                        Label {
+                            Layout.fillWidth: true
+                            text: (deviceCard.deviceData ? deviceCard.deviceData.address : "")
+                                + (deviceCard.deviceData && deviceCard.deviceData.paired ? " · " + qsTr("已配对") : "")
+                            elide: Text.ElideRight
+                            font: Kirigami.Theme.smallFont
+                            color: Kirigami.Theme.disabledTextColor
                         }
                     }
-                    // 移除按钮 (仅在已配对时显示)
+
+                    Button {
+                        display: AbstractButton.TextOnly
+                        text: (deviceCard.deviceData && deviceCard.deviceData.connected) ? qsTr("断开")
+                            : (deviceCard.deviceData && deviceCard.deviceData.paired ? qsTr("连接") : qsTr("配对"))
+                        palette.buttonText: (deviceCard.deviceData && deviceCard.deviceData.connected)
+                            ? Kirigami.Theme.negativeTextColor : Kirigami.Theme.highlightColor
+                        onClicked: {
+                            if (!deviceCard.deviceData)
+                                return;
+                            if (deviceCard.deviceData.connected)
+                                deviceCard.deviceData.disconnect();
+                            else if (deviceCard.deviceData.paired)
+                                deviceCard.deviceData.connect();
+                            else
+                                deviceCard.deviceData.pair();
+                        }
+                    }
+
                     ToolButton {
-                        visible: modelData.paired
-                        icon.name: "edit-delete" // 使用标准图标
+                        visible: !!(deviceCard.deviceData && deviceCard.deviceData.paired)
+                        icon.name: "edit-delete"
                         display: AbstractButton.IconOnly
-                        ToolTip.text: "移除设备"
+                        ToolTip.text: qsTr("移除设备")
                         ToolTip.visible: hovered
-
-                        onClicked: modelData.forget()
-
-                        // 红色警示色
-                        Kirigami.Theme.colorSet: Kirigami.Theme.View
-                        Kirigami.Theme.inherit: false
+                        onClicked: if (deviceCard.deviceData) deviceCard.deviceData.forget()
                     }
                 }
             }

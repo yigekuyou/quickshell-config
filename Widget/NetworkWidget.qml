@@ -2,44 +2,69 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
 import Quickshell
-import qs.Services
 import Quickshell.Io
+import Quickshell.Networking
 import qs.Config
 import qs.Widget.common
-import QtQuick
-import QtQuick.Controls
-import QtQuick.Layouts
-import Quickshell
-import Quickshell.Widgets
-import Quickshell.Networking
 import org.kde.kirigami as Kirigami
-import QtQuick.Controls
 import org.kde.kirigamiaddons.formcard as FormCard
 
 SlideWindow {
     id: root
     title: "网络配置"
     icon: "network-wireless"
-    property string currentTab: "wifi" // 用于切换视图的 ID
-    property var wifiDev: getWifiDevice()
-    function getWifiDevice() {
-        return [...Networking.devices.values].find(d => d.type === DeviceType.Wifi);
+    property string currentTab: "wifi"
+
+    property var wifiDev: {
+        const devs = Networking.devices.values || [];
+        return [...devs].find(d => d.type === DeviceType.Wifi) ?? null;
     }
-    property var wiredDev: getwiredDevice()
-    function getwiredDevice() {
-	    return [...Networking.devices.values].find(d => d.type === DeviceType.Wired);
+    property var wiredDev: {
+        const devs = Networking.devices.values || [];
+        return [...devs].find(d => d.type === DeviceType.Wired) ?? null;
     }
+
+    // 排序后的列表。列表项使用 FormCard + AbstractFormDelegate（保持 KDE 外观），
+    // 不要直接用 FormButtonDelegate：它内部的 Label 使用 width: parent.width +
+    // wrapMode: Text.Wrap，弹窗首次显示、窗口尺寸从 0 变成实际值时会形成
+    // “宽度 -> 换行 -> 隐式高度 -> 布局 -> 宽度”的循环，主线程会被钉在 100%。
+    readonly property var wifiNetworks: {
+        if (!wifiDev || !wifiDev.networks)
+            return [];
+        const list = [...wifiDev.networks.values];
+        list.sort((a, b) => {
+            if (a.connected !== b.connected)
+                return a.connected ? -1 : 1;
+            return b.signalStrength - a.signalStrength;
+        });
+        return list;
+    }
+
+    readonly property var wiredNetworks: {
+        if (!wiredDev || !wiredDev.networks)
+            return [];
+        const list = [...wiredDev.networks.values];
+        list.sort((a, b) => {
+            if (a.connected !== b.connected)
+                return a.connected ? -1 : 1;
+            return (b.device?.linkSpeed ?? 0) - (a.device?.linkSpeed ?? 0);
+        });
+        return list;
+    }
+
+    function securityName(network) {
+        if (!network || network.security === undefined)
+            return "";
+        return WifiSecurityType.toString(network.security);
+    }
+
     headerTools: RowLayout {
-        Theme {
-            id: headerTheme
-        }
+        spacing: Kirigami.Units.smallSpacing
 
         ToolButton {
             id: boolscan
             action: Kirigami.Action {
-                // Kirigami 推荐使用 icon.name 而非直接使用字体图标字符
-                // "view-refresh" 是标准图标名，会自动匹配 Font Awesome 或 Breeze 图标库
-                icon.name: wifiDev.scannerEnabled ? "view-refresh" : "edit-find"
+                icon.name: (wifiDev && wifiDev.scannerEnabled) ? "view-refresh" : "edit-find"
                 icon.width: Kirigami.Units.iconSizes.small
                 icon.height: Kirigami.Units.iconSizes.small
                 checkable: true
@@ -48,9 +73,8 @@ SlideWindow {
                         wifiDev.scannerEnabled = !wifiDev.scannerEnabled;
                 }
             }
-            // 旋转动画：Kirigami 环境下依然建议保留动画逻辑
             RotationAnimation on rotation {
-                running: wifiDev.scannerEnabled
+                running: wifiDev ? wifiDev.scannerEnabled : false
                 from: 0
                 to: 360
                 loops: Animation.Infinite
@@ -59,32 +83,23 @@ SlideWindow {
                     boolscan.rotation = 0
             }
             ToolTip.visible: hovered
-            ToolTip.text: wifiDev.scannerEnabled ? qsTr("正在扫描...") : qsTr("开始扫描")
+            ToolTip.text: (wifiDev && wifiDev.scannerEnabled) ? qsTr("正在扫描...") : qsTr("开始扫描")
         }
 
         Kirigami.Separator {
             Layout.fillHeight: true
         }
 
-        // WiFi 开关部分
         Switch {
             id: wifiSwitch
-
-            // 状态逻辑
             enabled: Networking.wifiHardwareEnabled
             checked: Networking.wifiEnabled && Networking.wifiHardwareEnabled
-
-            // Kirigami 样式会自动处理颜色（primary color）和禁用状态的灰色
-            // 不需要手动写 Rectangle 的 radius 和 color
-
-            onToggled: {
-                Networking.wifiEnabled = checked;
-            }
-
+            onToggled: Networking.wifiEnabled = checked
             ToolTip.visible: hovered
             ToolTip.text: !enabled ? qsTr("硬件已禁用") : (checked ? qsTr("WiFi 已开启") : qsTr("WiFi 已关闭"))
         }
     }
+
     Kirigami.NavigationTabBar {
         Layout.fillWidth: true
 
@@ -103,143 +118,197 @@ SlideWindow {
             }
         ]
     }
-    Repeater {
-        model: wifiDev ? [...wifiDev.networks.values].sort((a, b) => {
-            if (a.connected !== b.connected)
-                return b.connected - a.connected;
-            return b.signalStrength - a.signalStrength;
-        }) : []
 
-        Layout.fillWidth: true
-        Layout.margins: 0
+    // ==================== Wi-Fi 列表（KDE FormCard 风格） ====================
+    Repeater {
+        model: root.wifiNetworks
 
         FormCard.FormCard {
-            id: wifiComp
-            visible: root.currentTab === "wifi"
+            id: wifiCard
             Layout.fillWidth: true
-            FormCard.FormButtonDelegate {
-                text: modelData.name || "未知设备"
-                description: `${WifiSecurityType.toString(modelData.security)} | ${Math.round(modelData.signalStrength * 100)}%`
-                BusyIndicator {
-                    anchors.fill: parent
-                    running: modelData.stateChanging
-                    visible: running
-                }
+            // Repeater 注入的 modelData；不要在被嵌套的 AbstractFormDelegate 上
+            // 声明 required property modelData（只有 delegate 根对象才会被赋值）。
+            property var netData: modelData
 
-                trailing: Row {
+            FormCard.AbstractFormDelegate {
+                id: wifiRow
+                Layout.fillWidth: true
+                visible: root.currentTab === "wifi"
+
+                readonly property bool needsPsk: {
+                    const s = wifiCard.netData ? wifiCard.netData.security : undefined;
+                    return s === WifiSecurityType.WpaPsk || s === WifiSecurityType.Wpa2Psk || s === WifiSecurityType.Sae;
+                }
+                property bool passwordVisible: false
+
+                contentItem: RowLayout {
+                    spacing: Kirigami.Units.smallSpacing
+
+                    Kirigami.Icon {
+                        source: (wifiCard.netData && wifiCard.netData.connected) ? "network-wireless-connected" : "network-wireless"
+                        implicitWidth: Kirigami.Units.iconSizes.smallMedium
+                        implicitHeight: implicitWidth
+                        color: (wifiCard.netData && wifiCard.netData.connected) ? Kirigami.Theme.linkColor : Kirigami.Theme.textColor
+                    }
+
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 0
+
+                        Label {
+                            Layout.fillWidth: true
+                            text: (wifiCard.netData && wifiCard.netData.name) ? wifiCard.netData.name : qsTr("未知网络")
+                            elide: Text.ElideRight
+                            font.bold: !!(wifiCard.netData && wifiCard.netData.connected)
+                        }
+                        Label {
+                            Layout.fillWidth: true
+                            text: root.securityName(wifiCard.netData) + " · "
+                                + Math.round((wifiCard.netData ? wifiCard.netData.signalStrength : 0) * 100) + "%"
+                            elide: Text.ElideRight
+                            font: Kirigami.Theme.smallFont
+                            color: Kirigami.Theme.disabledTextColor
+                        }
+                    }
+
+                    BusyIndicator {
+                        Layout.preferredWidth: Kirigami.Units.iconSizes.small
+                        Layout.preferredHeight: Layout.preferredWidth
+                        running: wifiCard.netData ? wifiCard.netData.stateChanging : false
+                        visible: running
+                    }
+
                     ToolButton {
-                        icon.name: modelData.connected ? "network-disconnect" : "network-connect"
-                        // 只有当前项没有连接时才显示“连接”
-                        visible: true
+                        icon.name: (wifiCard.netData && wifiCard.netData.connected) ? "network-disconnect" : "network-connect"
                         onClicked: {
-                            if (modelData.connected) {
-                                modelData.disconnect();
-                            } else {
-                                modelData.connect();
-                            }
+                            if (!wifiCard.netData)
+                                return;
+                            if (wifiCard.netData.connected)
+                                wifiCard.netData.disconnect();
+                            else
+                                wifiCard.netData.connect();
                         }
                         ToolTip.visible: hovered
-                        ToolTip.text: modelData.connected ? qsTr("断开连接") : qsTr("连接")
+                        ToolTip.text: (wifiCard.netData && wifiCard.netData.connected) ? qsTr("断开连接") : qsTr("连接")
                     }
-                    Connections {
-                        target: modelData
-                        function onConnectionFailed(reason) {
-                            console.log(ConnectionFailReason.toString(reason));
-                            // 如果失败原因是缺少凭据 (NoSecrets)
-                            if (reason === ConnectionFailReason.NoSecrets) {
-                                passwordField.visible = true;
-                                passwordField.status = Kirigami.MessageType.Error;
-                            }
-                        }
-                    }
-                    ToolButton {
-                        icon.name: "database-change-key"
-                        visible: {
-                            if (!modelData.known)
-                                return false;
-                            const security = modelData.security;
-                            const needsPsk = (security === WifiSecurityType.WpaPsk || security === WifiSecurityType.Wpa2Psk || security === WifiSecurityType.Sae);
-                            return needsPsk;
-                        }
-                        onClicked: {
-                            passwordField.visible = !passwordField.visible;
-                        }
 
+                    ToolButton {
+                        visible: wifiCard.netData ? (wifiCard.netData.known && wifiRow.needsPsk) : false
+                        icon.name: "database-change-key"
+                        onClicked: wifiRow.passwordVisible = !wifiRow.passwordVisible
                         ToolTip.visible: hovered
                         ToolTip.text: qsTr("修改密码")
                     }
-                    // 忘记网络按钮
-                    ToolButton {
-                        icon.name: "edit-delete"
-                        visible: modelData.known
-                        onClicked: modelData.forget()
 
+                    ToolButton {
+                        visible: wifiCard.netData ? wifiCard.netData.known : false
+                        icon.name: "edit-delete"
+                        onClicked: if (wifiCard.netData) wifiCard.netData.forget()
                         ToolTip.visible: hovered
                         ToolTip.text: qsTr("忘记网络")
                     }
                 }
             }
-            FormCard.FormPasswordFieldDelegate {
+
+            FormCard.FormTextFieldDelegate {
                 id: passwordField
-                visible: false
-                label: qsTr("%1 的密码").arg(modelData.name)
-                statusMessage: qsTr("连接到 %1").arg(modelData.name)
+                visible: wifiRow.passwordVisible && root.currentTab === "wifi"
+                label: qsTr("%1 的密码").arg(wifiCard.netData ? wifiCard.netData.name : "")
+                statusMessage: qsTr("连接到 %1").arg(wifiCard.netData ? wifiCard.netData.name : "")
                 placeholderText: qsTr("请输入密码")
-                showPasswordQuality: true
+                echoMode: TextInput.Password
                 onAccepted: {
-                    if (text.length > 0) {
-                        modelData.connectWithPsk(text);
-                        clear();
+                    if (wifiCard.netData && text.length > 0) {
+                        wifiCard.netData.connectWithPsk(text);
+                        text = "";
+                        statusMessage = "";
+                        wifiRow.passwordVisible = false;
+                    }
+                }
+            }
+
+            Connections {
+                target: wifiCard.netData
+                function onConnectionFailed(reason) {
+                    if (reason === ConnectionFailReason.NoSecrets) {
+                        wifiRow.passwordVisible = true;
+                        passwordField.status = Kirigami.MessageType.Error;
+                        passwordField.statusMessage = qsTr("需要密码");
+                        passwordField.forceActiveFocus();
                     }
                 }
             }
         }
     }
 
-    // 以太网占位部分
-    FormCard.FormCard {
-        visible: root.currentTab === "wired" || !Networking.wifiEnabled && root.currentTab === "wifi"
-        Layout.fillWidth: true
-        Repeater {
-		model: wiredDev ? [...wiredDev.networks.values].sort((a, b) => {
-			if (a.connected !== b.connected)
-				return b.connected - a.connected;
-			return b.device.linkSpeed - a.device.linkSpeed;
-		}) : []
-			FormCard.FormButtonDelegate {
-		                text: modelData.name || "未知设备"
-				description: modelData.device.linkSpeed+ qsTr("Mbps")
-				BusyIndicator {
-					anchors.fill: parent
-					running: modelData.stateChanging
-					visible: running
-				}
-				trailing: Row {
-					ToolButton {
-						icon.name: modelData.connected ? "network-disconnect" : "network-connect"
-						// 只有当前项没有连接时才显示“连接”
-						visible: true
-						onClicked: {
-							if (modelData.connected) {
-								modelData.disconnect();
-							} else {
-								modelData.connect();
-							}
-						}
-						ToolTip.visible: hovered
-						ToolTip.text: modelData.connected ? qsTr("断开连接") : qsTr("连接")
-					}
-				}
-			}
-	}
-        Kirigami.PlaceholderMessage {
-            id: offMessage
-            // 控制显示：当 WiFi 关闭时显示
-            visible: !Networking.wifiEnabled && root.currentTab === "wifi"
+    // ==================== 以太网列表（KDE FormCard 风格） ====================
+    Repeater {
+        model: root.wiredNetworks
 
-            icon.name: "network-wireless-off"
-            text: "Wi-Fi 已关闭"
-            explanation: "请在上方开关处开启 Wi-Fi 和扫描可用网络。"
+        FormCard.FormCard {
+            id: wiredCard
+            Layout.fillWidth: true
+            property var netData: modelData
+
+            FormCard.AbstractFormDelegate {
+                id: wiredRow
+                Layout.fillWidth: true
+                visible: root.currentTab === "wired"
+
+                contentItem: RowLayout {
+                    spacing: Kirigami.Units.smallSpacing
+
+                    Kirigami.Icon {
+                        source: "network-wired"
+                        implicitWidth: Kirigami.Units.iconSizes.smallMedium
+                        implicitHeight: implicitWidth
+                        color: (wiredCard.netData && wiredCard.netData.connected) ? Kirigami.Theme.linkColor : Kirigami.Theme.textColor
+                    }
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 0
+                        Label {
+                            Layout.fillWidth: true
+                            text: (wiredCard.netData && wiredCard.netData.name) ? wiredCard.netData.name : qsTr("未知设备")
+                            elide: Text.ElideRight
+                            font.bold: true
+                        }
+                        Label {
+                            Layout.fillWidth: true
+                            text: (wiredCard.netData && wiredCard.netData.device ? wiredCard.netData.device.linkSpeed : 0) + " " + qsTr("Mbps")
+                            elide: Text.ElideRight
+                            font: Kirigami.Theme.smallFont
+                            color: Kirigami.Theme.disabledTextColor
+                        }
+                    }
+                    BusyIndicator {
+                        Layout.preferredWidth: Kirigami.Units.iconSizes.small
+                        Layout.preferredHeight: Layout.preferredWidth
+                        running: wiredCard.netData ? wiredCard.netData.stateChanging : false
+                        visible: running
+                    }
+                    ToolButton {
+                        icon.name: (wiredCard.netData && wiredCard.netData.connected) ? "network-disconnect" : "network-connect"
+                        onClicked: {
+                            if (!wiredCard.netData)
+                                return;
+                            if (wiredCard.netData.connected)
+                                wiredCard.netData.disconnect();
+                            else
+                                wiredCard.netData.connect();
+                        }
+                        ToolTip.visible: hovered
+                        ToolTip.text: (wiredCard.netData && wiredCard.netData.connected) ? qsTr("断开连接") : qsTr("连接")
+                    }
+                }
+            }
         }
+    }
+
+    Kirigami.PlaceholderMessage {
+        visible: !Networking.wifiEnabled && root.currentTab === "wifi"
+        icon.name: "network-wireless-off"
+        text: "Wi-Fi 已关闭"
+        explanation: "请在上方开关处开启 Wi-Fi 和扫描可用网络。"
     }
 }

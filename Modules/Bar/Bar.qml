@@ -29,7 +29,7 @@ Variants {
         WlrLayershell.layer: WlrLayer.Bottom
         WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
         BackgroundEffect.blurRegion: Region {
-		item: parent.contentItem
+		item: barWindow.contentItem
 	}
         required property var modelData
         screen: modelData

@@ -8,11 +8,12 @@ RowLayout{
 	id: root
 	spacing: Kirigami.Units.smallSpacing
 	property var node
+	readonly property var audio: node ? node.audio : null
 	property bool isHeadphone: false
 	property var theme: Theme {}
 		Kirigami.Icon {
-			Layout.alignment:parent.left
-			source: (node && node.audio.muted) ? "audio-volume-muted" : (root.isHeadphone ? "audio-headphones" : "audio-speakers")
+			Layout.alignment: Qt.AlignVCenter
+			source: (root.audio && root.audio.muted) ? "audio-volume-muted" : (root.isHeadphone ? "audio-headphones" : "audio-speakers")
 			implicitWidth: Kirigami.Units.iconSizes.small
 			implicitHeight: Kirigami.Units.iconSizes.small
 			color: "white" // 进度条上的图标通常固定白色以保证对比度
@@ -28,14 +29,14 @@ RowLayout{
 			Rectangle {
 				id: progressFill
 				height: parent.height
-				width: node ? parent.width * (mouseArea.pressed ?
+				width: root.audio ? parent.width * (mouseArea.pressed ?
 				Math.min(Math.max(0, mouseArea.mouseX / parent.width), 1.0) :
-				node.audio.volume) : 0
+				root.audio.volume) : 0
 				color: Kirigami.Theme.highlightColor
 				radius: height / 2
 
 				// 渐变美化（可选）
-				opacity: node && node.audio.muted ? 0.5 : 1.0
+				opacity: root.audio && root.audio.muted ? 0.5 : 1.0
 				Behavior on opacity { NumberAnimation { duration: Kirigami.Units.shortDuration } }
 			}
 			Rectangle {
@@ -57,17 +58,19 @@ RowLayout{
 				anchors.fill: parent
 				cursorShape: Qt.PointingHandCursor
 				onPressed:{
+					if (!root.audio) return;
 					let pos = Math.min(Math.max(0, mouse.x / parent.width), 1.0);
-					node.audio.volume = pos
+					root.audio.volume = pos
 				}
 				onReleased: {
+					if (!root.audio) return;
 					let pos = Math.min(Math.max(0, mouse.x / parent.width), 1.0);
-					node.audio.volume = pos
+					root.audio.volume = pos
 				}
 				onPositionChanged: (mouse) => {
-					if (pressed) {
+					if (pressed && root.audio) {
 						let pos = Math.min(Math.max(0, mouse.x / parent.width), 1.0);
-						node.audio.volume = pos
+						root.audio.volume = pos
 					}
 				}
 			}
@@ -79,12 +82,12 @@ RowLayout{
 		flat: true
 		hoverEnabled: true
 		display: AbstractButton.IconOnly // 如果只想显示图标
-		icon.name: node.audio.muted ? "audio-volume-muted" : "audio-volume-high"
-		icon.color: node.audio.muted ? Kirigami.Theme.negativeTextColor : Kirigami.Theme.highlightColor
+		icon.name: (root.audio && root.audio.muted) ? "audio-volume-muted" : "audio-volume-high"
+		icon.color: (root.audio && root.audio.muted) ? Kirigami.Theme.negativeTextColor : Kirigami.Theme.highlightColor
 
-		ToolTip.text: node.audio.muted ? "恢复" : "静音"
+		ToolTip.text: (root.audio && root.audio.muted) ? "恢复" : "静音"
 		ToolTip.delay: Kirigami.Units.toolTipDelay
 		ToolTip.visible: hovered
-		onClicked: node.audio.muted = !node.audio.muted
+		onClicked: if (root.audio) root.audio.muted = !root.audio.muted
 	}
 }

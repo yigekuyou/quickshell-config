@@ -19,7 +19,7 @@ Variants {
 		property int triggerHeight: 1
 		screen: modelData
 		BackgroundEffect.blurRegion: Region {
-			item: parent.contentItem
+			item: panelWindow.contentItem
 		}
 		Timer {
 			id: hideTimer

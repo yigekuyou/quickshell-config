@@ -27,6 +27,7 @@ Kirigami.ShadowedRectangle {
     // 实例化混音器小组件
     AudioWidget {
         id: audioPanel
+        anchorItem: root
         visible: false // 默认关闭
     }
 
