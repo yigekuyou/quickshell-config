@@ -8,10 +8,12 @@ import qs.Modules.DynamicIsland
 import qs.Config
 import qs.Modules.Launcher
 import qs.Modules.Panel
+import qs.Modules.Screenshot
 import qs.Wallpaper
 ShellRoot {
 	Variants {model: Quickshell.screens
 	}
+	Screenshot {}
 	LazyLoader {
 		activeAsync:true
 		Bar{}
