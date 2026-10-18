@@ -111,9 +111,7 @@ Kirigami.ShadowedRectangle {
                     onTapped: root.activateApp(button.modelData)
                 }
 
-                ToolTip.delay: Kirigami.Units.toolTipDelay
-                ToolTip.visible: button.hovered
-                ToolTip.text: button.modelData.tooltip
+
             }
         }
     }

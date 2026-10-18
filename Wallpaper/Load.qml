@@ -101,18 +101,6 @@ Scope {
 			})
 		}
 	}
-	LazyLoader {
-		id: notifLoader
-		activeAsync:true
-		Process {
-			running: true
-			// 1. 设置执行文件路径
-			command: ["qs", "--path", Quickshell.env("XDG_CONFIG_HOME") + "/quickshell/Wallpaper/Notif.qml"]
-			environment: ({
-				"QS_APP_ID":"org.quickshell.notif"
-			})
-		}
-	}
     Process {
         id: kded6
         running: true

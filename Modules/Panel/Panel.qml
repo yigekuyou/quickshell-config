@@ -119,9 +119,6 @@ Variants {
 						}
 					}
 
-					ToolTip.delay: Kirigami.Units.toolTipDelay
-					ToolTip.visible: menuHover.hovered
-					ToolTip.text: qsTr("应用启动器")
 				}
 
 				Kirigami.Separator {

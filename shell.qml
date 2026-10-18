@@ -9,9 +9,11 @@ import qs.Config
 import qs.Modules.Launcher
 import qs.Modules.Panel
 import qs.Modules.Screenshot
+import qs.Modules.Notifications
 import qs.Wallpaper
 ShellRoot {
 	Screenshot {}
+	NotificationPopupStack {}
 	LazyLoader {
 		activeAsync:true
 		Bar{}

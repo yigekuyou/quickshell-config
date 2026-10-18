@@ -39,6 +39,8 @@ PopupWindow {
     // --- 开放给外部的属性 ---
     property string title: ""
     property string icon: ""
+    // 内容实际高度，方便调用方把窗口高度贴着内容走（通知中心用）
+    readonly property real contentHeight: flick.contentHeight
     property int windowHeight: 420
     property int extraTopMargin: 0
     property alias headerTools: headerToolsLayout.data
