@@ -7,6 +7,7 @@ import qs.Modules.Bar.Workspaces
 import qs.Modules.Bar.Clock
 import qs.Modules.Bar.Tray
 import qs.Modules.Bar.Cava
+import qs.Modules.Bar.ClipboardManager
 import qs.Modules.Bar.Network
 import qs.Modules.Bar.Bluetooth
 import qs.Modules.Bar.Volume
@@ -82,6 +83,7 @@ Variants {
 		    anchors.leftMargin: Kirigami.Units.largeSpacing
 		    spacing: Kirigami.Units.smallSpacing
                 Cava {}
+                ClipboardStatus {}
             }
             // --- 中间：灵动岛 ---
             RowLayout {
