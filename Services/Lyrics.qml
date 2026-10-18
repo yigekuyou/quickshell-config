@@ -61,6 +61,16 @@ Singleton {
                 });
             }
         }
+        // 在列表最前面补一个空行。
+        // 歌词条是水平 ListView，contentX 最小只能到 0，而第一句右对齐需要的
+        // contentX 是负数（width - 文本宽），会被夹回 0 —— 这就是只有第一句
+        // 贴在左边的原因。前面垫一个空行（宽度 0 + 一句 spacing）之后，
+        // 第一句的 x 至少是一整屏，右对齐的目标值变成正数，就不会被夹住了。
+        // 它和第一句同为 0 秒，所以永远轮不到显示。
+        lyricsWTimes.insert(0, {
+            "time": 0,
+            "lyric": ""
+        });
     }
 
     function parseTime(timeString) {
