@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
 import qs.Config
+import qs.Services
 import org.kde.kirigami as Kirigami
 Kirigami.ShadowedRectangle {
     id: root
@@ -16,7 +17,18 @@ Kirigami.ShadowedRectangle {
     // 1. 属性定义
     // ============================================================
     property bool expanded: false
-    property string scriptPath: Quickshell.env("HOME") + "/.config/quickshell/scripts/cava.sh"
+    property string confPath: Quickshell.env("HOME") + "/.config/quickshell/scripts/cava.conf"
+
+    // 从 Lyrics 单例读取播放状态与当前曲目
+    property var activePlayer: Lyrics.player ? Lyrics.player.mprisData : null
+    property bool musicPlaying: activePlayer ? activePlayer.isPlaying : false
+    property string currentTitle: activePlayer ? (activePlayer.trackTitle || "") : ""
+    readonly property string flatBars: "▁".repeat(18)
+
+    // 切歌时重置显示，避免上一首残影
+    onCurrentTitleChanged: cavaText.text = root.flatBars
+    // 暂停时也重置为平条（此时 Process 已停止，不再有新帧）
+    onMusicPlayingChanged: if (!root.musicPlaying) cavaText.text = root.flatBars
 
     property int collapsedWidth: Kirigami.Units.gridUnit*2
     property int autoWidth: (widthfull.implicitWidth > 0 ? widthfull.implicitWidth : Kirigami.Units.gridUnit*2)
@@ -118,15 +130,23 @@ Kirigami.ShadowedRectangle {
 
     Process {
         id: cavaScript
-        command: ["bash", root.scriptPath]
-        running: root.expanded
+        // 直接管理 cava 进程，不经过 bash 管道，杜绝孤儿进程残留
+        command: ["cava", "-p", root.confPath]
+        // 仅在组件展开且音乐正在播放时运行
+        running: root.expanded && root.musicPlaying
         stdout: SplitParser {
             splitMarker: "\n"
             onRead: data => {
-                let cleanData = data.trim()
-                if (cleanData !== "") {
-                    cavaText.text = cleanData
+                // cava ascii 输出形如 "0;2;4;7"，映射为方块字符
+                let s = data.replace(/;/g, "").trim()
+                if (s.length === 0) return
+                const bars = "▁▂▃▄▅▆▇█"
+                let out = ""
+                for (let i = 0; i < s.length; i++) {
+                    let d = parseInt(s[i])
+                    out += (d >= 0 && d <= 7) ? bars[d] : ""
                 }
+                if (out.length > 0) cavaText.text = out
             }
         }
     }
