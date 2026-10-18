@@ -15,6 +15,7 @@ import qs.Modules.Bar.PowerButton
 import qs.Modules.Bar.PowerProfile
 import qs.Modules.Bar.SysMonitor
 import qs.Modules.Bar.NotificationButton
+import qs.Modules.Bar.WallpaperButton
 import qs.Modules.Bar.DayNightSwitch
 import qs.Modules.DynamicIsland
 import qs.Config
@@ -84,6 +85,7 @@ Variants {
 		    spacing: Kirigami.Units.smallSpacing
                 Cava {}
                 ClipboardStatus {}
+                WallpaperButton {}
             }
             // --- 中间：灵动岛 ---
             RowLayout {

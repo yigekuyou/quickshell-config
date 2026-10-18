@@ -128,8 +128,17 @@ Scope {
 		    environment: ({
 			    "DRI_PRIME": "1",
 			    "QS_APP_ID":"org.quickshell.wall",
-			    "QSG_RHI_BACKEND": "opengl"
+			    "QSG_RHI_BACKEND": "opengl",
+			    // 标记这是 scene 专用子进程：它只负责场景渲染，
+			    // 不要在里面对 Web 壁纸再起一个 WebEngine 子进程
+			    "QS_WALLPAPER_SCENE_CHILD": "1"
 		    })
+		    // 切到 video/web 时 LazyLoader 会销毁这个 Process 对象，
+		    // 但子 qs 不一定跟着退出；按 pid 显式清理，避免留下孤儿背景层
+		    Component.onDestruction: {
+			    if (running && processId)
+				    Quickshell.execDetached(["kill", String(processId)]);
+		    }
 	    }
     }
 }
