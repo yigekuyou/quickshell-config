@@ -8,10 +8,16 @@ import qs.Widget.common
 import org.kde.kirigami as Kirigami
 import org.kde.kirigamiaddons.formcard as FormCard
 
-// 剪贴板历史面板。结构与 NetworkWidget / BluetoothWidget / NotificationWidget 保持一致：
-// SlideWindow（圆角卡片 + 阴影 + 标题栏）+ FormCard/AbstractFormDelegate 列表。
-// 不用 FormButtonDelegate：其内部 Label 是 width: parent.width + wrapMode: Text.Wrap，
-// 弹窗从隐藏变为可见时会形成“宽度 -> 换行 -> 隐式高度 -> 布局 -> 宽度”的循环。
+// 剪贴板历史面板。与 NetworkWidget / NotificationWidget 同属 qs.Widget：
+// 由顶栏入口 Modules/Bar/ClipboardManager 的 ClipboardStatus 实例化并锚定，
+// 不属于 Bar 目录结构本身。
+//
+// 结构与 NetworkWidget 一致：SlideWindow（圆角卡片 + 阴影 + 标题栏）+ 列表。
+// 列表走 ListView + delegate（如 Notifications 的 NotificationPopup 作为
+// ListView delegate）：滚动发生在列表内部，标题栏与 headerTools 保持在
+// head 上不跟着滚；不再是所有内容塞进一个 Flickable 里整体滚。
+// 不用 FormButtonDelegate：其内部 Label 是 width: parent.width + wrapMode，
+// 弹窗从隐藏变可见时会形成“宽度 -> 换行 -> 隐式高度 -> 布局 -> 宽度”的循环。
 SlideWindow {
     id: root
     title: qsTr("剪贴板")
@@ -36,17 +42,6 @@ SlideWindow {
         repeat: true
         running: root.visible
         onTriggered: root.now = Date.now()
-    }
-
-    // 条目快照（普通数组，交给 Repeater 使用；不要中途改模型引发重排）
-    readonly property var items: {
-        const out = [];
-        const h = ClipboardService.history;
-        for (let i = 0; i < h.count; i++) {
-            const rec = h.get(i);
-            out.push({ "text": rec.clipText, "time": rec.time });
-        }
-        return out;
     }
 
     // ==================== 格式化 ====================
@@ -78,15 +73,15 @@ SlideWindow {
         return Qt.formatDateTime(new Date(ts), "yyyy-MM-dd");
     }
 
-    function meta(item) {
-        const text = String(item.text);
+    function meta(text, ts) {
+        const str = String(text);
         const parts = [];
-        if (item.time > 0)
-            parts.push(root.relativeTime(item.time));
-        const lines = text.split("\n").length;
+        if (ts > 0)
+            parts.push(root.relativeTime(ts));
+        const lines = str.split("\n").length;
         if (lines > 1)
             parts.push(qsTr("%1 行").arg(lines));
-        parts.push(qsTr("%1 字符").arg(text.length));
+        parts.push(qsTr("%1 字符").arg(str.length));
         return parts.join(" · ");
     }
 
@@ -100,7 +95,8 @@ SlideWindow {
         ClipboardService.removeEntry(text);
     }
 
-    // ==================== 标题栏工具 ====================
+    // ==================== head：不随列表滚动的工具 ====================
+    // 清空按钮放 head（SlideWindow 的标题栏），滚动时不被带走
     headerTools: ToolButton {
         icon.name: "edit-clear-all"
         enabled: ClipboardService.count > 0
@@ -110,26 +106,79 @@ SlideWindow {
     }
 
     // ==================== 历史列表 ====================
-    Repeater {
-        model: root.items
+    // 直接用 ClipboardService.history（ListModel）：增删时 ListView 自动同步，
+    // 不需要快照数组。ListModel 的 role 通过 delegate 的 required 属性注入。
+    ListView {
+        id: clipList
+        Layout.fillWidth: true
+        Layout.fillHeight: true
+        visible: ClipboardService.count > 0
+        clip: true
+        spacing: Kirigami.Units.mediumSpacing
+        boundsBehavior: Flickable.StopAtBounds
+        model: ClipboardService.history
 
-        FormCard.FormCard {
+        ScrollBar.vertical: ScrollBar {
+            id: listScrollBar
+
+            policy: clipList.contentHeight > clipList.height + 1
+                ? ScrollBar.AsNeeded
+                : ScrollBar.AlwaysOff
+            interactive: true
+            implicitWidth: Kirigami.Units.smallSpacing + 6
+            padding: 3
+            z: 100
+
+            onPressedChanged: if (!pressed && size < 1.0)
+                clipList.returnToBounds()
+
+            contentItem: Rectangle {
+                implicitWidth: 5
+                // 手柄长度按可见比例走（size = 可见高度 / 总高度），太短时保底两个网格
+                implicitHeight: Math.min(listScrollBar.available,
+                    Math.max(Kirigami.Units.gridUnit * 2,
+                        listScrollBar.size * listScrollBar.available))
+                radius: implicitWidth / 2
+                color: Qt.alpha(Kirigami.Theme.textColor,
+                    listScrollBar.pressed ? 0.6
+                    : listScrollBar.hovered ? 0.42
+                    : 0.25)
+                Behavior on color {
+                    ColorAnimation {
+                        duration: Kirigami.Units.shortDuration
+                    }
+                }
+            }
+
+            background: Rectangle {
+                radius: 4
+                color: Qt.alpha(Kirigami.Theme.backgroundColor,
+                    listScrollBar.pressed ? 0.35 : 0)
+                Behavior on color {
+                    ColorAnimation {
+                        duration: Kirigami.Units.shortDuration
+                    }
+                }
+            }
+        }
+
+        delegate: FormCard.FormCard {
             id: clipCard
-            Layout.fillWidth: true
-            // Repeater 注入的 modelData 提升到 FormCard 上，
-            // 内层 AbstractFormDelegate 不再声明 required property modelData。
-            property var itemData: modelData
+            width: ListView.view.width
+            // ListModel role 注入（与 NotificationPopup 的 required modelData 同模式）
+            required property var clipText
+            required property var time
 
             FormCard.AbstractFormDelegate {
                 id: clipRow
                 Layout.fillWidth: true
-                onClicked: root.copyItem(clipCard.itemData.text)
+                onClicked: root.copyItem(clipCard.clipText)
 
                 contentItem: RowLayout {
                     spacing: Kirigami.Units.smallSpacing
 
                     Kirigami.Icon {
-                        source: root.iconFor(clipCard.itemData.text)
+                        source: root.iconFor(clipCard.clipText)
                         implicitWidth: Kirigami.Units.iconSizes.smallMedium
                         implicitHeight: implicitWidth
                         color: clipRow.hovered ? Kirigami.Theme.highlightColor : Kirigami.Theme.disabledTextColor
@@ -142,14 +191,14 @@ SlideWindow {
                         // 单行 + elide：不使用 wrapMode，避免弹窗首次布局时的换行反馈循环
                         Label {
                             Layout.fillWidth: true
-                            text: root.preview(clipCard.itemData.text)
+                            text: root.preview(clipCard.clipText)
                             elide: Text.ElideRight
                             maximumLineCount: 1
                             color: Kirigami.Theme.textColor
                         }
                         Label {
                             Layout.fillWidth: true
-                            text: root.meta(clipCard.itemData)
+                            text: root.meta(clipCard.clipText, clipCard.time)
                             elide: Text.ElideRight
                             maximumLineCount: 1
                             font: Kirigami.Theme.smallFont
@@ -162,7 +211,7 @@ SlideWindow {
                         // 常驻占位、悬停才显现，避免鼠标移入时整行内容左右跳动
                         opacity: clipRow.hovered ? 1 : 0
                         enabled: clipRow.hovered
-                        onClicked: root.removeItem(clipCard.itemData.text)
+                        onClicked: root.removeItem(clipCard.clipText)
                         ToolTip.visible: hovered
                         ToolTip.text: qsTr("删除此条")
                         Behavior on opacity {
@@ -176,7 +225,7 @@ SlideWindow {
                 // 中键快速删除（类似浏览器的中键关闭标签页）
                 TapHandler {
                     acceptedButtons: Qt.MiddleButton
-                    onTapped: root.removeItem(clipCard.itemData.text)
+                    onTapped: root.removeItem(clipCard.clipText)
                 }
             }
         }
@@ -186,7 +235,7 @@ SlideWindow {
     Kirigami.PlaceholderMessage {
         Layout.alignment: Qt.AlignHCenter
         Layout.topMargin: Kirigami.Units.largeSpacing * 2
-        visible: root.items.length === 0
+        visible: ClipboardService.count === 0
         icon.name: "edit-paste-symbolic"
         text: qsTr("暂无剪贴板历史")
         explanation: qsTr("复制任意文本后会自动出现在这里。")

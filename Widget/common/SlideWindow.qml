@@ -120,6 +120,10 @@ PopupWindow {
 			ColumnLayout {
 				id: mainColumn
 				width: flick.width
+				// 固定为视口高度：fillHeight 类子项（如 ClipboardWidget 的 ListView）
+				// 需要明确的分配空间才能撑满不塌缩；没有 fillHeight 子项时，
+				// 内容仍按隐式高度从顶部排列，和之前的行为一致。
+				height: flick.height
 				spacing: Kirigami.Units.mediumSpacing
 
 				RowLayout {

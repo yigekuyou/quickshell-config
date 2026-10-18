@@ -6,9 +6,11 @@ import Quickshell.Io
 import org.kde.kirigami as Kirigami
 import qs.Config
 import qs.Services
+import qs.Widget
 
 // 顶栏剪贴板入口。外观与 Network / Bluetooth 两个顶栏部件保持一致：
 // ShadowedRectangle + Sizes.cornerRadius + 半透明背景 + 细描边。
+// 面板本体在 qs.Widget.ClipboardWidget（与 NetworkWidget 同目录），不放在这里。
 Kirigami.ShadowedRectangle {
     id: root
 
@@ -26,7 +28,7 @@ Kirigami.ShadowedRectangle {
     border.color: Qt.alpha(root.popupOpen ? Kirigami.Theme.highlightColor : Kirigami.Theme.dividerColor, 0.3)
 
     // --- 面板 ---
-    ClipboardHistoryPopup {
+    ClipboardWidget {
         id: popup
 
         anchorItem: root
