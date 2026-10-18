@@ -37,6 +37,10 @@ Kirigami.ShadowedRectangle {
         anchorItem: root
         visible: root.popupOpen
         onCloseRequested: WidgetState.notifOpen = false
+        // 面板因点击外部 / 合成器 popup_done 自己关掉时，把全局状态一起收回。
+        // 否则 WidgetState.notifOpen 停在 true，下一次点击只是把它改回 false，
+        // 面板仍然关着，用户会感觉"要点两次才打开"。
+        onClosed: WidgetState.notifOpen = false
     }
 
     HoverHandler {
