@@ -67,8 +67,53 @@ PopupWindow {
 			// 宽度固定为视口宽度，避免内容宽度反向影响布局（ScrollablePage 在
 			// 弹出窗口“显示后重新布局”时会因此进入无限重排，主线程 100% 卡死）
 			contentWidth: width
-			contentHeight: mainColumn.implicitHeight
+			contentHeight: mainColumn.implicitHeight + Kirigami.Units.smallSpacing
 			boundsBehavior: Flickable.StopAtBounds
+
+			// 细滚动条：仅当内容比视口高时出现；手柄宽度固定，不抢占内容宽度
+			ScrollBar.vertical: ScrollBar {
+				id: verticalScrollBar
+
+				policy: flick.contentHeight > flick.height + 1
+					? ScrollBar.AsNeeded
+					: ScrollBar.AlwaysOff
+				interactive: true
+				implicitWidth: Kirigami.Units.smallSpacing + 6
+				padding: 3
+				z: 100
+
+				onPressedChanged: if (!pressed && size < 1.0)
+					flick.returnToBounds()
+
+				contentItem: Rectangle {
+					implicitWidth: 5
+					// 手柄长度按可见比例走（size = 可见高度 / 总高度），太短时保底两个网格
+					implicitHeight: Math.min(verticalScrollBar.available,
+						Math.max(Kirigami.Units.gridUnit * 2,
+							verticalScrollBar.size * verticalScrollBar.available))
+					radius: implicitWidth / 2
+					color: Qt.alpha(Kirigami.Theme.textColor,
+						verticalScrollBar.pressed ? 0.6
+						: verticalScrollBar.hovered ? 0.42
+						: 0.25)
+					Behavior on color {
+						ColorAnimation {
+							duration: Kirigami.Units.shortDuration
+						}
+					}
+				}
+
+				background: Rectangle {
+					radius: 4
+					color: Qt.alpha(Kirigami.Theme.backgroundColor,
+						verticalScrollBar.pressed ? 0.35 : 0)
+					Behavior on color {
+						ColorAnimation {
+							duration: Kirigami.Units.shortDuration
+						}
+					}
+				}
+			}
 
 			ColumnLayout {
 				id: mainColumn

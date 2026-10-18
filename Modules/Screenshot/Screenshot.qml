@@ -2,138 +2,107 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
+import Quickshell.Hyprland
 import qs.Config
 
+// 截图总控。每块屏幕一个 ScreenshotOverlay，同一时间只让其中一块（当前焦点屏）激活。
+//
+// IPC（Print 键 -> qs ipc call shot ui）：
+//   qs ipc call shot ui      打开截图界面：框选后可选 复制 / 保存 / 全屏 / 取消
+//   qs ipc call shot area    同上（兼容旧命令）
+//   qs ipc call shot full    不显示界面，整屏截图直接进剪贴板
+//   qs ipc call shot shot    同上（兼容旧命令）
+//   qs ipc call shot screen 1  指定屏幕索引后整屏复制
+//   qs ipc call shot close   关闭界面
 Item {
     id: root
 
-    // 截图：quickshell 原生 ScreencopyView（官方文档 Quickshell.Wayland）
-    // captureSource 取 ShellScreen（Quickshell.screens[i]，需 wlr-screencopy，Hyprland 满足）
-    // live:false 单帧 → grabToImage 出 QImage → 存 PNG → wl-copy(image/png) 写剪贴板。
-    // 注：captureSource 必须在截图时赋值——加载时 QuickshellScreenInfo 的内部 screen
-    // 指针未必就绪，且绑定不会因对象不变而重算，提早赋值会拿到空上下文。
-    // grab 超时或失败时回退 grim 管道。
+    property bool active: false
+    property bool instant: false
+    property int forcedIndex: -1
 
-    readonly property string shotPath: "/tmp/quickshell-screenshot.png"
-    property bool busy: false
-    property int pendingIndex: 0
+    readonly property string shotPath: "/tmp/quickshell-shot.png"
 
-    Process {
-        id: copier
+    // 当前焦点屏的名字（Hyprland 不可用时为空，退回第一块屏幕）
+    readonly property string focusedScreenName: {
+        try {
+            if (Hyprland.focusedMonitor && Hyprland.focusedMonitor.name)
+                return Hyprland.focusedMonitor.name;
+        } catch (e) {
+            // 非 Hyprland 会话：忽略
+        }
+        return "";
     }
 
-    function copyPngToClipboard() {
-        copier.exec(["sh", "-c", "wl-copy --type image/png < " + root.shotPath])
+    function openUi(instantMode) {
+        root.instant = instantMode;
+        root.active = true;
     }
 
-    function grimFallback() {
-        copier.exec(["sh", "-c", "if command -v grim >/dev/null 2>&1; then grim - | wl-copy --type image/png; fi"])
+    function closeUi() {
+        root.active = false;
     }
 
-    // ===== IPC =====
-    // quickshell ipc call shot shot          全屏→剪贴板（主屏）
-    // quickshell ipc call shot screen 1      指定屏幕索引
-    // quickshell ipc call shot area          区域选择（slurp，需 grim）
+    // 这块屏幕是不是当前要用的那块
+    function isTargetScreen(screenInfo) {
+        if (root.forcedIndex >= 0)
+            return screenInfo === Quickshell.screens[root.forcedIndex];
+        if (root.focusedScreenName !== "")
+            return screenInfo.name === root.focusedScreenName;
+        return screenInfo === Quickshell.screens[0];
+    }
+
     IpcHandler {
         target: "shot"
 
-        function shot(): void {
-            root.startShot(0)
-        }
-
-        function screen(index: int): void {
-            root.startShot(index)
+        function ui(): void {
+            root.forcedIndex = -1;
+            root.openUi(false);
         }
 
         function area(): void {
-            copier.exec(["sh", "-c", "grim -g \"$(slurp)\" - | wl-copy --type image/png"])
+            root.forcedIndex = -1;
+            root.openUi(false);
         }
-    }
 
-    function startShot(index) {
-        if (root.busy)
-            return
-        if (index < 0 || index >= Quickshell.screens.length) {
-            console.warn("[screenshot] 屏幕索引越界: " + index)
-            return
+        function full(): void {
+            root.forcedIndex = -1;
+            root.openUi(true);
         }
-        root.busy = true
-        // 捕获窗口必须先可见并完成一次渲染，wayland 表面与 buffer 管理器就绪后
-        // 再连 captureSource，否则首帧请求会打到未完成的上下文上
-        root.pendingIndex = index
-        shotWindow.visible = true
-        armTimer.restart()
-    }
 
-    function doGrab() {
-        // 看门狗不停：grab 回调可能永不触发（合成器渲染兼容问题），此时由
-        // shotTimer 超时回退 grim
-        shotTimer.restart()
-        console.log("[screenshot] 开始抓帧 " + view.sourceSize.width + "x" + view.sourceSize.height)
-        view.grabToImage(function (res) {
-            shotTimer.stop()
-            shotWindow.visible = false
-            root.busy = false
-            if (!res || !res.image) {
-                console.warn("[screenshot] grabToImage 空图像，回退 grim")
-                root.grimFallback()
-                return
+        function shot(): void {
+            root.forcedIndex = -1;
+            root.openUi(true);
+        }
+
+        function screen(index: int): void {
+            if (index < 0 || index >= Quickshell.screens.length) {
+                console.warn("[screenshot] 屏幕索引越界: " + index);
+                return;
             }
-            if (!res.saveToFile("file://" + root.shotPath)) {
-                console.warn("[screenshot] 截图存盘失败，回退 grim")
-                root.grimFallback()
-                return
-            }
-            root.copyPngToClipboard()
-        }, view.sourceSize)
-    }
-
-    // 窗口可见后延迟连接捕获源，等表面/渲染就绪
-    Timer {
-        id: armTimer
-        interval: 400
-        onTriggered: {
-            if (!root.busy)
-                return
-            view.captureSource = Quickshell.screens[root.pendingIndex]
-            if (view.hasContent && view.sourceSize.width > 0)
-                root.doGrab()
-            else
-                view.captureFrame()
+            root.forcedIndex = index;
+            root.openUi(true);
         }
-    }
 
-    // 取帧超时兜底（合成器不支持、grab 无响应等）
-    Timer {
-        id: shotTimer
-        interval: 3000
-        onTriggered: {
-            if (root.busy) {
-                shotWindow.visible = false
-                root.busy = false
-                console.warn("[screenshot] 取帧超时，回退 grim")
-                root.grimFallback()
-            }
+        function close(): void {
+            root.closeUi();
         }
+
     }
 
-    FloatingWindow {
-        id: shotWindow
-        visible: false
-        implicitWidth: 320
-        implicitHeight: 180
-        color: "#22000000"
+    Variants {
+        model: Quickshell.screens
 
-        ScreencopyView {
-            id: view
-            anchors.fill: parent
-            live: false
-            paintCursor: true
+        ScreenshotOverlay {
+            screen: modelData
+            active: root.active && root.isTargetScreen(modelData)
+            instant: root.instant
+            shotPath: root.shotPath
 
-            onHasContentChanged: {
-                console.log("[screenshot] hasContent=" + hasContent)
-                if (hasContent && root.busy && view.sourceSize.width > 0)
-                    root.doGrab()
+            onFinished: root.closeUi()
+            onFailed: {
+                console.warn("[screenshot] 取帧失败");
+                root.closeUi();
             }
         }
     }

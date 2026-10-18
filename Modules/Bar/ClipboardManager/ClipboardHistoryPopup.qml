@@ -4,189 +4,191 @@ import QtQuick.Controls
 import Quickshell
 import qs.Services
 import qs.Config
+import qs.Widget.common
 import org.kde.kirigami as Kirigami
+import org.kde.kirigamiaddons.formcard as FormCard
 
-PopupWindow {
-    id: popup
-    visible: true
-    color: "transparent"
-    mask: null
+// 剪贴板历史面板。结构与 NetworkWidget / BluetoothWidget / NotificationWidget 保持一致：
+// SlideWindow（圆角卡片 + 阴影 + 标题栏）+ FormCard/AbstractFormDelegate 列表。
+// 不用 FormButtonDelegate：其内部 Label 是 width: parent.width + wrapMode: Text.Wrap，
+// 弹窗从隐藏变为可见时会形成“宽度 -> 换行 -> 隐式高度 -> 布局 -> 宽度”的循环。
+SlideWindow {
+    id: root
+    title: qsTr("剪贴板")
+    icon: "edit-paste-symbolic"
+    windowHeight: 480
 
-    implicitWidth: Kirigami.Units.gridUnit * 26
-    implicitHeight: content.implicitHeight + Kirigami.Units.smallSpacing
-
+    // 弹窗自己请求关闭（Esc / 选中条目），由调用方把 popupOpen 置 false。
+    // 不要直接写 visible = false：visible 通常绑定在外部属性上，赋值会破坏绑定。
     signal closeRequested()
 
-    // 点击弹窗外部自动关闭并把 visible 置 false
-    grabFocus: true
+    // 本面板不做搜索：PopupWindow 不是顶层窗口，输入法无法收到按键事件，
+    // 搜索框看起来可用却打不出中文，因此只展示历史列表。
+    Shortcut {
+        sequence: "Escape"
+        onActivated: root.closeRequested()
+    }
 
-    // 锚定到顶栏左栏（ClipboardStatus 所在侧）
-    anchor.window: barWindow
-    anchor.edges: Edges.Top | Edges.Left
-    anchor.gravity: Edges.Bottom
-    anchor.margins.top: Kirigami.Units.smallSpacing * 2
+    // 用于刷新“N 分钟前”，只在面板可见时走动，避免后台空转
+    property double now: Date.now()
+    Timer {
+        interval: 30000
+        repeat: true
+        running: root.visible
+        onTriggered: root.now = Date.now()
+    }
 
-    Kirigami.ShadowedRectangle {
-        id: card
-        anchors.fill: parent
-        radius: Kirigami.Units.largeSpacing
-        color: Kirigami.Theme.backgroundColor
-        border.width: 1
-        border.color: Qt.alpha(Kirigami.Theme.textColor, 0.1)
-        shadow.size: Kirigami.Units.smallSpacing
-        shadow.color: Qt.rgba(0, 0, 0, 0.3)
-        shadow.yOffset: 2
+    // 条目快照（普通数组，交给 Repeater 使用；不要中途改模型引发重排）
+    readonly property var items: {
+        const out = [];
+        const h = ClipboardService.history;
+        for (let i = 0; i < h.count; i++) {
+            const rec = h.get(i);
+            out.push({ "text": rec.clipText, "time": rec.time });
+        }
+        return out;
+    }
 
-        ColumnLayout {
-            id: content
-            anchors.fill: parent
-            spacing: 0
+    // ==================== 格式化 ====================
+    function preview(text) {
+        const t = String(text).replace(/\s+/g, " ").trim();
+        return t.length > 120 ? t.substring(0, 120) + "…" : t;
+    }
 
-            // 头部：标题 + 计数 + 清空
-            RowLayout {
+    function iconFor(text) {
+        const t = String(text).trim();
+        if (/^(https?|ftp|file):\/\//i.test(t))
+            return "internet-web-browser-symbolic";
+        return "edit-paste-symbolic";
+    }
+
+    function relativeTime(ts) {
+        const diff = Math.max(0, root.now - ts);
+        const minutes = Math.floor(diff / 60000);
+        if (minutes < 1)
+            return qsTr("刚刚");
+        if (minutes < 60)
+            return qsTr("%1 分钟前").arg(minutes);
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24)
+            return qsTr("%1 小时前").arg(hours);
+        const days = Math.floor(hours / 24);
+        if (days < 7)
+            return qsTr("%1 天前").arg(days);
+        return Qt.formatDateTime(new Date(ts), "yyyy-MM-dd");
+    }
+
+    function meta(item) {
+        const text = String(item.text);
+        const parts = [];
+        if (item.time > 0)
+            parts.push(root.relativeTime(item.time));
+        const lines = text.split("\n").length;
+        if (lines > 1)
+            parts.push(qsTr("%1 行").arg(lines));
+        parts.push(qsTr("%1 字符").arg(text.length));
+        return parts.join(" · ");
+    }
+
+    // ==================== 操作 ====================
+    function copyItem(text) {
+        ClipboardService.copyToClipboard(text);
+        root.closeRequested();
+    }
+
+    function removeItem(text) {
+        ClipboardService.removeEntry(text);
+    }
+
+    // ==================== 标题栏工具 ====================
+    headerTools: ToolButton {
+        icon.name: "edit-clear-all"
+        enabled: ClipboardService.count > 0
+        onClicked: ClipboardService.clearHistory()
+        ToolTip.visible: hovered
+        ToolTip.text: qsTr("清空历史")
+    }
+
+    // ==================== 历史列表 ====================
+    Repeater {
+        model: root.items
+
+        FormCard.FormCard {
+            id: clipCard
+            Layout.fillWidth: true
+            // Repeater 注入的 modelData 提升到 FormCard 上，
+            // 内层 AbstractFormDelegate 不再声明 required property modelData。
+            property var itemData: modelData
+
+            FormCard.AbstractFormDelegate {
+                id: clipRow
                 Layout.fillWidth: true
-                Layout.leftMargin: Kirigami.Units.largeSpacing
-                Layout.rightMargin: Kirigami.Units.smallSpacing
-                Layout.topMargin: Kirigami.Units.smallSpacing
-                spacing: Kirigami.Units.smallSpacing
+                onClicked: root.copyItem(clipCard.itemData.text)
 
-                Kirigami.Heading {
-                    level: 5
-                    opacity: 0.7
-                    text: qsTr("剪贴板历史 (%1)").arg(ClipboardService.count)
-                }
-                Item {
-                    Layout.fillWidth: true
-                }
-                Button {
-                    flat: true
-                    text: qsTr("清空")
-                    icon.name: "edit-clear-all"
-                    enabled: ClipboardService.count > 0
-                    onClicked: {
-                        ClipboardService.clearHistory()
-                        popup.refresh()
-                    }
-                    contentItem: RowLayout {
-                        spacing: Kirigami.Units.smallSpacing
-                        Kirigami.Icon {
-                            source: "edit-clear-all"
-                            implicitWidth: Kirigami.Units.iconSizes.small
-                            implicitHeight: implicitWidth
-                            color: Kirigami.Theme.textColor
-                        }
-                        Kirigami.Heading {
-                            level: 5
-                            text: qsTr("清空")
-                        }
-                    }
-                }
-            }
+                contentItem: RowLayout {
+                    spacing: Kirigami.Units.smallSpacing
 
-            // 搜索框
-            TextField {
-                id: searchField
-                Layout.fillWidth: true
-                Layout.margins: Kirigami.Units.smallSpacing
-                placeholderText: qsTr("搜索…")
-                onTextEdited: popup.refresh()
-                Keys.onEscapePressed: popup.close()
-            }
-
-            // 历史列表（搜索过滤代理）
-            ListView {
-                id: listView
-                Layout.fillWidth: true
-                Layout.preferredHeight: Math.min(contentHeight, Kirigami.Units.gridUnit * 28)
-                Layout.bottomMargin: Kirigami.Units.smallSpacing
-                clip: true
-                model: filtered
-                delegate: ItemDelegate {
-                    id: entry
-                    required property string clipText
-
-                    width: ListView.view.width
-                    implicitHeight: Math.max(Kirigami.Units.gridUnit * 1.6, entryLayout.implicitHeight)
-
-                    text: (clipText.length > 90 ? clipText.substring(0, 90) + "…" : clipText.replace(/\n/g, " "))
-                    onClicked: {
-                        ClipboardService.copyToClipboard(clipText)
-                        popup.close()
+                    Kirigami.Icon {
+                        source: root.iconFor(clipCard.itemData.text)
+                        implicitWidth: Kirigami.Units.iconSizes.smallMedium
+                        implicitHeight: implicitWidth
+                        color: clipRow.hovered ? Kirigami.Theme.highlightColor : Kirigami.Theme.disabledTextColor
                     }
 
-                    contentItem: RowLayout {
-                        id: entryLayout
-                        spacing: Kirigami.Units.smallSpacing
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 0
 
-                        Kirigami.Icon {
-                            source: "edit-paste-symbolic"
-                            color: Kirigami.Theme.disabledTextColor
-                            implicitWidth: Kirigami.Units.iconSizes.small
-                            implicitHeight: implicitWidth
-                        }
-                        Text {
+                        // 单行 + elide：不使用 wrapMode，避免弹窗首次布局时的换行反馈循环
+                        Label {
                             Layout.fillWidth: true
-                            text: entry.text
+                            text: root.preview(clipCard.itemData.text)
                             elide: Text.ElideRight
-                            maximumLineCount: 2
-                            wrapMode: Text.WrapAtWordBoundaryOrAnywhere
+                            maximumLineCount: 1
                             color: Kirigami.Theme.textColor
-                            font.family: Kirigami.Theme.defaultFont.family
                         }
-                        ToolButton {
-                            icon.name: "window-close"
-                            flat: true
-                            implicitWidth: Kirigami.Units.iconSizes.small
-                            implicitHeight: implicitWidth
-                            onClicked: {
-                                ClipboardService.removeEntry(entry.clipText)
-                                popup.refresh()
+                        Label {
+                            Layout.fillWidth: true
+                            text: root.meta(clipCard.itemData)
+                            elide: Text.ElideRight
+                            maximumLineCount: 1
+                            font: Kirigami.Theme.smallFont
+                            color: Kirigami.Theme.disabledTextColor
+                        }
+                    }
+
+                    ToolButton {
+                        icon.name: "edit-delete-remove"
+                        // 常驻占位、悬停才显现，避免鼠标移入时整行内容左右跳动
+                        opacity: clipRow.hovered ? 1 : 0
+                        enabled: clipRow.hovered
+                        onClicked: root.removeItem(clipCard.itemData.text)
+                        ToolTip.visible: hovered
+                        ToolTip.text: qsTr("删除此条")
+                        Behavior on opacity {
+                            NumberAnimation {
+                                duration: Kirigami.Units.shortDuration
                             }
                         }
                     }
                 }
 
-                // 空态
-                Kirigami.PlaceholderMessage {
-                    anchors.centerIn: parent
-                    visible: listView.count === 0
-                    icon.name: "edit-paste-symbolic"
-                    text: qsTr("暂无历史记录")
+                // 中键快速删除（类似浏览器的中键关闭标签页）
+                TapHandler {
+                    acceptedButtons: Qt.MiddleButton
+                    onTapped: root.removeItem(clipCard.itemData.text)
                 }
             }
         }
     }
 
-    ListModel {
-        id: filtered
-    }
-
-    function refresh() {
-        filtered.clear()
-        const q = searchField.text.toLowerCase()
-        for (let i = 0; i < ClipboardService.history.count; i++) {
-            const t = ClipboardService.history.get(i).clipText
-            if (q === "" || t.toLowerCase().indexOf(q) !== -1)
-                filtered.append({
-                    "clipText": t
-                })
-        }
-    }
-
-    Connections {
-        target: ClipboardService
-        function onHistoryUpdated() {
-            popup.refresh()
-        }
-    }
-
-    Component.onCompleted: {
-        popup.refresh()
-        searchField.forceActiveFocus()
-    }
-
-    function close() {
-        popup.visible = false
-        popup.closeRequested()
+    // ==================== 空状态 ====================
+    Kirigami.PlaceholderMessage {
+        Layout.alignment: Qt.AlignHCenter
+        Layout.topMargin: Kirigami.Units.largeSpacing * 2
+        visible: root.items.length === 0
+        icon.name: "edit-paste-symbolic"
+        text: qsTr("暂无剪贴板历史")
+        explanation: qsTr("复制任意文本后会自动出现在这里。")
     }
 }
