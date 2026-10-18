@@ -59,6 +59,9 @@ PanelWindow {
             armTimer.stop();
             closeTimer.stop();
             view.captureSource = null;
+            // 关掉界面时把 busy 一起复位，否则 saveWatchdog 会继续计时，
+            // 每次截图 5 秒后都误报一次“导出超时”
+            busy = false;
         }
     }
 

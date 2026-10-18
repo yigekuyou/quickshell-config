@@ -160,26 +160,37 @@ Singleton {
 
         return jsonString;
     }
-    function launch(index) {
-        const entry = filteredApps.values[index];
-        if (entry) {
+    // 直接按 DesktopEntry 启动：分页/分类视图里的下标跟搜索结果的下标并不一致，
+    // 用下标启动会打开错的应用，所以统一走 entry。
+    function launchEntry(entry) {
+        if (!entry)
+            return;
 
-            // 利用 entry.id 拼接出标准的 .desktop 文件名
-            const desktopFileName = entry.id + ".desktop";
+        const desktopFileName = entry.id + ".desktop";
+        const desktopFilePath = StandardPaths.locate(StandardPaths.ApplicationsLocation, desktopFileName);
 
-            // 在系统标准路径中查找该 .desktop 文件的绝对路径
-            const desktopFilePath = StandardPaths.locate(StandardPaths.ApplicationsLocation, desktopFileName);
-
-            // 使用 kioclient（或某些系统上的 kioclient5）通过绝对路径启动 desktop 文件
-            const terminal = "kioclient";
-            const targetPath = desktopFilePath !== "" ? desktopFilePath : entry.command[0];
-
-            const fullCommand = [terminal, "exec", targetPath];
-
+        // 有 .desktop 就走 kioclient：它会处理 Terminal=true、环境变量和启动通知
+        if (desktopFilePath !== "") {
             Quickshell.execDetached({
-                command: fullCommand,
+                command: ["kioclient", "exec", desktopFilePath],
                 workingDirectory: entry.workingDirectory
             });
+            return;
         }
+
+        // 没有 .desktop 的应用（例如 steam 游戏）直接跑它的命令行
+        if (entry.command && entry.command.length > 0) {
+            Quickshell.execDetached({
+                command: entry.command,
+                workingDirectory: entry.workingDirectory
+            });
+        } else {
+            console.warn("[launcher] 无法启动 " + entry.id + "：没有可用的启动方式");
+        }
+    }
+
+    // 兼容旧的下标式调用
+    function launch(index) {
+        launchEntry(filteredApps.values[index]);
     }
 }

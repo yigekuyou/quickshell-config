@@ -3,19 +3,21 @@ import Quickshell.Wayland
 import org.kde.kirigami as Kirigami
 import qs.Modules.Launcher
 import QtQuick
-import QtQuick.Layouts
 import QtQuick.Controls
+import QtQuick.Layouts
+import qs.Config
+import qs.Services
 
 Variants {
 	model: Quickshell.screens
 	PanelWindow {
 		id: panelWindow
-		WlrLayershell.namespace:"panelWindow"
+		WlrLayershell.namespace: "panelWindow"
 		WlrLayershell.layer: WlrLayer.Top
 		WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
 		exclusionMode: ExclusionMode.Ignore
 		required property var modelData
-		property bool isExpanded :true
+		property bool isExpanded: true
 		property int triggerHeight: 1
 		screen: modelData
 		BackgroundEffect.blurRegion: Region {
@@ -23,8 +25,9 @@ Variants {
 		}
 		Timer {
 			id: hideTimer
-			interval: 5000 // 鼠标离开半秒后收起
-			running:isExpanded
+			interval: 5000 // 鼠标离开五秒后收起
+			// 启动器打开时保持展开，否则鼠标一离开面板就缩成一条线
+			running: panelWindow.isExpanded && !launcher.isOpen
 			onTriggered: panelWindow.isExpanded = false
 		}
 		anchors {
@@ -34,8 +37,8 @@ Variants {
 			bottom: isExpanded ? Kirigami.Units.smallSpacing : 0
 		}
 		color: "transparent"
-		implicitWidth: layout.implicitWidth
-		implicitHeight: isExpanded ? layout.implicitHeight : triggerHeight
+		implicitWidth: layout.implicitWidth + Kirigami.Units.largeSpacing * 2
+		implicitHeight: isExpanded ? Math.max(Sizes.barHeight, layout.implicitHeight + Kirigami.Units.smallSpacing * 2) : triggerHeight
 		Behavior on implicitHeight {
 			SequentialAnimation {
 				PauseAnimation {
@@ -46,11 +49,10 @@ Variants {
 					easing.type: Easing.OutCubic
 				}
 			}
-
 		}
 
-		LauncherManager{
-			id:launcher
+		LauncherManager {
+			id: launcher
 		}
 		MouseArea {
 			anchors.fill: parent
@@ -58,8 +60,8 @@ Variants {
 
 			// 核心逻辑：进入展开，离开触发定时器
 			onEntered: {
-				hideTimer.stop()
-				panelWindow.isExpanded = true
+				hideTimer.stop();
+				panelWindow.isExpanded = true;
 			}
 			onExited: hideTimer.start()
 		}
@@ -68,26 +70,72 @@ Variants {
 			color: Kirigami.Theme.backgroundColor
 			radius: Kirigami.Units.smallSpacing
 			border.color: Qt.rgba(Kirigami.Theme.textColor.r, Kirigami.Theme.textColor.g, Kirigami.Theme.textColor.b, 0.1)
-			border.width: isExpanded ?1:0
-			shadow.size:isExpanded ? Kirigami.Units.smallSpacing :0
+			border.width: isExpanded ? 1 : 0
+			shadow.size: isExpanded ? Kirigami.Units.smallSpacing : 0
 			shadow.color: Qt.rgba(0, 0, 0, 0.3)
 			shadow.yOffset: 2
-			RowLayout{
-				id:layout
+			RowLayout {
+				id: layout
 				anchors.centerIn: parent
-				spacing: Kirigami.Units.mediumSpacing
-				anchors.margins: Kirigami.Units.smallSpacing
-				Button {
+				spacing: Kirigami.Units.smallSpacing
+				// 启动器按钮：悬停/打开时有一层高亮底色
+				Item {
 					id: menuButton
-					icon.name: "start-here"
-					flat: true
+					Layout.alignment: Qt.AlignVCenter
+					// 和右侧托盘按钮同高，面板才会保持一条紧凑的圆角条
+					implicitWidth: Kirigami.Units.gridUnit * 1.35
+					implicitHeight: Kirigami.Units.gridUnit * 1.35
 
-					onClicked: {
-						launcher.createlauncher()
-						hideTimer.stop()
+					Rectangle {
+						anchors.fill: parent
+						radius: Kirigami.Units.smallSpacing
+						color: menuHover.hovered || launcher.isOpen ? Qt.alpha(Kirigami.Theme.highlightColor, 0.28) : "transparent"
+
+						Behavior on color {
+							ColorAnimation {
+								duration: Kirigami.Units.shortDuration
+							}
+						}
 					}
+
+					Kirigami.Icon {
+						anchors.centerIn: parent
+						width: Kirigami.Units.gridUnit * 0.95
+						height: width
+						source: "start-here"
+						opacity: menuHover.hovered || launcher.isOpen ? 1.0 : 0.85
+					}
+
+					HoverHandler {
+						id: menuHover
+						cursorShape: Qt.PointingHandCursor
+					}
+
+					TapHandler {
+						acceptedButtons: Qt.LeftButton
+						onTapped: {
+							hideTimer.stop();
+							launcher.toggle();
+						}
+					}
+
+					ToolTip.delay: Kirigami.Units.toolTipDelay
+					ToolTip.visible: menuHover.hovered
+					ToolTip.text: qsTr("应用启动器")
 				}
-				Panelapp{}
+
+				Kirigami.Separator {
+					Layout.alignment: Qt.AlignVCenter
+					Layout.fillHeight: true
+					Layout.topMargin: Kirigami.Units.smallSpacing
+					Layout.bottomMargin: Kirigami.Units.smallSpacing
+					visible: TaskbarApps.apps.length > 0
+					opacity: 0.5
+				}
+
+				Panelapp {
+					Layout.alignment: Qt.AlignVCenter
+				}
 			}
 		}
 	}

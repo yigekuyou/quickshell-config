@@ -3,55 +3,61 @@ import Quickshell
 import Quickshell.Io
 import qs.Services
 
+// 启动器窗口的管理者。
+//
+// 整个进程只创建一个 Launcher 实例，之后开关只切 visible：以前每次按快捷键都
+// createObject 一个新窗口、关掉时 destroy()，既会闪一下，旧的 AppPage.qml 那套
+// PopupWindow + mapToItem 还会不停抛 "Too many arguments" / "contentItem of null"。
 Item {
-	id: root
-	// 1. 必须持有引用，否则窗口会被销毁
-	property var activeWindow: null
-	function createWindow() {
-		// 如果窗口已经存在，先销毁旧的（防止重复打开）
-		if (activeWindow) {
-			activeWindow.destroy();
-			activeWindow = null;
-		}
+    id: root
 
-		const component = Qt.createComponent("Launcher.qml");
+    property var launcherWindow: null
+    readonly property bool isOpen: launcherWindow !== null && launcherWindow.visible
 
-		if (component.status === Component.Ready) {
-			// 2. 关键：调用 createObject 并指定 root 为父对象
-			activeWindow = component.createObject(root);
+    function ensureWindow() {
+        if (launcherWindow)
+            return launcherWindow;
 
-			if (activeWindow === null) {
-				console.error("实例化窗口对象失败");
-			}
-		} else if (component.status === Component.Error) {
-			console.error("加载 Launcher.qml 失败:", component.errorString());
-		}
-	}
-	function createlauncher() {
-		// 如果窗口已经存在，先销毁旧的（防止重复打开）
-		if (activeWindow) {
-			activeWindow.destroy();
-			activeWindow = null;
-		}
+        const component = Qt.createComponent("Launcher.qml");
+        if (component.status !== Component.Ready) {
+            console.error("[launcher] 加载 Launcher.qml 失败: " + component.errorString());
+            return null;
+        }
 
-		const component = Qt.createComponent("AppPage.qml");
+        launcherWindow = component.createObject(root);
+        if (!launcherWindow)
+            console.error("[launcher] 创建启动器窗口失败");
+        return launcherWindow;
+    }
 
-		if (component.status === Component.Ready) {
-			// 2. 关键：调用 createObject 并指定 root 为父对象
-			activeWindow = component.createObject(root);
+    function open() {
+        const win = ensureWindow();
+        if (win)
+            win.openLauncher();
+    }
 
-			if (activeWindow === null) {
-				console.error("实例化窗口对象失败");
-			}
-		} else if (component.status === Component.Error) {
-			console.error("加载 AppPage.qml 失败:", component.errorString());
-		}
-	}
-	IpcHandler {
-		target: "launcher"
-		function open() {
-			createWindow();
-			return "LAUNCHER_TOGGLED";
-		}
-	}
+    function close() {
+        if (launcherWindow)
+            launcherWindow.closeLauncher();
+    }
+
+    function toggle() {
+        const win = ensureWindow();
+        if (win)
+            win.toggleLauncher();
+    }
+
+    IpcHandler {
+        target: "launcher"
+
+        function open(): void {
+            root.open();
+        }
+        function close(): void {
+            root.close();
+        }
+        function toggle(): void {
+            root.toggle();
+        }
+    }
 }

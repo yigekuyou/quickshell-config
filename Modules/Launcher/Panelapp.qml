@@ -1,85 +1,153 @@
 import org.kde.kirigami as Kirigami
+import QtQuick
 import QtQuick.Controls
+import QtQuick.Layouts
 import qs.Config
 import qs.Services
-import QtQuick
-import QtQuick.Layouts
+
+// 底部面板的运行中应用托盘。
+//
+// 每个应用一个方块按钮：悬停高亮、按下缩一下，当前有焦点窗口的应用在底部
+// 显示一条主题色短横线。图标与名字都来自 .desktop 条目
+// （见 Services/TaskbarApps.qml），没有 .desktop 的窗口才退回 appId。
 Kirigami.ShadowedRectangle {
-	Layout.alignment: Qt.AlignVCenter
+    id: root
 
-	radius: Kirigami.Units.gridUnit / 2
-	color: Qt.alpha(Kirigami.Theme.backgroundColor,0.5)
-	shadow.color: Qt.alpha(Kirigami.Theme.backgroundColor, 0.2)
-	implicitWidth:(Kirigami.Units.iconSizes.medium+Kirigami.Units.gridUnit )*TaskbarApps.apps.length
-	implicitHeight:Kirigami.Units.iconSizes.medium+Kirigami.Units.gridUnit
-	RowLayout {
-		anchors.fill: parent
-		anchors.leftMargin: Kirigami.Units.smallSpacing
-		anchors.rightMargin: Kirigami.Units.smallSpacing
-		spacing: Kirigami.Units.smallSpacing
-		Repeater {
-			model: TaskbarApps.apps
+    // 没有运行中的应用时整块收起来，面板只留启动器按钮
+    visible: TaskbarApps.apps.length > 0
 
-			delegate: Kirigami.AbstractCard {
-				id: appDelegate
-				implicitWidth: Kirigami.Units.gridUnit * 2
-				Layout.fillHeight: true
-				Layout.fillWidth: true
+    readonly property real buttonSize: Kirigami.Units.gridUnit * 1.35
+    readonly property real iconSize: Kirigami.Units.gridUnit * 1.1
 
-				// 移除卡片默认边距和背景，手动控制
-				showClickFeedback: true
-				highlighted: hovered
-				ToolTip.delay: Kirigami.Units.toolTipDelay
-				background: Rectangle {
-					color: appDelegate.hovered ?Qt.alpha(Kirigami.Theme.hoverColor,0.2)  : "transparent"
-					// 运行中状态指示器
-				}
+    implicitWidth: row.implicitWidth + Kirigami.Units.smallSpacing * 2
+    implicitHeight: Sizes.barHeight - Kirigami.Units.smallSpacing
 
-				contentItem: Kirigami.Icon {
-					source: modelData.appId
-					opacity: modelData.toplevels.length > 0 ? 1.0 : 0.6 // 未运行时图标半透明
-					scale: appDelegate.pressed ? 0.9 : (appDelegate.hovered ? 1.1 : 1.0)
-					Behavior on scale { NumberAnimation { duration: Kirigami.Units.shortDuration } }
-				}
-				onClicked: {
-					const wins = modelData.toplevels;
-					const count = wins.length;
+    radius: Sizes.cornerRadius
+    color: Qt.alpha(Kirigami.Theme.textColor, 0.035)
+    border.width: 1
+    border.color: Qt.alpha(Kirigami.Theme.dividerColor, 0.25)
+    shadow.color: Qt.rgba(0, 0, 0, 0)
+    shadow.size: 0
 
-					if (count > 0) {
-						// 1寻找当前处于激活状态的窗口索引
-						let activeIndex = -1;
-						for (let i = 0; i < count; i++) {
-							if (wins[i].activated === true) {
-								activeIndex = i;
-								break;
-							}
-						}
+    RowLayout {
+        id: row
+        anchors.centerIn: parent
+        spacing: Kirigami.Units.smallSpacing / 2
 
-						// 2. 执行切换逻辑
-						if (activeIndex !== -1) {
-							// 情况 A：该应用的某个窗口正处于激活状态
-							if (count === 1) {
-								// 只有一个窗口时，点击则最小化
-								wins[0].minimized = true;
-							} else {
-								// 有多个窗口，按顺序切换到下一个 (Index + 1)
-								let nextIndex = (activeIndex + 1) % count;
-								let nextWin = wins[nextIndex];
+        Repeater {
+            model: TaskbarApps.apps
 
-								nextWin.activate(); // 调用文档中的 activate() 函数
-								if (nextWin.minimized) nextWin.minimized = false;
-							}
-						} else {
-							// 情况 B：当前没有窗口被激活
-							// 默认激活第一个，如果它被最小化了则恢复
-							wins[0].activate();
-							if (wins[0].minimized) wins[0].minimized = false;
-						}
-					}
-				}
-			}
-		}
-		// 撑开右侧空间
-		Item { Layout.fillWidth: true }
-	}
+            delegate: Item {
+                id: button
+                required property var modelData
+
+                readonly property bool activeWindow: modelData.active
+                readonly property bool hovered: hoverHandler.hovered
+
+                Layout.alignment: Qt.AlignVCenter
+                implicitWidth: root.buttonSize
+                implicitHeight: root.buttonSize
+
+                // 悬停 / 当前窗口 的底色
+                Rectangle {
+                    anchors.fill: parent
+                    radius: Kirigami.Units.smallSpacing
+                    color: button.hovered
+                        ? Qt.alpha(Kirigami.Theme.highlightColor, 0.28)
+                        : button.activeWindow
+                            ? Qt.alpha(Kirigami.Theme.highlightColor, 0.14)
+                            : "transparent"
+
+                    Behavior on color {
+                        ColorAnimation {
+                            duration: Kirigami.Units.shortDuration
+                        }
+                    }
+                }
+
+                Kirigami.Icon {
+                    id: appIcon
+                    anchors.centerIn: parent
+                    width: root.iconSize
+                    height: root.iconSize
+                    source: button.modelData.iconName
+
+                    scale: tapHandler.pressed ? 0.88 : button.hovered ? 1.08 : 1.0
+                    Behavior on scale {
+                        NumberAnimation {
+                            duration: Kirigami.Units.shortDuration
+                            easing.type: Easing.OutCubic
+                        }
+                    }
+                }
+
+                // 当前有焦点窗口的指示条。托盘里的应用本来都在运行，
+                // 每个图标下面再点一个小圆点只会显得很吵，所以只标“当前窗口”。
+                Rectangle {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    anchors.bottom: parent.bottom
+                    anchors.bottomMargin: 2
+                    height: 2.5
+                    radius: height / 2
+                    width: root.buttonSize * 0.45
+                    color: Kirigami.Theme.highlightColor
+                    opacity: button.activeWindow ? 1 : 0
+
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: Kirigami.Units.shortDuration
+                        }
+                    }
+                }
+
+                HoverHandler {
+                    id: hoverHandler
+                    cursorShape: Qt.PointingHandCursor
+                }
+
+                TapHandler {
+                    id: tapHandler
+                    acceptedButtons: Qt.LeftButton
+                    onTapped: root.activateApp(button.modelData)
+                }
+
+                ToolTip.delay: Kirigami.Units.toolTipDelay
+                ToolTip.visible: button.hovered
+                ToolTip.text: button.modelData.tooltip
+            }
+        }
+    }
+
+    // 点击托盘图标：有焦点窗口就切到下一个窗口，只有一个窗口则最小化；
+    // 没有焦点窗口时恢复第一个（顺手取消最小化）。
+    function activateApp(app) {
+        const wins = app.toplevels;
+        if (!wins || wins.length === 0)
+            return;
+
+        let activeIndex = -1;
+        for (let i = 0; i < wins.length; i++) {
+            if (wins[i].activated) {
+                activeIndex = i;
+                break;
+            }
+        }
+
+        if (activeIndex === -1) {
+            wins[0].activate();
+            if (wins[0].minimized)
+                wins[0].minimized = false;
+            return;
+        }
+
+        if (wins.length === 1) {
+            wins[0].minimized = true;
+            return;
+        }
+
+        const next = wins[(activeIndex + 1) % wins.length];
+        next.activate();
+        if (next.minimized)
+            next.minimized = false;
+    }
 }
