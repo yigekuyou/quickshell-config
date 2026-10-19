@@ -6,7 +6,9 @@ import qs.Config
 import qs.Services
 import qs.Modules.Wallpaper.WallpaperContent
 import Quickshell.Wayland
+import Quickshell.Hyprland
 Scope {
+	id: root
 	property bool lockLoader: false
 		readonly property bool other: {
 		return (Quickshell.env("QSG_RHI_BACKEND").toLowerCase() === "vulkan") === (WallpaperPath.wallpaperType === "scene");
@@ -59,14 +61,28 @@ Scope {
 		running: false
 		command: ["qs", "--path", Quickshell.env("XDG_CONFIG_HOME") + "/quickshell/Wallpaper/Lock.qml", "ipc", "call", "lock", "open"]
 	}
+	// 锁屏入口：全局快捷键 quickshell:lock 和 IPC (qs ipc call lock open) 都走这里
+	function lockNow() {
+		lock.startDetached();
+		lockLoader = true;
+	}
+
 	IpcHandler {
 		target: "lock"
 		function open() {
-			lock.startDetached();
-			lockLoader=true
+			root.lockNow();
 		}
 		function close(){
 			lockLoader=false
+		}
+	}
+
+	// 全局快捷键 quickshell:lock，由 Services/Shortcuts.qml 注册
+	Connections {
+		target: Shortcuts
+
+		function onLockRequested() {
+			root.lockNow();
 		}
 	}
 	LazyLoader {

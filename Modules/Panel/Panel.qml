@@ -53,6 +53,18 @@ Variants {
 
 		LauncherManager {
 			id: launcher
+
+			// 全局快捷键 quickshell:launcher-toggle（Services/Shortcuts.qml 注册）。
+			// 每块屏都有一个 LauncherManager，只让主屏那个响应，
+			// 不然一次快捷键会在每块屏各开一个启动器窗口
+			Connections {
+				target: Shortcuts
+				enabled: panelWindow.screen === Quickshell.screens[0]
+
+				function onLauncherToggleRequested() {
+					launcher.toggle();
+				}
+			}
 		}
 		MouseArea {
 			anchors.fill: parent

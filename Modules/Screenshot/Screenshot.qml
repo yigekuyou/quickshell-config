@@ -4,6 +4,7 @@ import Quickshell.Io
 import Quickshell.Wayland
 import Quickshell.Hyprland
 import qs.Config
+import qs.Services
 
 // 截图总控。每块屏幕一个 ScreenshotOverlay，同一时间只让其中一块（当前焦点屏）激活。
 //
@@ -88,6 +89,22 @@ Item {
             root.closeUi();
         }
 
+    }
+
+    // 全局快捷键（quickshell:screenshot / quickshell:screenshot-instant），
+    // 由 Services/Shortcuts.qml 注册，语义和上面的 IPC 完全一致
+    Connections {
+        target: Shortcuts
+
+        function onScreenshotRequested(): void {
+            root.forcedIndex = -1;
+            root.openUi(false);
+        }
+
+        function onScreenshotInstantRequested(): void {
+            root.forcedIndex = -1;
+            root.openUi(true);
+        }
     }
 
     Variants {
