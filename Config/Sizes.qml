@@ -27,8 +27,15 @@ Singleton {
     // ==================== 全局菜单 · 顶栏菜单条 ====================
     readonly property real menuBarFontSize: root.fontSize
     // 单个顶层项左右合计留白（文字两侧各一半）
-    readonly property real menuBarItemPadding: Kirigami.Units.gridUnit * 0.7
+    readonly property real menuBarItemPadding: Kirigami.Units.gridUnit * 0.55
     readonly property real menuBarItemRadius: Kirigami.Units.gridUnit * 0.35
+    // 菜单条宽度上限：菜单再多也不能把顶栏其他部件挤走。
+    // 到上限后菜单条整体压缩（文字省略），压到下面这个下限还放不下才横向滚动。
+    readonly property real menuBarMaxWidth: Kirigami.Units.gridUnit * 40
+    // 单个顶层项的宽度下限：压缩时每项都不会比它更窄（再窄就只剩省略号了）
+    readonly property real menuBarItemMinWidth: Kirigami.Units.gridUnit * 1.6
+    // 溢出时右边缘渐隐宽度
+    readonly property real menuBarFadeWidth: Kirigami.Units.gridUnit * 0.8
 
     // ==================== 全局菜单 · 弹出菜单 ====================
     // 宽度按最长文本自适应，夹在 min / max 之间

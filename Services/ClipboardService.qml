@@ -24,6 +24,11 @@ Singleton {
 
     readonly property int maxHistory: ClipboardManager.maxHistory
 
+    // 旧版模块（<= 20261019 的 RPM）用阻塞写把选区交给粘贴方：图片大于管道缓冲
+    // （64 KiB，任意一张截图都超）时，读写两端在同一个事件循环里互等，整个 shell
+    // 会卡死。修好的版本导出 asyncSend=true，调用方据此判断能不能放心发布大图。
+    readonly property bool asyncSend: ClipboardManager.asyncSend === true
+
     signal historyUpdated()
 
     Connections {

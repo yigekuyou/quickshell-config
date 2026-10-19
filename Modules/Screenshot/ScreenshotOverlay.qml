@@ -4,6 +4,7 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
+import qs.Services
 import org.kde.kirigami as Kirigami
 
 // 截图覆盖层（每块屏幕一个），交互仿常见截图工具：
@@ -19,6 +20,7 @@ PanelWindow {
     property bool active: false     // 由 Screenshot.qml 统一开关
     property bool instant: false    // 立即全屏复制到剪贴板，不显示界面
     property string shotPath: "/tmp/quickshell-shot.png"
+    property string cropPath: "/tmp/quickshell-crop.png"
 
     signal finished()
     signal failed()
@@ -58,7 +60,11 @@ PanelWindow {
         } else {
             armTimer.stop();
             closeTimer.stop();
-            view.captureSource = null;
+            // 释放捕获源挪到本轮事件处理之后：销毁 screencopy 上下文会让合成器
+            // 回收缓冲，不要在属性变更通知链里做（整屏复制的卡死曾停在这一步）
+            Qt.callLater(function () {
+                view.captureSource = null;
+            });
             // 关掉界面时把 busy 一起复位，否则 saveWatchdog 会继续计时，
             // 每次截图 5 秒后都误报一次“导出超时”
             busy = false;
@@ -110,8 +116,11 @@ PanelWindow {
             return;
         overlay.captured = true;
         overlay.sel = Qt.rect(0, 0, overlay.width, overlay.height);
+        // 不要在这个回调里直接导出：onFrame 由 ScreencopyView 的帧事件触发，
+        // 在帧回调里跑 grabToImage + 子进程会把事件循环卡死（整屏复制模式
+        // 之前就这样把 shell 冻住）。挪到本轮事件处理结束之后再做。
         if (overlay.instant)
-            overlay.confirm("copy");
+            Qt.callLater(() => overlay.confirm("copy"));
     }
 
     // ==================== 选区 ====================
@@ -147,12 +156,29 @@ PanelWindow {
             overlay.cancel();
     }
 
-    // 依据选区把冻结画面裁出来：一次抓整屏（原生分辨率），再用 magick 裁矩形。
-    // 这样只需要一帧画面，UI 上的遮罩 / 边框不会被带进成品。
+    // ==================== 导出：全程在 Qt 内部完成，不调用任何外部程序 ====================
+    //   1. 冻结画面整屏抓一次（原生分辨率）→ shotPath
+    //   2. 用 Image.sourceClipRect 把选区那一块单独解码出来，渲染成 1:1 的
+    //      小 Item 再整块抓图（见下面的 cropper）
+    //   3. ItemGrabResult.saveToFile() 落盘（Qt 6.2 起可直接传 URL）
+    // 整屏复制（SHIFT+Print）不需要第 2 步：整屏抓图本身就是成品。
+    property string pendingAction: "" // 已按剪贴板能力降级后的动作: "copy" / "save"
+    property string pendingNote: ""
+    property rect pendingRegion: Qt.rect(0, 0, 0, 0) // 选区，原生像素坐标
+    property bool pendingFull: false
+    property var pendingTarget: null // { dir, name, path }
+
     function confirm(action) {
         if (overlay.busy || !overlay.captured)
             return;
+
+        // 旧版 clipboard 模块用阻塞写把选区塞给请求方：图片一大，读写两端在同一
+        // 个事件循环里互等，整个 shell 会冻住。模块没更新时把“复制”降级成存盘。
+        const downgraded = action === "copy" && !ClipboardService.asyncSend;
+
         overlay.busy = true;
+        overlay.pendingAction = downgraded ? "save" : action;
+        overlay.pendingTarget = overlay.targetFile();
 
         const sw = Math.max(1, view.sourceSize.width);
         const sh = Math.max(1, view.sourceSize.height);
@@ -164,52 +190,89 @@ PanelWindow {
         const cw = Math.max(1, Math.min(sw - cx, Math.round(r.width * kx)));
         const ch = Math.max(1, Math.min(sh - cy, Math.round(r.height * ky)));
 
+        overlay.pendingRegion = Qt.rect(cx, cy, cw, ch);
+        overlay.pendingFull = cx === 0 && cy === 0 && cw >= sw && ch >= sh;
+        overlay.pendingNote = downgraded ? qsTr("剪贴板模块待更新，已保存到 图片/Screenshots/" + overlay.pendingTarget.name) : "";
+
+        // grabToImage 的回调仍在抓图 / 渲染的同步上下文里：之后每一步（写盘、
+        // 解码、抓图、发布剪贴板）都用 Qt.callLater 挪到本轮事件处理之后，
+        // 否则容易在那里把事件循环锁死（保存后 shell 冻住就是这样来的）。
         view.grabToImage(function (res) {
             if (!res || !res.image) {
                 console.warn("[screenshot] grabToImage 返回空图像");
-                overlay.busy = false;
-                overlay.failed();
+                Qt.callLater(() => overlay.abort());
                 return;
             }
             if (!res.saveToFile("file://" + overlay.shotPath)) {
                 console.warn("[screenshot] 临时文件写入失败: " + overlay.shotPath);
-                overlay.busy = false;
-                overlay.failed();
+                Qt.callLater(() => overlay.abort());
                 return;
             }
-            overlay.runCrop(action, cx, cy, cw, ch);
+            Qt.callLater(() => overlay.exportSelection());
         }, Qt.size(sw, sh));
     }
 
-    function runCrop(action, x, y, w, h) {
-        const crop = "-crop " + w + "x" + h + "+" + x + "+" + y + " +repage";
-        const shot = overlay.shotPath;
+    function exportSelection() {
+        // 整屏 + 复制：shotPath 里的整屏抓图就是成品，不必再裁一遍
+        if (overlay.pendingAction === "copy" && overlay.pendingFull) {
+            overlay.publish(overlay.shotPath);
+            return;
+        }
+        cropper.start();
+    }
 
-        if (action === "copy") {
-            overlay.toast = qsTr("已复制到剪贴板");
-            cropProcess.exec(["/bin/sh", "-c",
-                "magick '" + shot + "' " + crop + " png:- | wl-copy --type image/png"]);
+    // 裁好的图像写盘之后执行动作。
+    // 注意：saveToFile 必须在抓图回调里当场做完（见 cropper.grab）——
+    // ItemGrabResult 是 grabToImage 的一次性产物，挪到下一轮事件循环
+    // 可能已经被回收，image 就空了。
+    function finishExport(dest) {
+        if (overlay.pendingAction === "copy") {
+            overlay.publish(dest);
         } else {
-            const dir = Quickshell.env("HOME") + "/图片/Screenshots";
-            const name = "Screenshot_" + Qt.formatDateTime(new Date(), "yyyy-MM-dd_HH-mm-ss") + ".png";
-            overlay.toast = qsTr("已保存到 图片/Screenshots/" + name);
-            // magick 的 security policy 只允许写 /tmp，因此先落到临时文件再 cp
-            cropProcess.exec(["/bin/sh", "-c",
-                "magick '" + shot + "' " + crop + " /tmp/quickshell-crop.png"
-                + " && mkdir -p '" + dir + "'"
-                + " && cp /tmp/quickshell-crop.png '" + dir + "/" + name + "'"]);
+            overlay.done(overlay.pendingNote !== "" ? overlay.pendingNote : qsTr("已保存到 图片/Screenshots/" + overlay.pendingTarget.name));
         }
     }
 
-    Process {
-        id: cropProcess
-        onExited: (code) => {
-            if (code !== 0) {
-                console.warn("[screenshot] 导出失败，退出码 " + code);
-                overlay.toast = qsTr("导出失败");
-            }
+    function publish(path) {
+        if (overlay.instant) {
+            // 整屏复制模式没有界面可看：先关掉覆盖层（释放 screencopy、窗口消失），
+            // 再把成品交给剪贴板 —— 发布这一步历史上最容易卡住，别把覆盖层
+            // 一起拖在里面，卡住也不会留一个抢焦点的全屏层。
+            overlay.finished();
+            Qt.callLater(() => ClipboardService.copyImage(path, "image/png"));
+            return;
+        }
+        overlay.toast = qsTr("已复制到剪贴板");
+        ClipboardService.copyImage(path, "image/png");
+        closeTimer.restart();
+    }
+
+    function done(note) {
+        if (overlay.instant)
+            overlay.finished();
+        else {
+            overlay.toast = note;
             closeTimer.restart();
         }
+    }
+
+    function abort() {
+        overlay.busy = false;
+        if (overlay.instant)
+            overlay.finished();
+        else
+            overlay.failed();
+    }
+
+    // 截图落盘位置： 图片/Screenshots/Screenshot_<时间>.png
+    function targetFile() {
+        const dir = Quickshell.env("HOME") + "/图片/Screenshots";
+        const name = "Screenshot_" + Qt.formatDateTime(new Date(), "yyyy-MM-dd_HH-mm-ss") + ".png";
+        return {
+            "dir": dir,
+            "name": name,
+            "path": dir + "/" + name
+        };
     }
 
     Timer {
@@ -236,6 +299,92 @@ PanelWindow {
             onHasContentChanged: {
                 if (hasContent && overlay.active && !overlay.captured)
                     overlay.onFrame();
+            }
+        }
+
+        // ==================== 纯 Qt 裁切器 ====================
+        // 只把选区那块单独解码（Image.sourceClipRect），渲染成 1:1 的小 Item 再
+        // 整块抓图 —— 不用 magick，也不起任何子进程。
+        // 放在冻结画面下面（z: -1）用户看不到它，但它必须是可见的：
+        // grabToImage 对不可见 / 不在窗口里的 Item 只会给出空图。
+        Item {
+            id: cropper
+
+            z: -1
+            width: 1
+            height: 1
+            property rect region: Qt.rect(0, 0, 0, 0)
+            property bool grabRequested: false
+
+            function start() {
+                const r = overlay.pendingRegion;
+                cropper.grabRequested = false;
+                cropper.region = r;
+                cropper.width = Math.max(1, r.width);
+                cropper.height = Math.max(1, r.height);
+                // 同一张图 + 同一块区域时改 sourceClipRect 不一定会重新解码，
+                // 先清空 source 逼它读一遍
+                cropImage.source = "";
+                cropImage.source = "file://" + overlay.shotPath;
+                // 本地文件是同步解码的，这里 status 通常已经 Ready
+                Qt.callLater(cropper.grabIfReady);
+            }
+
+            function grabIfReady() {
+                if (!overlay.busy || cropper.grabRequested)
+                    return;
+                if (cropImage.status === Image.Ready)
+                    cropper.grab();
+                else if (cropImage.status === Image.Error) {
+                    console.warn("[screenshot] 选区解码失败");
+                    overlay.abort();
+                }
+                // Loading: 等 onStatusChanged
+            }
+
+            function grab() {
+                if (cropper.grabRequested)
+                    return;
+                cropper.grabRequested = true;
+                const r = overlay.pendingRegion;
+                const dest = overlay.pendingAction === "copy" ? overlay.cropPath : overlay.pendingTarget.path;
+
+                cropper.grabToImage(function (res) {
+                    // 写盘必须在回调里当场完成：ItemGrabResult 是抓图的一次性产物，
+                    // 挪到下一轮事件循环可能已经被回收
+                    if (!res || !res.image) {
+                        console.warn("[screenshot] 裁切抓图返回空图像");
+                        Qt.callLater(() => overlay.abort());
+                        return;
+                    }
+                    if (!res.saveToFile("file://" + dest)) {
+                        console.warn("[screenshot] 写入失败: " + dest);
+                        Qt.callLater(() => overlay.abort());
+                        return;
+                    }
+                    // 之后的动作（发布剪贴板 / 提示 / 关窗）挪出抓图上下文
+                    Qt.callLater(() => overlay.finishExport(dest));
+                }, Qt.size(Math.max(1, r.width), Math.max(1, r.height)));
+            }
+
+            Image {
+                id: cropImage
+
+                anchors.fill: parent
+                fillMode: Image.Pad
+                cache: false
+                asynchronous: false
+                // 只解码选区那一块（原生像素坐标），内存里不会多一份整屏
+                sourceClipRect: cropper.region
+
+                onStatusChanged: {
+                    if (status === Image.Ready) {
+                        Qt.callLater(cropper.grabIfReady);
+                    } else if (status === Image.Error && overlay.busy) {
+                        console.warn("[screenshot] 选区解码失败");
+                        overlay.abort();
+                    }
+                }
             }
         }
 

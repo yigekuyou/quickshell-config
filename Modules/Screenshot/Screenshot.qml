@@ -24,6 +24,17 @@ Item {
 
     readonly property string shotPath: "/tmp/quickshell-shot.png"
 
+    // 截图目录：启动时建一次（mkdir 是唯一还会用到的外部程序，与图像处理无关），
+    // 导出时就只需要 Qt 自己写文件。
+    readonly property string shotsDir: Quickshell.env("HOME") + "/图片/Screenshots"
+
+    Process {
+        id: ensureShotsDir
+
+        running: true
+        command: ["/bin/mkdir", "-p", root.shotsDir]
+    }
+
     // 当前焦点屏的名字（Hyprland 不可用时为空，退回第一块屏幕）
     readonly property string focusedScreenName: {
         try {
