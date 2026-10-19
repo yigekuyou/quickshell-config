@@ -39,6 +39,20 @@ SlideWindow {
         return "edit-paste-symbolic";
     }
 
+    function titleOf(entry) {
+        return entry.kind === "image" ? qsTr("图片") : root.preview(entry.clipText);
+    }
+
+    function bytesLabel(n) {
+        if (n >= 1048576)
+            return (n / 1048576).toFixed(1) + " MB";
+
+        if (n >= 1024)
+            return Math.round(n / 1024) + " KB";
+
+        return n + " B";
+    }
+
     function relativeTime(ts) {
         const diff = Math.max(0, root.now - ts);
         const minutes = Math.floor(diff / 60000);
@@ -59,12 +73,23 @@ SlideWindow {
         return Qt.formatDateTime(new Date(ts), "yyyy-MM-dd");
     }
 
-    function meta(text, ts) {
-        const str = String(text);
+    function meta(entry) {
         const parts = [];
-        if (ts > 0)
-            parts.push(root.relativeTime(ts));
+        if (entry.time > 0)
+            parts.push(root.relativeTime(entry.time));
 
+        if (entry.kind === "image") {
+            if (entry.imgW > 0 && entry.imgH > 0)
+                parts.push(entry.imgW + "×" + entry.imgH);
+
+            if (entry.bytes > 0)
+                parts.push(root.bytesLabel(entry.bytes));
+
+            parts.push(qsTr("图片"));
+            return parts.join(" · ");
+        }
+
+        const str = String(entry.clipText);
         const lines = str.split("\n").length;
         if (lines > 1)
             parts.push(qsTr("%1 行").arg(lines));
@@ -74,13 +99,17 @@ SlideWindow {
     }
 
     // ==================== 操作 ====================
-    function copyItem(text) {
-        ClipboardService.copyToClipboard(text);
+    function copyItem(entry) {
+        if (entry.kind === "image")
+            ClipboardService.copyImage(entry.imagePath, entry.mime);
+        else
+            ClipboardService.copyToClipboard(entry.clipText);
+
         root.closeRequested();
     }
 
-    function removeItem(text) {
-        ClipboardService.removeEntry(text);
+    function removeItem(entry) {
+        ClipboardService.removeEntry(entry.uid);
     }
 
     title: qsTr("剪贴板")
@@ -175,7 +204,15 @@ SlideWindow {
                     id: clipCard
 
                     // ListModel role 注入（与 NotificationWidget 的 required modelData 同模式）
+                    required property var uid
+                    required property var kind
                     required property var clipText
+                    required property var imagePath
+                    required property var mime
+                    required property var imageHash
+                    required property var bytes
+                    required property var imgW
+                    required property var imgH
                     required property var time
 
                     Layout.fillWidth: true
@@ -184,22 +221,42 @@ SlideWindow {
                         id: clipRow
 
                         Layout.fillWidth: true
-                        onClicked: root.copyItem(clipCard.clipText)
+                        onClicked: root.copyItem(clipCard)
 
                         // 中键快速删除（类似浏览器的中键关闭标签页）
                         TapHandler {
                             acceptedButtons: Qt.MiddleButton
-                            onTapped: root.removeItem(clipCard.clipText)
+                            onTapped: root.removeItem(clipCard)
                         }
 
                         contentItem: RowLayout {
                             spacing: Kirigami.Units.smallSpacing
 
                             Kirigami.Icon {
+                                visible: clipCard.kind !== "image"
                                 source: root.iconFor(clipCard.clipText)
                                 implicitWidth: Kirigami.Units.iconSizes.smallMedium
                                 implicitHeight: implicitWidth
                                 color: clipRow.hovered ? Kirigami.Theme.highlightColor : Kirigami.Theme.disabledTextColor
+                            }
+
+                            // 图片条目：imagePath 本身就是 image://clipboard/<uid>（内存图片 provider），
+                            // 不能再拼 file://，否则缩略图永远加载不出来
+                            Image {
+                                id: thumb
+
+                                readonly property real thumbHeight: Kirigami.Units.gridUnit * 2.5
+
+                                visible: clipCard.kind === "image"
+                                source: clipCard.kind === "image" && clipCard.imagePath !== "" ? clipCard.imagePath : ""
+                                sourceSize.width: 160
+                                sourceSize.height: 90
+                                asynchronous: true
+                                cache: false
+                                fillMode: Image.PreserveAspectFit
+                                Layout.alignment: Qt.AlignVCenter
+                                Layout.preferredHeight: thumbHeight
+                                Layout.preferredWidth: implicitHeight > 0 ? Math.min(thumbHeight * 2.6, thumbHeight * implicitWidth / implicitHeight) : thumbHeight
                             }
 
                             ColumnLayout {
@@ -209,7 +266,7 @@ SlideWindow {
                                 // 单行 + elide：不使用 wrapMode，避免弹窗首次布局时的换行反馈循环
                                 Label {
                                     Layout.fillWidth: true
-                                    text: root.preview(clipCard.clipText)
+                                    text: root.titleOf(clipCard)
                                     elide: Text.ElideRight
                                     maximumLineCount: 1
                                     color: Kirigami.Theme.textColor
@@ -217,7 +274,7 @@ SlideWindow {
 
                                 Label {
                                     Layout.fillWidth: true
-                                    text: root.meta(clipCard.clipText, clipCard.time)
+                                    text: root.meta(clipCard)
                                     elide: Text.ElideRight
                                     maximumLineCount: 1
                                     font: Kirigami.Theme.smallFont
@@ -233,7 +290,7 @@ SlideWindow {
                                 // 常驻占位、悬停才显现，避免鼠标移入时整行内容左右跳动
                                 opacity: clipRow.hovered ? 1 : 0
                                 enabled: clipRow.hovered
-                                onClicked: root.removeItem(clipCard.clipText)
+                                onClicked: root.removeItem(clipCard)
                                 ToolTip.visible: hovered
                                 ToolTip.text: qsTr("删除此条")
 

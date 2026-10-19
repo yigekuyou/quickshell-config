@@ -75,14 +75,14 @@ Kirigami.ShadowedRectangle {
         Kirigami.Icon {
             implicitWidth: Kirigami.Units.gridUnit * 0.8
             implicitHeight: Kirigami.Units.gridUnit * 0.8
-            source: "edit-paste-symbolic"
+            source: ClipboardService.currentKind === "image" ? "image-x-generic-symbolic" : "edit-paste-symbolic"
             color: root.popupOpen ? Kirigami.Theme.highlightColor : Kirigami.Theme.textColor
         }
 
         // 最近一条内容的预览；无内容时整段隐藏，部件自动收窄
         Label {
-            visible: ClipboardService.currentText !== ""
-            text: ClipboardService.currentText.replace(/\s+/g, " ").trim()
+            visible: ClipboardService.count > 0
+            text: ClipboardService.currentKind === "image" ? qsTr("图片") : ClipboardService.currentText.substring(0, 200).replace(/\s+/g, " ").trim()
             elide: Text.ElideRight
             maximumLineCount: 1
             Layout.maximumWidth: Kirigami.Units.gridUnit * 10
