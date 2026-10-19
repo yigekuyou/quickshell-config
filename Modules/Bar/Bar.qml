@@ -4,6 +4,7 @@ import Quickshell.Wayland
 import QtQuick
 import QtQuick.Layouts
 import qs.Modules.Bar.Workspaces
+import qs.Modules.Bar.AppMenu
 import qs.Modules.Bar.Clock
 import qs.Modules.Bar.Tray
 import qs.Modules.Bar.Cava
@@ -84,6 +85,7 @@ Variants {
 		    anchors.leftMargin: Kirigami.Units.largeSpacing
 		    spacing: Kirigami.Units.smallSpacing
                 Cava {}
+                AppMenuBar {}
                 ClipboardStatus {}
                 WallpaperButton {}
             }
