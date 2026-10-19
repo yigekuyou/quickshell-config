@@ -30,7 +30,7 @@ Kirigami.ShadowedRectangle {
     border.color: Qt.alpha(Kirigami.Theme.textColor, 0.1)
 
     implicitHeight: Sizes.barHeight
-    implicitWidth: menuStrip.implicitWidth + Kirigami.Units.smallSpacing * 2
+    implicitWidth: menuStrip.implicitWidth + Sizes.smallSpacing * 2
     visible: root.hasItems || root.fallbackAppName !== ""
     clip: true
 
@@ -113,7 +113,7 @@ Kirigami.ShadowedRectangle {
             delegate: Item {
                 id: topItem
 
-                implicitWidth: topLabel.implicitWidth + Kirigami.Units.gridUnit * 0.8
+                implicitWidth: topLabel.implicitWidth + Sizes.menuBarItemPadding
                 implicitHeight: Sizes.barHeight
                 opacity: model.enabled === false ? 0.45 : 1.0
                 // 纯分隔 / 既无文字又无图标的顶层项不渲染
@@ -121,7 +121,7 @@ Kirigami.ShadowedRectangle {
 
                 Rectangle {
                     anchors.fill: parent
-                    radius: Sizes.cornerRadius
+                    radius: Sizes.menuBarItemRadius
                     color: root.openIndex === index ? Qt.alpha(Kirigami.Theme.highlightColor, 0.4) : (hoverHandler.hovered ? Qt.alpha(Kirigami.Theme.highlightColor, 0.2) : "transparent")
                     Behavior on color {
                         ColorAnimation {
@@ -134,7 +134,7 @@ Kirigami.ShadowedRectangle {
                     id: topLabel
 
                     anchors.centerIn: parent
-                    font.pixelSize: Kirigami.Units.gridUnit * 0.8
+                    font.pointSize: Sizes.menuBarFontSize
                     text: model.text !== undefined && model.text.length > 0 ? model.text : "…"
                     color: Kirigami.Theme.textColor
                 }

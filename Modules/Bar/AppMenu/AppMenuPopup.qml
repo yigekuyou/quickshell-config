@@ -10,11 +10,16 @@ import org.kde.kirigami as Kirigami
 // 单层全局菜单弹窗。子菜单通过内部 Loader 再实例化一个本文件（文件级递归），
 // 因此任意深度的级联菜单都能展开。
 //
-// 锚定（PopupAnchor 直接映射到 xdg-positioner，edges 是锚点在锚矩形上的位置，
-// gravity 是弹窗相对锚点展开的方向）：
+// 尺寸全部来自 Config/Sizes.qml（其值又派生自 Kirigami 的 gridUnit / 字体度量），
+// 这里不写任何魔法数字。
+//
+// 锚定：打开时命令式调用 updateAnchor()（PopupAnchor 直接映射到 xdg-positioner，
+// edges 是锚点在锚矩形上的位置，gravity 是弹窗相对锚点展开的方向）：
 //   顶层（菜单条下拉）：锚点取菜单项底边左角，向右下方展开；
 //   子菜单（级联）：    锚点取整行的右上角，向右下方展开。
-//   —— 和 Qt 原生 QMenu 在 Wayland 上的定位完全一致（见 qtwayland platformmenu）。
+//   —— 和 Qt 原生 QMenu 在 Wayland 上的定位一致（见 qtwayland platformmenu）。
+//   不写声明式 binding：anchor.item 的响应式求值和 PopupAnchor 内部的重定位
+//   会互相触发（Quickshell 已知的反馈环），表现为弹窗飞到屏幕最下面。
 PopupWindow {
     id: root
 
@@ -28,6 +33,9 @@ PopupWindow {
     property bool submenuMode: false // false = 顶栏下拉, true = 行级联
     property var pendingChild: null // 待应用到 Loader 上的子弹窗参数
 
+    // 宽度按最长文本自适应（见 recomputeWidth），高度封顶后可滚动
+    property real popupWidth: Sizes.menuPopupWidthMin
+
     visible: false
     grabFocus: true
     color: "transparent"
@@ -36,6 +44,45 @@ PopupWindow {
 
     onVisibleChanged: if (!visible)
         root.cleanup()
+    onMenuModelChanged: root.recomputeWidth()
+
+    // ==================== 宽度测量 ====================
+    // DBusMenuModel 角色号：TextRole = Qt.UserRole + 3 = 259，ShortcutRole = +12 = 268
+    readonly property int _textRole: 259
+    readonly property int _shortcutRole: 268
+
+    TextMetrics {
+        id: textMetrics
+
+        font.pointSize: Sizes.menuFontSize
+    }
+
+    TextMetrics {
+        id: shortcutMetrics
+
+        font.pointSize: Sizes.menuShortcutFontSize
+    }
+
+    function recomputeWidth() {
+        const m = root.menuModel
+        if (!m) {
+            root.popupWidth = Sizes.menuPopupWidthMin
+            return
+        }
+        let widest = 0
+        for (let r = 0; r < m.count; ++r) {
+            const idx = m.index(r, 0)
+            textMetrics.text = m.data(idx, root._textRole) || ""
+            let rowWidth = textMetrics.advanceWidth
+            const shortcut = m.data(idx, root._shortcutRole)
+            if (shortcut) {
+                shortcutMetrics.text = shortcut
+                rowWidth += shortcutMetrics.advanceWidth + Sizes.menuItemSpacing * 2
+            }
+            widest = Math.max(widest, rowWidth)
+        }
+        root.popupWidth = Math.min(Math.max(widest + Sizes.menuRowChrome, Sizes.menuPopupWidthMin), Sizes.menuPopupWidthMax)
+    }
 
     // 锚定不能写声明式 binding：anchor.item 的响应式求值和 PopupAnchor 内部
     // 的重定位会互相触发（Quickshell 已知的反馈环，SlideWindow 踩过同一个坑），
@@ -106,21 +153,21 @@ PopupWindow {
     Kirigami.ShadowedRectangle {
         id: bg
 
-        implicitWidth: 240
-        implicitHeight: Math.min(list.contentHeight + Kirigami.Units.smallSpacing * 2, 480)
+        implicitWidth: root.popupWidth
+        implicitHeight: Math.min(list.contentHeight + Sizes.menuPopupPadding * 2, Sizes.menuPopupMaxHeight)
         radius: Sizes.cornerRadius
         color: Kirigami.Theme.backgroundColor
-        border.width: 1
+        border.width: Sizes.menuBorderWidth
         border.color: Qt.alpha(Kirigami.Theme.textColor, 0.12)
         shadow.color: Qt.rgba(0, 0, 0, 0.25)
-        shadow.size: 14
-        shadow.yOffset: 3
+        shadow.size: Sizes.menuShadowSize
+        shadow.yOffset: Sizes.menuShadowYOffset
 
         ListView {
             id: list
 
             anchors.fill: parent
-            anchors.margins: 3
+            anchors.margins: Sizes.menuPopupPadding
             clip: true
             model: root.menuModel
             // 注意：delegate 里不能写 required property —— 写了之后引擎就不再注入
@@ -132,10 +179,10 @@ PopupWindow {
             ScrollBar.vertical: ScrollBar {
                 policy: list.contentHeight > list.height ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff
                 interactive: true
-                implicitWidth: Kirigami.Units.smallSpacing + 5
+                implicitWidth: Sizes.menuScrollBarWidth
                 contentItem: Rectangle {
-                    implicitWidth: 4
-                    radius: 2
+                    implicitWidth: Sizes.menuScrollBarThickness
+                    radius: Sizes.menuScrollBarThickness / 2
                     color: Qt.alpha(Kirigami.Theme.textColor, 0.35)
                 }
             }
@@ -144,15 +191,15 @@ PopupWindow {
                 id: rowItem
 
                 width: list.width
-                height: model.separator === true ? 10 : 32
+                height: model.separator === true ? Sizes.menuSeparatorHeight : Sizes.menuItemHeight
                 opacity: model.enabled === false ? 0.4 : 1.0
 
                 // 悬停高亮 / 已展开标记
                 Rectangle {
                     visible: model.separator !== true
                     anchors.fill: parent
-                    anchors.margins: 2
-                    radius: 4
+                    anchors.margins: Sizes.menuItemHighlightMargin
+                    radius: Sizes.menuItemRadius
                     color: (hover.hovered || root.childRow === index) ? Qt.alpha(Kirigami.Theme.highlightColor, 0.3) : "transparent"
                     Behavior on color {
                         ColorAnimation {
@@ -167,17 +214,17 @@ PopupWindow {
                     anchors.verticalCenter: parent.verticalCenter
                     anchors.left: parent.left
                     anchors.right: parent.right
-                    anchors.leftMargin: 10
-                    anchors.rightMargin: 10
-                    height: 1
+                    anchors.leftMargin: Sizes.menuSeparatorMargin
+                    anchors.rightMargin: Sizes.menuSeparatorMargin
+                    height: Sizes.menuBorderWidth
                     color: Qt.alpha(Kirigami.Theme.textColor, 0.15)
                 }
 
                 RowLayout {
                     anchors.fill: parent
-                    anchors.leftMargin: 10
-                    anchors.rightMargin: 8
-                    spacing: 6
+                    anchors.leftMargin: Sizes.menuItemPaddingLeft
+                    anchors.rightMargin: Sizes.menuItemPaddingRight
+                    spacing: Sizes.menuItemSpacing
                     visible: model.separator !== true
 
                     // 勾选 / 单选指示
@@ -185,15 +232,16 @@ PopupWindow {
                         visible: model.toggleType !== undefined && model.toggleType !== ""
                         text: model.toggleType === "radio" ? (model.toggleState === 1 ? "◉" : "○") : (model.toggleState === 1 ? "✓" : "")
                         color: Kirigami.Theme.activeTextColor
-                        font.pixelSize: Kirigami.Units.gridUnit * 0.75
+                        font.pointSize: Sizes.menuFontSize
+                        Layout.minimumWidth: Sizes.menuIndicatorWidth
                         Layout.alignment: Qt.AlignVCenter
                     }
 
                     Kirigami.Icon {
                         visible: model.iconName !== undefined && model.iconName !== ""
                         source: model.iconName
-                        implicitWidth: Kirigami.Units.iconSizes.small
-                        implicitHeight: implicitWidth
+                        implicitWidth: Sizes.menuIconSize
+                        implicitHeight: Sizes.menuIconSize
                         color: Kirigami.Theme.textColor
                         Layout.alignment: Qt.AlignVCenter
                     }
@@ -201,7 +249,7 @@ PopupWindow {
                     Label {
                         text: model.text !== undefined ? model.text : ""
                         color: Kirigami.Theme.textColor
-                        font.pixelSize: Kirigami.Units.gridUnit * 0.78
+                        font.pointSize: Sizes.menuFontSize
                         elide: Text.ElideRight
                         Layout.fillWidth: true
                         Layout.alignment: Qt.AlignVCenter
@@ -212,7 +260,7 @@ PopupWindow {
                         visible: model.shortcut !== undefined && model.shortcut !== ""
                         text: model.shortcut
                         color: Kirigami.Theme.disabledTextColor
-                        font.pixelSize: Kirigami.Units.gridUnit * 0.7
+                        font.pointSize: Sizes.menuShortcutFontSize
                         Layout.alignment: Qt.AlignVCenter
                     }
 
@@ -221,7 +269,7 @@ PopupWindow {
                         visible: model.hasSubMenu === true
                         text: "▸"
                         color: Kirigami.Theme.disabledTextColor
-                        font.pixelSize: Kirigami.Units.gridUnit * 0.8
+                        font.pointSize: Sizes.menuArrowFontSize
                         Layout.alignment: Qt.AlignVCenter
                     }
                 }
@@ -302,5 +350,4 @@ PopupWindow {
         popup.visible = true
         root.pendingChild = null
     }
-
 }
