@@ -20,7 +20,7 @@ PanelWindow {
     property bool active: false     // 由 Screenshot.qml 统一开关
     property bool instant: false    // 立即全屏复制到剪贴板，不显示界面
     property string shotPath: "/tmp/quickshell-shot.png"
-    property string cropPath: "/tmp/quickshell-crop.png"
+    property string cropPath: Directories.shotCropFile
 
     signal finished()
     signal failed()
@@ -55,7 +55,13 @@ PanelWindow {
             captured = false;
             busy = false;
             toast = "";
+            frameWidth = 0;
+            frameHeight = 0;
             sel = Qt.rect(0, 0, width, height);
+            // 关键：清掉上一轮裁切留在窗口左上角的那块旧图。
+            // ScreencopyView 抓的是整个输出，包含我们自己的覆盖层窗口；
+            // 如果不清，这块旧图会被一起抓进冻结帧，成为截图里「被糊住」的方块。
+            cropper.reset();
             armTimer.restart();
         } else {
             armTimer.stop();
@@ -164,9 +170,32 @@ PanelWindow {
     // 整屏复制（SHIFT+Print）不需要第 2 步：整屏抓图本身就是成品。
     property string pendingAction: "" // 已按剪贴板能力降级后的动作: "copy" / "save"
     property string pendingNote: ""
-    property rect pendingRegion: Qt.rect(0, 0, 0, 0) // 选区，原生像素坐标
-    property bool pendingFull: false
     property var pendingTarget: null // { dir, name, path }
+
+    // 冻结帧真正写盘的像素尺寸。所有「逻辑坐标 <-> 像素」换算只认这两个值，
+    // 不再用 view.sourceSize —— 那是合成器报的捕获缓冲尺寸，和 grabToImage
+    // 真正抓出来的图像尺寸不保证一致（HiDPI、合成器换缓冲时就会差一行/一列），
+    // 拿它去算 sourceClipRect 会越出图片边界，越界读到的就是缓冲里的残留内容。
+    property int frameWidth: 0
+    property int frameHeight: 0
+
+    // 逻辑坐标的选区 -> 像素坐标，并钳制在 frameW x frameH 之内（含右/下边界）
+    function regionFor(frameW, frameH) {
+        const w = Math.max(1, frameW);
+        const h = Math.max(1, frameH);
+        const kx = w / Math.max(1, overlay.width);
+        const ky = h / Math.max(1, overlay.height);
+        const s = overlay.sel;
+        const cx = Math.max(0, Math.min(w - 1, Math.round(s.x * kx)));
+        const cy = Math.max(0, Math.min(h - 1, Math.round(s.y * ky)));
+        const cw = Math.max(1, Math.min(w - cx, Math.round(s.width * kx)));
+        const ch = Math.max(1, Math.min(h - cy, Math.round(s.height * ky)));
+        return Qt.rect(cx, cy, cw, ch);
+    }
+
+    function regionIsFull(r) {
+        return r.x === 0 && r.y === 0 && r.width >= overlay.frameWidth && r.height >= overlay.frameHeight;
+    }
 
     function confirm(action) {
         if (overlay.busy || !overlay.captured)
@@ -179,26 +208,21 @@ PanelWindow {
         overlay.busy = true;
         overlay.pendingAction = downgraded ? "save" : action;
         overlay.pendingTarget = overlay.targetFile();
-
-        const sw = Math.max(1, view.sourceSize.width);
-        const sh = Math.max(1, view.sourceSize.height);
-        const kx = sw / Math.max(1, view.width);
-        const ky = sh / Math.max(1, view.height);
-        const r = overlay.sel;
-        const cx = Math.max(0, Math.min(sw - 1, Math.round(r.x * kx)));
-        const cy = Math.max(0, Math.min(sh - 1, Math.round(r.y * ky)));
-        const cw = Math.max(1, Math.min(sw - cx, Math.round(r.width * kx)));
-        const ch = Math.max(1, Math.min(sh - cy, Math.round(r.height * ky)));
-
-        overlay.pendingRegion = Qt.rect(cx, cy, cw, ch);
-        overlay.pendingFull = cx === 0 && cy === 0 && cw >= sw && ch >= sh;
         overlay.pendingNote = downgraded ? qsTr("剪贴板模块待更新，已保存到 图片/Screenshots/" + overlay.pendingTarget.name) : "";
+        overlay.frameWidth = 0;
+        overlay.frameHeight = 0;
 
+        // 1:1 抓冻结画面，不传 targetSize。
+        // 以前传的是 Qt.size(sourceSize.width, sourceSize.height)：只要捕获缓冲的
+        // 真实尺寸和 sourceSize 差一点（HiDPI、合成器换缓冲），Qt 就会按一个比缓冲
+        // 更大的尺寸去重采样，越界读出来的那部分就是缓冲里的残留像素。不缩放就没有
+        // 这种错位。（左上角那块方块的主要成因是上一轮裁切图残留在窗口里，
+        // 见下面 cropper.reset()。）
         // grabToImage 的回调仍在抓图 / 渲染的同步上下文里：之后每一步（写盘、
         // 解码、抓图、发布剪贴板）都用 Qt.callLater 挪到本轮事件处理之后，
         // 否则容易在那里把事件循环锁死（保存后 shell 冻住就是这样来的）。
         view.grabToImage(function (res) {
-            if (!res || !res.image) {
+            if (!res || !res.image || res.image.width < 2 || res.image.height < 2) {
                 console.warn("[screenshot] grabToImage 返回空图像");
                 Qt.callLater(() => overlay.abort());
                 return;
@@ -208,13 +232,18 @@ PanelWindow {
                 Qt.callLater(() => overlay.abort());
                 return;
             }
+            // 以抓到的图像实际尺寸为准；它和合成器报的 sourceSize 不一致时留个痕迹
+            overlay.frameWidth = res.image.width;
+            overlay.frameHeight = res.image.height;
+            if (view.sourceSize.width > 0 && (view.sourceSize.width !== overlay.frameWidth || view.sourceSize.height !== overlay.frameHeight))
+                console.warn("[screenshot] 捕获缓冲尺寸不符: sourceSize=" + view.sourceSize.width + "x" + view.sourceSize.height + " frame=" + overlay.frameWidth + "x" + overlay.frameHeight);
             Qt.callLater(() => overlay.exportSelection());
-        }, Qt.size(sw, sh));
+        });
     }
 
     function exportSelection() {
         // 整屏 + 复制：shotPath 里的整屏抓图就是成品，不必再裁一遍
-        if (overlay.pendingAction === "copy" && overlay.pendingFull) {
+        if (overlay.pendingAction === "copy" && overlay.regionIsFull(overlay.regionFor(overlay.frameWidth, overlay.frameHeight))) {
             overlay.publish(overlay.shotPath);
             return;
         }
@@ -317,12 +346,33 @@ PanelWindow {
             property rect region: Qt.rect(0, 0, 0, 0)
             property bool grabRequested: false
 
-            function start() {
-                const r = overlay.pendingRegion;
+            // 清空一切可能被画到屏幕上的内容。
+            // 这个 Item 在窗口里是「可见」的（grabToImage 对不可见 Item 只给空图），
+            // 所以上一次裁切留下的图片会一直挂在窗口左上角；下一次截图时
+            // ScreencopyView 会把整个输出（含我们自己的窗口）抓进冻结帧，
+            // 那块旧图就被烙进新截图里。每次开/关界面都必须清干净。
+            function reset() {
                 cropper.grabRequested = false;
+                cropper.width = 1;
+                cropper.height = 1;
+                // 只要不画东西就够了：source 清空后这个 Item 是空的。
+                // 注意别把 region 清成 0x0 —— 那个矩形会被直接塞给
+                // QImageReader::setScaledClipRect()，下一轮解码会卡在 Loading。
+                cropImage.source = "";
+            }
+
+            function start() {
+                if (!overlay.busy)
+                    return;
+                cropper.grabRequested = false;
+                // 用刚抓到的图像的真实像素尺寸换算选区：只读得到、且钳制在图内
+                const r = overlay.regionFor(overlay.frameWidth, overlay.frameHeight);
                 cropper.region = r;
                 cropper.width = Math.max(1, r.width);
                 cropper.height = Math.max(1, r.height);
+                // 绑定会把 sourceClipRect 同步成刚钳制过的 region：
+                // 解码器只读选区那一块，且读之前区域就已经落在图片边界内
+                //
                 // 同一张图 + 同一块区域时改 sourceClipRect 不一定会重新解码，
                 // 先清空 source 逼它读一遍
                 cropImage.source = "";
@@ -347,25 +397,32 @@ PanelWindow {
                 if (cropper.grabRequested)
                     return;
                 cropper.grabRequested = true;
-                const r = overlay.pendingRegion;
                 const dest = overlay.pendingAction === "copy" ? overlay.cropPath : overlay.pendingTarget.path;
+                // 记录期望尺寸：抓图按 item 自身尺寸 1:1 出图，两者必须一致
+                const wantW = cropper.region.width;
+                const wantH = cropper.region.height;
 
                 cropper.grabToImage(function (res) {
                     // 写盘必须在回调里当场完成：ItemGrabResult 是抓图的一次性产物，
                     // 挪到下一轮事件循环可能已经被回收
-                    if (!res || !res.image) {
+                    if (!res || !res.image || res.image.width < 1 || res.image.height < 1) {
                         console.warn("[screenshot] 裁切抓图返回空图像");
                         Qt.callLater(() => overlay.abort());
                         return;
                     }
+                    if (res.image.width !== wantW || res.image.height !== wantH)
+                        console.warn("[screenshot] 裁切尺寸不符: 期望 " + wantW + "x" + wantH + " 实得 " + res.image.width + "x" + res.image.height);
                     if (!res.saveToFile("file://" + dest)) {
                         console.warn("[screenshot] 写入失败: " + dest);
                         Qt.callLater(() => overlay.abort());
                         return;
                     }
+                    // 产物已经落盘：立刻把窗口左上角那块临时图像清掉，
+                    // 别让它挂到下一次截图里
+                    Qt.callLater(cropper.reset);
                     // 之后的动作（发布剪贴板 / 提示 / 关窗）挪出抓图上下文
                     Qt.callLater(() => overlay.finishExport(dest));
-                }, Qt.size(Math.max(1, r.width), Math.max(1, r.height)));
+                });
             }
 
             Image {
@@ -375,7 +432,8 @@ PanelWindow {
                 fillMode: Image.Pad
                 cache: false
                 asynchronous: false
-                // 只解码选区那一块（原生像素坐标），内存里不会多一份整屏
+                // 只解码选区那一块（像素坐标，已按真实图像尺寸钳制），
+                // 内存里不会多一份整屏
                 sourceClipRect: cropper.region
 
                 onStatusChanged: {

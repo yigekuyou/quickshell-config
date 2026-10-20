@@ -39,6 +39,10 @@ Singleton {
     // ==================== 本 shell 的固定文件 ====================
     readonly property string scheduleCacheFile: cacheDir + "/schedule.json"
     readonly property string shotTempFile: runtimeDir + "/quickshell-shot.png"
+    // 复制到剪贴板时用的裁切临时文件：和整屏临时文件一样放 XDG_RUNTIME_DIR
+    // （tmpfs、0700、仅本用户可访问）。不要用 /tmp 下的固定名字：那是全局共享的，
+    // 多用户 / 多实例会互相覆盖，还能被预置符号链接。
+    readonly property string shotCropFile: runtimeDir + "/quickshell-crop.png"
 
     // ==================== XDG 用户目录 ====================
     // Qt StandardPaths 解析 user-dirs.dirs，本地化目录名（如中文的 ~/图片）自动适配
