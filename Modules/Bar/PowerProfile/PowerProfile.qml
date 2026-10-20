@@ -17,7 +17,7 @@ Kirigami.AbstractCard {
     property bool warningexpanded: false
     property bool deviceexpanded: false
     property bool warning: true
-    property var warningText: 0
+    property string warningText: qsTr("无")
     headerOrientation: Qt.Horizontal
     Component.onCompleted: {
         switch (PowerProfiles.profile) {

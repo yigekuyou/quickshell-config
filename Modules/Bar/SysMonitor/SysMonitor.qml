@@ -1,5 +1,4 @@
 import QtQuick
-import QtCharts
 import QtQuick.Layouts
 import QtQuick.Controls
 import Quickshell

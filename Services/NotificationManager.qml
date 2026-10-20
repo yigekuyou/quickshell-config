@@ -26,7 +26,7 @@ Singleton {
     readonly property var trackedModel: server.trackedNotifications
 
     // 顶栏徽标只要条数，不要排序，避免每条通知都排一次序
-    readonly property int count: root.trackedModel ? root.trackedModel.values.length : 0
+    readonly property int count: root.trackedModel && root.trackedModel.values ? root.trackedModel.values.length : 0
 
     // 通知中心用的排序快照。
     //

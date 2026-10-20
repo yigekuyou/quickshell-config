@@ -1,19 +1,12 @@
 import QtQuick
 import Quickshell
-import Quickshell.Io
-import Quickshell.Services.Pipewire
-import Quickshell.Services.Notifications
 import qs.Services
-import qs.Config
 import qs.Modules.DynamicIsland.ClockContent
 import qs.Modules.DynamicIsland.MediaContent
-import qs.Modules.DynamicIsland.VolumeContent
-import qs.Modules.DynamicIsland.LauncherContent
 import qs.Modules.DynamicIsland.DashboardContent
 import qs.Modules.DynamicIsland.LyricsContent
 import qs.Modules.PolkitAuth
 import org.kde.kirigami as Kirigami
-import QtQuick.Effects
 
 Kirigami.ShadowedRectangle {
     id: root
@@ -33,10 +26,7 @@ Kirigami.ShadowedRectangle {
     property bool showLyrics: Lyrics.playerManager.count >0
 
     // 简化后的逻辑判定
-    property bool isDashboardMode: showDashboard
-    property bool isWallpaperMode: !showDashboard
-    property bool isLyricsMode: showLyrics && !showDashboard
-    property bool isAuthMode: (PolkitService.agent.flow) ? 1 : 0
+    property bool isAuthMode: PolkitService.agent.flow !== null
     // ================= 状态机定义 (MD3 核心) =================
     states: [
         State {

@@ -13,8 +13,7 @@ import org.kde.kirigami as Kirigami
 Kirigami.ShadowedRectangle {
     id: rectangle
     
-    color: Kirigami.Theme.backgroundColor
-    opacity: 0.8
+    color: Qt.alpha(Kirigami.Theme.backgroundColor, 0.5)
     implicitHeight: Sizes.barHeight
 implicitWidth: content.width + (Kirigami.Units.largeSpacing * 2)
     radius: Sizes.cornerRadius

@@ -8,7 +8,7 @@ Rectangle {
     id: root
 
     // --- 样式：与其他模块完全统一 ---
-    color: "#80" +  Colorscheme.background.toString().substring(1)
+    color: Qt.alpha(Colorscheme.background, 0.5)
     radius: Sizes.cornerRadius
 
     // 高度固定为 40

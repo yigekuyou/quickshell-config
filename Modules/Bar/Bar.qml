@@ -41,7 +41,7 @@ Variants {
             right: true
         }
         color: "transparent"
-        implicitHeight: Math.max(Sizes.barHeight+Kirigami.Units.smallSpacing )
+        implicitHeight: Sizes.barHeight + Kirigami.Units.smallSpacing
 	LazyLoader {
 		activeAsync:true
         PopupWindow {
@@ -55,7 +55,11 @@ Variants {
 		anchor.margins.top:Math.round(Sizes.barHeight/3+Kirigami.Units.smallSpacing)
 
 		visible: true
-		mask: null
+		// 只让“岛”本身可点击：弹窗其余透明区域把点击透传给下面的栏内容
+		// （否则居中的弹窗会盖住 Workspaces，点不动）
+		mask: Region {
+			item: island
+		}
 		color: "transparent"
 		implicitWidth: island.width + Kirigami.Units.smallSpacing
 		implicitHeight: Math.max(Sizes.barHeight, island.height )
@@ -75,12 +79,10 @@ Variants {
                 right: parent.right
                 bottom:parent.bottom
             }
-            height: barWindow.barHeight
 
             // --- 左侧组件 ---
             RowLayout {
 		    anchors.left: parent.left
-		    anchors.top:parent.top
 		    anchors.verticalCenter: parent.verticalCenter
 		    anchors.leftMargin: Kirigami.Units.largeSpacing
 		    spacing: Kirigami.Units.smallSpacing
@@ -92,14 +94,13 @@ Variants {
             // --- 中间：灵动岛 ---
             RowLayout {
 		    anchors.horizontalCenter: parent.horizontalCenter
-		    anchors.top:parent.top
+		    anchors.verticalCenter: parent.verticalCenter
 		    spacing: Kirigami.Units.mediumSpacing
 		    Workspaces {}
 
 	    }
             RowLayout {
                 // 钉在右边
-		    anchors.top:parent.top
 		    anchors.right: parent.right
 		    anchors.verticalCenter: parent.verticalCenter
 		    anchors.rightMargin: Kirigami.Units.largeSpacing
