@@ -3,6 +3,7 @@ import Quickshell.Widgets
 import Quickshell.Wayland
 import QtQuick
 import QtQuick.Layouts
+import qs.Modules.Bar.SettingsButton
 import qs.Modules.Bar.Workspaces
 import qs.Modules.Bar.AppMenu
 import qs.Modules.Bar.Clock
@@ -87,6 +88,7 @@ Variants {
 		    anchors.verticalCenter: parent.verticalCenter
 		    anchors.leftMargin: Kirigami.Units.largeSpacing
 		    spacing: Kirigami.Units.smallSpacing
+		    SettingsButton {}
     		    Workspaces {}
                 Cava {}
                 AppMenuBar {}

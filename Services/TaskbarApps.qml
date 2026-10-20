@@ -61,7 +61,9 @@ Singleton {
 
     function hasActiveWindow(toplevels) {
         for (let i = 0; i < toplevels.length; i++) {
-            if (toplevels[i].activated)
+            // toplevels 里可能夹着已销毁窗口留下的空槽（关窗瞬间），别直接解引用
+            const toplevel = toplevels[i];
+            if (toplevel && toplevel.activated)
                 return true;
         }
         return false;
