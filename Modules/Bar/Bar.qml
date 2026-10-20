@@ -52,7 +52,9 @@ Variants {
 		BackgroundEffect.blurRegion: Region {
 			item: contentItem
 		}
-		anchor.margins.top:Math.round(Sizes.barHeight/3+Kirigami.Units.smallSpacing)
+		// 岛顶边直接贴齐锚矩形顶边（= barWindow 顶边 = 屏幕最顶层），
+		// 不再往下留间距
+		anchor.margins.top: 0
 
 		visible: true
 		// 只让“岛”本身可点击：弹窗其余透明区域把点击透传给下面的栏内容
