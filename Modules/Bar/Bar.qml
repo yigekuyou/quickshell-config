@@ -86,6 +86,7 @@ Variants {
 		    anchors.verticalCenter: parent.verticalCenter
 		    anchors.leftMargin: Kirigami.Units.largeSpacing
 		    spacing: Kirigami.Units.smallSpacing
+    		    Workspaces {}
                 Cava {}
                 AppMenuBar {}
                 ClipboardStatus {}
@@ -96,7 +97,6 @@ Variants {
 		    anchors.horizontalCenter: parent.horizontalCenter
 		    anchors.verticalCenter: parent.verticalCenter
 		    spacing: Kirigami.Units.mediumSpacing
-		    Workspaces {}
 
 	    }
             RowLayout {
