@@ -65,7 +65,7 @@ SettingsPage {
                             elide: Text.ElideMiddle
                             maximumLineCount: 1
                             font.family: Sizes.fontFamilyMono
-                            font.pixelSize: Math.round(Kirigami.Units.gridUnit * 0.62)
+                            font.pixelSize: Kirigami.Theme.smallFont.pixelSize
                             color: Kirigami.Theme.highlightColor
                         }
 
@@ -74,7 +74,7 @@ SettingsPage {
                             text: entryRow.modelData.note
                             elide: Text.ElideRight
                             maximumLineCount: 1
-                            font.pixelSize: Math.round(Kirigami.Units.gridUnit * 0.62)
+                            font.pixelSize: Kirigami.Theme.smallFont.pixelSize
                             color: Kirigami.Theme.disabledTextColor
                         }
                     }
@@ -117,7 +117,7 @@ SettingsPage {
                         Layout.fillWidth: true
                         text: qsTr("手改 json 后重新载入即可生效；本窗口里的修改会自动保存。")
                         wrapMode: Text.WordWrap
-                        font.pixelSize: Math.round(Kirigami.Units.gridUnit * 0.62)
+                        font.pixelSize: Kirigami.Theme.smallFont.pixelSize
                         color: Kirigami.Theme.disabledTextColor
                     }
                 }
@@ -136,7 +136,7 @@ SettingsPage {
         text: qsTr("配置由 Services/Settings.qml 读写；设置窗口不占顶栏位置，")
             + qsTr("用 qs ipc call settings toggle 或全局快捷键 quickshell:settings 打开。")
         wrapMode: Text.WordWrap
-        font.pixelSize: Math.round(Kirigami.Units.gridUnit * 0.62)
+        font.pixelSize: Kirigami.Theme.smallFont.pixelSize
         color: Kirigami.Theme.disabledTextColor
     }
 }

@@ -81,7 +81,7 @@ SettingsPage {
                             text: qsTr("%1 · %2").arg(root.typeLabel(root.current ? root.current.type : WallpaperPath.wallpaperType)).arg(WallpaperPath.wallpaperId)
                             elide: Text.ElideRight
                             maximumLineCount: 1
-                            font.pixelSize: Math.round(Kirigami.Units.gridUnit * 0.65)
+                            font.pixelSize: Kirigami.Theme.smallFont.pixelSize
                             color: Kirigami.Theme.disabledTextColor
                         }
                     }
@@ -150,7 +150,7 @@ SettingsPage {
                 Label {
                     Layout.fillWidth: true
                     wrapMode: Text.WordWrap
-                    font.pixelSize: Math.round(Kirigami.Units.gridUnit * 0.65)
+                    font.pixelSize: Kirigami.Theme.smallFont.pixelSize
                     color: Kirigami.Theme.disabledTextColor
                     text: WallpaperPath.wallpaperType === "web"
                         ? qsTr("Web 壁纸由独立的 QtWebEngine 进程渲染（QS 本体无法加载 WebEngine），帧率设置对它无效。")
@@ -177,7 +177,7 @@ SettingsPage {
 
         Label {
             text: WallpaperLibrary.scanning ? qsTr("扫描中…") : qsTr("%1 张").arg(WallpaperLibrary.items.length)
-            font.pixelSize: Math.round(Kirigami.Units.gridUnit * 0.65)
+            font.pixelSize: Kirigami.Theme.smallFont.pixelSize
             color: Kirigami.Theme.disabledTextColor
         }
 
@@ -284,13 +284,13 @@ SettingsPage {
                             text: cell.modelData.title
                             elide: Text.ElideRight
                             maximumLineCount: 1
-                            font.pixelSize: Math.round(Kirigami.Units.gridUnit * 0.65)
+                            font.pixelSize: Kirigami.Theme.smallFont.pixelSize
                             color: "white"
                         }
 
                         Label {
                             text: root.typeLabel(cell.modelData.type)
-                            font.pixelSize: Math.round(Kirigami.Units.gridUnit * 0.65)
+                            font.pixelSize: Kirigami.Theme.smallFont.pixelSize
                             color: "white"
                             opacity: 0.75
                         }
@@ -343,7 +343,7 @@ SettingsPage {
         text: WallpaperLibrary.error
         elide: Text.ElideRight
         maximumLineCount: 1
-        font.pixelSize: Math.round(Kirigami.Units.gridUnit * 0.65)
+        font.pixelSize: Kirigami.Theme.smallFont.pixelSize
         color: Kirigami.Theme.negativeTextColor
     }
 }

@@ -55,7 +55,7 @@ SettingsPage {
                     Layout.fillWidth: true
                     text: qsTr("修改会立即生效并写入 %1").arg(Settings.path)
                     wrapMode: Text.WordWrap
-                    font.pixelSize: Math.round(Kirigami.Units.gridUnit * 0.65)
+                    font.pixelSize: Kirigami.Theme.smallFont.pixelSize
                     color: Kirigami.Theme.disabledTextColor
                 }
 

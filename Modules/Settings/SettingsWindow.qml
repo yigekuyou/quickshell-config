@@ -9,10 +9,15 @@ import qs.Services
 import org.kde.kirigami as Kirigami
 
 // ============================================================================
-// 设置窗口（全屏遮罩 + 居中卡片，左侧导航 / 右侧内容）。
+// 设置窗口（全屏遮罩 + 居中卡片：顶部标题栏 / 左侧导航 / 右侧内容）。
 //
-// 打开方式（不再占用顶栏）：
+// 全部用标准组件搭：ListView + ItemDelegate 做导航、ToolButton 做关闭、
+// StackLayout 做翻页、Kirigami.Separator 做分隔线。没有手画的悬停高亮/
+// 自绘点击区，交互行为都来自 QtQuick.Controls 自己的实现。
+//
+// 打开方式（不占用顶栏）：
 //   qs ipc call settings toggle | open | close
+//   顶栏最左边的齿轮（Modules/Bar/SettingsButton）
 //   全局快捷键 quickshell:settings（见 Services/Shortcuts.qml）
 //
 // 所有可调参数都存在 settings/settings.json，由 Services/Settings.qml 读写；
@@ -45,23 +50,28 @@ Variants {
             right: true
         }
 
-        // ==================== 页面 ====================
+        // ==================== 页面表 ====================
+        // 导航和内容都从这里取，加一页 = 加一条 + 加一个页面组件
         readonly property var pages: [
             {
                 "icon": "preferences-desktop-wallpaper",
-                "label": qsTr("壁纸")
+                "label": qsTr("壁纸"),
+                "component": "WallpaperPage.qml"
             },
             {
                 "icon": "preferences-desktop-theme",
-                "label": qsTr("状态栏")
+                "label": qsTr("状态栏"),
+                "component": "BarPage.qml"
             },
             {
                 "icon": "preferences-desktop-screensaver",
-                "label": qsTr("空闲")
+                "label": qsTr("空闲"),
+                "component": "IdlePage.qml"
             },
             {
                 "icon": "help-about",
-                "label": qsTr("关于")
+                "label": qsTr("关于"),
+                "component": "AboutPage.qml"
             }
         ]
         property int currentPage: 0
@@ -71,7 +81,6 @@ Variants {
             WidgetState.settingsOpen = false;
         }
 
-        // 打开时把画面抢过来：Escape 关闭，方向键/滚轮都归这里
         Shortcut {
             sequence: "Escape"
             onActivated: win.dismiss()
@@ -88,12 +97,10 @@ Variants {
             }
         }
 
-        // ==================== 背景遮罩 ====================
-        // 点卡片外面关闭。MouseArea 拿独占 grab，卡片自己的 MouseArea 在它上面，
-        // 所以点卡片不会连带关掉窗口。
+        // ==================== 遮罩 ====================
         Rectangle {
             anchors.fill: parent
-            color: Qt.rgba(0, 0, 0, 0.45)
+            color: Qt.rgba(0, 0, 0, 0.4)
 
             MouseArea {
                 anchors.fill: parent
@@ -106,165 +113,148 @@ Variants {
             id: card
 
             anchors.centerIn: parent
-            width: Math.min(parent.width - Kirigami.Units.gridUnit * 3, Kirigami.Units.gridUnit * 62)
-            height: Math.min(parent.height - Kirigami.Units.gridUnit * 3, Kirigami.Units.gridUnit * 44)
+            width: Math.min(parent.width - Kirigami.Units.gridUnit * 4, Kirigami.Units.gridUnit * 60)
+            height: Math.min(parent.height - Kirigami.Units.gridUnit * 4, Kirigami.Units.gridUnit * 42)
 
             color: Kirigami.Theme.backgroundColor
-            radius: Sizes.cornerRadius
+            radius: Kirigami.Units.gridUnit * 0.6
             border.width: 1
-            border.color: Qt.alpha(Kirigami.Theme.textColor, 0.15)
+            border.color: Qt.alpha(Kirigami.Theme.textColor, 0.12)
             shadow.size: Kirigami.Units.gridUnit * 1.2
             shadow.yOffset: 6
             shadow.color: Qt.rgba(0, 0, 0, 0.35)
 
-            // 吞掉卡片内的点击，避免穿透到遮罩
+            // 卡片自己的空白处吞掉点击（别穿透到遮罩把窗口关了）。
+            // 声明在最前面 → 始终在所有内容下面，不会挡住控件。
             MouseArea {
                 anchors.fill: parent
             }
 
-            RowLayout {
+            ColumnLayout {
                 anchors.fill: parent
-                anchors.margins: Kirigami.Units.largeSpacing
-                spacing: Kirigami.Units.largeSpacing
+                spacing: 0
 
-                // ==================== 左侧导航 ====================
-                ColumnLayout {
-                    Layout.preferredWidth: Kirigami.Units.gridUnit * 9
-                    Layout.fillHeight: true
+                // ---------- 标题栏 ----------
+                RowLayout {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: Kirigami.Units.gridUnit * 3
+                    Layout.leftMargin: Kirigami.Units.largeSpacing
+                    Layout.rightMargin: Kirigami.Units.smallSpacing
                     spacing: Kirigami.Units.smallSpacing
 
                     Kirigami.Heading {
                         text: qsTr("设置")
                         level: 2
-                        Layout.leftMargin: Kirigami.Units.smallSpacing
-                        Layout.bottomMargin: Kirigami.Units.smallSpacing
-                    }
-
-                    Repeater {
-                        model: win.pages
-
-                        delegate: Item {
-                            id: navItem
-
-                            required property var modelData
-                            required property int index
-
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: Kirigami.Units.gridUnit * 2.1
-
-                            Rectangle {
-                                anchors.fill: parent
-                                radius: Kirigami.Units.gridUnit * 0.4
-                                color: win.currentPage === navItem.index
-                                    ? Qt.alpha(Kirigami.Theme.highlightColor, 0.22)
-                                    : (navHover.hovered ? Qt.alpha(Kirigami.Theme.textColor, 0.07) : "transparent")
-
-                                Behavior on color {
-                                    ColorAnimation {
-                                        duration: Kirigami.Units.shortDuration
-                                    }
-                                }
-
-                                RowLayout {
-                                    anchors.fill: parent
-                                    anchors.leftMargin: Kirigami.Units.smallSpacing
-                                    anchors.rightMargin: Kirigami.Units.smallSpacing
-                                    spacing: Kirigami.Units.smallSpacing
-
-                                    Kirigami.Icon {
-                                        source: navItem.modelData.icon
-                                        implicitWidth: Kirigami.Units.iconSizes.smallMedium
-                                        implicitHeight: implicitWidth
-                                        color: win.currentPage === navItem.index
-                                            ? Kirigami.Theme.highlightColor
-                                            : Kirigami.Theme.textColor
-                                    }
-
-                                    Label {
-                                        Layout.fillWidth: true
-                                        text: navItem.modelData.label
-                                        elide: Text.ElideRight
-                                        maximumLineCount: 1
-                                        font.weight: win.currentPage === navItem.index ? Font.DemiBold : Font.Normal
-                                        color: win.currentPage === navItem.index
-                                            ? Kirigami.Theme.highlightColor
-                                            : Kirigami.Theme.textColor
-                                    }
-                                }
-                            }
-
-                            HoverHandler {
-                                id: navHover
-                                cursorShape: Qt.PointingHandCursor
-                            }
-
-                            TapHandler {
-                                onTapped: win.currentPage = navItem.index
-                            }
-                        }
-                    }
-
-                    Item {
-                        Layout.fillHeight: true
-                    }
-
-                    // 配置目录（方便直接去改 json）
-                    Label {
                         Layout.fillWidth: true
-                        Layout.leftMargin: Kirigami.Units.smallSpacing
-                        text: "settings.json"
-                        font.pixelSize: Math.round(Kirigami.Units.gridUnit * 0.6)
-                        color: Kirigami.Theme.disabledTextColor
-                        elide: Text.ElideMiddle
+                    }
+
+                    ToolButton {
+                        icon.name: "window-close"
+                        display: AbstractButton.IconOnly
+                        flat: true
+                        onClicked: win.dismiss()
+                        ToolTip.visible: hovered
+                        ToolTip.text: qsTr("关闭 (Esc)")
+                        ToolTip.delay: Kirigami.Units.toolTipDelay
                     }
                 }
 
                 Kirigami.Separator {
-                    Layout.fillHeight: true
+                    Layout.fillWidth: true
                 }
 
-                // ==================== 右侧内容 ====================
-                StackLayout {
+                // ---------- 主体 ----------
+                RowLayout {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    currentIndex: win.currentPage
+                    spacing: 0
 
-                    WallpaperPage {}
-                    BarPage {}
-                    IdlePage {}
-                    AboutPage {}
+                    // 左侧导航
+                    ListView {
+                        id: navList
+
+                        Layout.preferredWidth: Kirigami.Units.gridUnit * 10
+                        Layout.fillHeight: true
+                        Layout.leftMargin: Kirigami.Units.smallSpacing
+                        Layout.rightMargin: Kirigami.Units.smallSpacing
+                        Layout.topMargin: Kirigami.Units.smallSpacing
+                        Layout.bottomMargin: Kirigami.Units.smallSpacing
+                        spacing: Kirigami.Units.smallSpacing
+                        clip: true
+                        model: win.pages
+                        currentIndex: win.currentPage
+
+                        delegate: ItemDelegate {
+                            id: navDelegate
+
+                            required property var modelData
+                            required property int index
+
+                            width: ListView.view.width
+                            implicitHeight: Kirigami.Units.gridUnit * 2
+                            text: navDelegate.modelData.label
+                            icon.name: navDelegate.modelData.icon
+                            highlighted: win.currentPage === navDelegate.index
+                            onClicked: win.currentPage = navDelegate.index
+                        }
+
+                        // 键盘上下键也能换页
+                        Keys.onUpPressed: win.currentPage = Math.max(0, win.currentPage - 1)
+                        Keys.onDownPressed: win.currentPage = Math.min(win.pages.length - 1, win.currentPage + 1)
+                    }
+
+                    // 竖分隔线：Separator 没有 orientation，靠 1px 宽 + 撑满高度成竖线
+                    Kirigami.Separator {
+                        Layout.preferredWidth: 1
+                        Layout.fillHeight: true
+                    }
+
+                    // 右侧内容
+                    StackLayout {
+                        id: pageStack
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        Layout.margins: Kirigami.Units.largeSpacing
+                        currentIndex: win.currentPage
+
+                        WallpaperPage {}
+                        BarPage {}
+                        IdlePage {}
+                        AboutPage {}
+                    }
                 }
-            }
 
-            // 右上角关闭
-            Item {
-                width: Kirigami.Units.gridUnit * 1.8
-                height: width
-                anchors.top: parent.top
-                anchors.right: parent.right
-                anchors.margins: Kirigami.Units.smallSpacing
-
-                Rectangle {
-                    anchors.fill: parent
-                    radius: width / 2
-                    color: closeHover.hovered ? Qt.alpha(Kirigami.Theme.negativeTextColor, 0.2) : "transparent"
+                Kirigami.Separator {
+                    Layout.fillWidth: true
                 }
 
-                Kirigami.Icon {
-                    anchors.centerIn: parent
-                    source: "window-close-symbolic"
-                    implicitWidth: Kirigami.Units.iconSizes.small
-                    implicitHeight: implicitWidth
-                    color: Kirigami.Theme.textColor
-                }
+                // ---------- 底栏：配置文件路径 ----------
+                RowLayout {
+                    Layout.fillWidth: true
+                    Layout.leftMargin: Kirigami.Units.largeSpacing
+                    Layout.rightMargin: Kirigami.Units.largeSpacing
+                    Layout.topMargin: Kirigami.Units.smallSpacing
+                    Layout.bottomMargin: Kirigami.Units.smallSpacing
+                    spacing: Kirigami.Units.smallSpacing
 
-                HoverHandler {
-                    id: closeHover
-                    cursorShape: Qt.PointingHandCursor
-                }
+                    Kirigami.Icon {
+                        source: "document-open-folder"
+                        implicitWidth: Kirigami.Units.iconSizes.small
+                        implicitHeight: implicitWidth
+                        color: Kirigami.Theme.disabledTextColor
+                    }
 
-                TapHandler {
-                    onTapped: win.dismiss()
+                    Label {
+                        Layout.fillWidth: true
+                        text: Settings.path
+                        elide: Text.ElideMiddle
+                        font: Kirigami.Theme.smallFont
+                        color: Kirigami.Theme.disabledTextColor
+
+                        TapHandler {
+                            onTapped: Qt.openUrlExternally("file://" + Settings.path)
+                        }
+                    }
                 }
             }
         }

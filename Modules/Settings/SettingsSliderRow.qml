@@ -5,11 +5,13 @@ import org.kde.kirigami as Kirigami
 import org.kde.kirigamiaddons.formcard as FormCard
 
 // 设置行：滑块。value 由外部模型驱动，用户拖动时发 moved(real)。
+// 排版交给 ColumnLayout：标题 + 数值 + 说明一行，滑块一行。
 FormCard.AbstractFormDelegate {
     id: root
 
     // text 用继承的（ItemDelegate / AbstractButton 自带）
     property string description: ""
+    property string iconName: ""
     property real from: 0
     property real to: 1
     property real stepSize: 0
@@ -32,6 +34,15 @@ FormCard.AbstractFormDelegate {
             Layout.fillWidth: true
             spacing: Kirigami.Units.smallSpacing
 
+            Kirigami.Icon {
+                visible: root.iconName !== ""
+                source: root.iconName
+                implicitWidth: Kirigami.Units.iconSizes.smallMedium
+                implicitHeight: implicitWidth
+                color: Kirigami.Theme.textColor
+                Layout.alignment: Qt.AlignVCenter
+            }
+
             Label {
                 Layout.fillWidth: true
                 text: root.text
@@ -52,7 +63,7 @@ FormCard.AbstractFormDelegate {
             visible: root.description !== ""
             text: root.description
             wrapMode: Text.WordWrap
-            font.pixelSize: Math.round(Kirigami.Units.gridUnit * 0.65)
+            font: Kirigami.Theme.smallFont
             color: Kirigami.Theme.disabledTextColor
         }
 

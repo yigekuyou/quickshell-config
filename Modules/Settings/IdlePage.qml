@@ -84,7 +84,7 @@ SettingsPage {
         Layout.topMargin: Kirigami.Units.smallSpacing
         text: qsTr("息屏 / 睡眠由 Wallpaper/Load.qml 的 IdleMonitor 执行，修改立即生效。")
         wrapMode: Text.WordWrap
-        font.pixelSize: Math.round(Kirigami.Units.gridUnit * 0.65)
+        font.pixelSize: Kirigami.Theme.smallFont.pixelSize
         color: Kirigami.Theme.disabledTextColor
     }
 }
