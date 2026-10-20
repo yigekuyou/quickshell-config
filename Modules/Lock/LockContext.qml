@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Services.Pam
+import qs.Services
 import org.kde.kirigami as Kirigami
 import QtQuick.Controls
 import QtQuick.Layouts
@@ -27,8 +28,8 @@ Kirigami.FormLayout{
 }
     PamContext {
         id: pam
-        // 指向 pam 文件夹的绝对路径
-        configDirectory: Quickshell.env("HOME") + "/.config/quickshell/Modules/Lock/pam"
+        // 指向 pam 文件夹的绝对路径（由 Services/Directories 提供）
+        configDirectory: Directories.pamDir
         config: "password.conf"
 
         onPamMessage: {

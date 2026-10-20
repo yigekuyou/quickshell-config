@@ -59,7 +59,7 @@ Scope {
 	Process {
 		id: lock
 		running: false
-		command: ["qs", "--path", Quickshell.env("XDG_CONFIG_HOME") + "/quickshell/Wallpaper/Lock.qml", "ipc", "call", "lock", "open"]
+		command: ["qs", "--path", Directories.configDir + "/Wallpaper/Lock.qml", "ipc", "call", "lock", "open"]
 	}
 	// 锁屏入口：全局快捷键 quickshell:lock 和 IPC (qs ipc call lock open) 都走这里
 	function lockNow() {
@@ -92,7 +92,7 @@ Scope {
 			id: vulkanProcess
 			running: true
 			// 1. 设置执行文件路径
-			command: ["qs", "--path", Quickshell.env("XDG_CONFIG_HOME") + "/quickshell/Wallpaper/Lock.qml"]
+			command: ["qs", "--path", Directories.configDir + "/Wallpaper/Lock.qml"]
 			environment: ({
 				"QSLOCK": "1",
 				"QS_APP_ID":"org.quickshell.lock"
@@ -107,7 +107,7 @@ Scope {
 			id: opengllockProcess
 			running: true
 			// 1. 设置执行文件路径
-			command: ["qs", "--path", Quickshell.env("XDG_CONFIG_HOME") + "/quickshell/Wallpaper/Lock.qml"]
+			command: ["qs", "--path", Directories.configDir + "/Wallpaper/Lock.qml"]
 			// 3. 设置环境变量
 			environment: ({
 				"QSLOCK": "1",
@@ -139,7 +139,7 @@ Scope {
 		    id: wallpaperProcess
 		    running: true
 		    // 1. 设置执行文件路径
-		    command: ["qs", "--path", Quickshell.env("XDG_CONFIG_HOME") + "/quickshell/Wallpaper/Wall.qml"]
+		    command: ["qs", "--path", Directories.configDir + "/Wallpaper/Wall.qml"]
 		    // 3. 设置环境变量
 		    environment: ({
 			    "DRI_PRIME": "1",

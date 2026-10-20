@@ -264,9 +264,10 @@ PanelWindow {
             overlay.failed();
     }
 
-    // 截图落盘位置： 图片/Screenshots/Screenshot_<时间>.png
+    // 截图落盘位置： <XDG 图片目录>/Screenshots/Screenshot_<时间>.png
+    // 走 StandardPaths 解析 XDG_PICTURES_DIR，不硬编码 "图片"。
     function targetFile() {
-        const dir = Quickshell.env("HOME") + "/图片/Screenshots";
+        const dir = Directories.screenshotsDir;
         const name = "Screenshot_" + Qt.formatDateTime(new Date(), "yyyy-MM-dd_HH-mm-ss") + ".png";
         return {
             "dir": dir,

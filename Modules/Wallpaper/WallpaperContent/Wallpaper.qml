@@ -5,6 +5,7 @@ import Quickshell.Io
 import Quickshell.Wayland
 import com.github.captsilver.wallpaperEngineKde
 import qs.Config
+import qs.Services
 
 // 壁纸渲染入口。渲染后端分工（见 Wallpaper/Load.qml）：
 //   scene -> 只能 OpenGL。主进程是 Vulkan 时，Load.qml 会另起一个
@@ -245,7 +246,7 @@ Item {
         // fps 只在进程启动时传入；WebEngine 没有帧率上限接口，改帧率不影响 Web。
         command: [
             "qml6",
-            Quickshell.env("XDG_CONFIG_HOME") + "/quickshell/Wallpaper/Web.qml",
+            Directories.configDir + "/Wallpaper/Web.qml",
             "--",
             root.webUrl,
             String(WallpaperPath.fps),

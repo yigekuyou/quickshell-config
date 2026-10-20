@@ -4,6 +4,7 @@ import QtQuick.Controls
 import Quickshell
 import Quickshell.Io
 import qs.Config
+import qs.Services
 
 Rectangle {
     id: root
@@ -62,7 +63,8 @@ Rectangle {
 
     Process {
         id: scheduleLoader
-        command: ["cat", Quickshell.env("HOME") + "/.cache/quickshell/schedule.json"]
+        // 路径统一由 Services/Directories 提供
+        command: ["cat", Directories.scheduleCacheFile]
         running: false
         stdout: SplitParser {
             onRead: (data) => { root.jsonBuffer += data; }

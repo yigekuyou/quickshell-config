@@ -22,11 +22,11 @@ Item {
     property bool instant: false
     property int forcedIndex: -1
 
-    readonly property string shotPath: "/tmp/quickshell-shot.png"
-
-    // 截图目录：启动时建一次（mkdir 是唯一还会用到的外部程序，与图像处理无关），
-    // 导出时就只需要 Qt 自己写文件。
-    readonly property string shotsDir: Quickshell.env("HOME") + "/图片/Screenshots"
+    // 临时截图与保存目录统一由 Services/Directories 提供：
+    // 临时文件走 XDG_RUNTIME_DIR（tmpfs、仅本用户可访问），
+    // 保存目录走 XDG 图片目录（StandardPaths 解析 XDG_PICTURES_DIR）。
+    readonly property string shotPath: Directories.shotTempFile
+    readonly property string shotsDir: Directories.screenshotsDir
 
     Process {
         id: ensureShotsDir

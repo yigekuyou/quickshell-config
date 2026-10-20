@@ -3,6 +3,7 @@ import Quickshell.Wayland
 import Quickshell.Io
 import QtQuick
 import qs.Config
+import qs.Services
 import qs.Modules.Lock
 
 ShellRoot {
@@ -16,7 +17,7 @@ ShellRoot {
 	Process {
 		id: lock
 		running: false
-		command: ["qs", "--path", Quickshell.env("XDG_CONFIG_HOME") + "/quickshell/shell.qml", "ipc", "call", "lock", "close"]
+		command: ["qs", "--path", Directories.configDir + "/shell.qml", "ipc", "call", "lock", "close"]
 	}
 	IpcHandler {
 		target: "lock"

@@ -15,7 +15,9 @@ Item {
     // 当前壁纸与播放参数写进 ~/.config/quickshell/wallpaper.json。
     // 下面这些 property alias 直接指向 JsonAdapter 的字段，改 alias 就等于改文件，
     // 重启 qs 后仍是同一张壁纸。
-    readonly property string configPath: Quickshell.env("XDG_CONFIG_HOME") + "/quickshell/wallpaper.json"
+    // 注意：Config 不能被 Services 反向依赖（Services 已 import qs.Config），
+    // 这里不引用 Directories，按 XDG 规范就地回退。
+    readonly property string configPath: (Quickshell.env("XDG_CONFIG_HOME") || (Quickshell.env("HOME") + "/.config")) + "/quickshell/wallpaper.json"
 
     // 场景壁纸跑在 Wallpaper/Load.qml 起的独立 opengl 进程里；那个进程只读配置，
     // 不写回，避免两个进程互相触发保存
