@@ -93,21 +93,27 @@ Singleton {
     }
 
     // ================= 活动播放器索引 =================
-    // player 跟踪的是 Instantiator 里的 wrapper，要拿它的 mprisData 去 players
-    // 列表里对号入座；播放器增删会让整条列表挪位，所以 players 一变也要重算。
+    // player 跟踪的是 Instantiator 里的 wrapper；播放器增删会让整条列表挪位，
+    // 所以 player 换了、数量变了都要重算。
+    // 注意：Mpris.players 是 UntypedObjectModel（const，无 changed 信号），
+    // 不能拿它当数组遍历，只能用同源的 playerManager（count / objectAt）。
     onPlayerChanged: root.updateActiveIndex()
-    onPlayersChanged: root.updateActiveIndex()
     Component.onCompleted: root.updateActiveIndex()
 
     function updateActiveIndex() {
+        const mgr = root.playerManager
         const p = root.player
-        if (!p) {
-            root.activeIndex = -1
-            return
+        // 1) player 还在列表里 → 用它的位置
+        for (let i = 0; i < mgr.count; ++i) {
+            if (mgr.objectAt(i) === p) {
+                root.activeIndex = i
+                return
+            }
         }
-        const players = root.players
-        for (let i = 0; i < players.length; ++i) {
-            if (players[i] === p.mprisData) {
+        // 2) player 对应的播放器已退出（wrapper 被销毁）→ 退到第一个仍在播放的
+        for (let i = 0; i < mgr.count; ++i) {
+            const w = mgr.objectAt(i)
+            if (w && w.mprisData && w.mprisData.isPlaying) {
                 root.activeIndex = i
                 return
             }
@@ -119,6 +125,8 @@ Singleton {
         id: playerManager
 
         model: players
+        // 播放器增删 → 整条列表挪位，重算活动索引
+        onCountChanged: root.updateActiveIndex()
 
         delegate: Item {
             id: wrapper

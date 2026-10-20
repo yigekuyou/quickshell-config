@@ -21,9 +21,23 @@ Kirigami.CardsListView {
     snapMode: ListView.SnapOneItem
     highlightRangeMode: ListView.StrictlyEnforceRange
     interactive: false
-    // 自动翻到正在播放的播放器：索引由 Services/Lyrics 统一计算
-    // （Lyrics.activeIndex），StrictlyEnforceRange + SnapOneItem 会让视图翻到对应卡片。
-    currentIndex: Lyrics.activeIndex
+    // 自动翻到正在播放的播放器：不能只用 currentIndex 绑定 ——
+    // StrictlyEnforceRange 的定位逻辑会在内部命令式改写 currentIndex，
+    // 一次赋值就把声明式绑定顶掉，之后 activeIndex 再变视图也不跟了。
+    // 改成 Connections 主动同步：服务端索引一变、组件一建好就设一次。
+    Connections {
+        target: Lyrics
+
+        function onActiveIndexChanged(): void {
+            if (lyricsView.currentIndex !== Lyrics.activeIndex)
+                lyricsView.currentIndex = Lyrics.activeIndex
+        }
+    }
+
+    Component.onCompleted: {
+        if (lyricsView.currentIndex !== Lyrics.activeIndex)
+            lyricsView.currentIndex = Lyrics.activeIndex
+    }
     delegate: Kirigami.Card {
         id: actived
         background: Rectangle {
