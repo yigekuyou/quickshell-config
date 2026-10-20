@@ -75,16 +75,81 @@ SettingsPage {
 
 
     // ==================== 分页 ====================
+    // 标签栏：两枚文字标签 + 选中下划线（Plasma 配置页的样子）。
+    // 只换外观，点击/键盘左右切换仍由 Controls 的 TabBar 负责。
     TabBar {
         id: tabs
 
-        TabButton {
-            text: qsTr("壁纸")
-        }
+        // 只按内容宽度排布（不拉满），靠左；下面的分隔线单独画一条，
+        // 否则 TabBar 拉满时 Controls 会把每个标签均分到整行宽度
+        Layout.alignment: Qt.AlignLeft
+        leftPadding: 0
+        rightPadding: 0
+        spacing: Kirigami.Units.largeSpacing
+        background: null
 
-        TabButton {
-            text: qsTr("播放")
+        Repeater {
+            model: [qsTr("壁纸"), qsTr("播放")]
+
+            delegate: TabButton {
+                id: tabButton
+
+                text: modelData
+                implicitHeight: Kirigami.Units.gridUnit * 2
+                implicitWidth: tabLabel.implicitWidth + Kirigami.Units.largeSpacing * 2
+                leftPadding: 0
+                rightPadding: 0
+                topPadding: 0
+                bottomPadding: 0
+
+                contentItem: Label {
+                    id: tabLabel
+
+                    text: tabButton.text
+                    font.weight: tabButton.checked ? Font.DemiBold : Font.Normal
+                    color: tabButton.checked
+                        ? Kirigami.Theme.highlightColor
+                        : (tabButton.hovered ? Kirigami.Theme.textColor : Kirigami.Theme.disabledTextColor)
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+
+                    Behavior on color {
+                        ColorAnimation {
+                            duration: Kirigami.Units.shortDuration
+                        }
+                    }
+                }
+
+                background: Rectangle {
+                    color: "transparent"
+
+                    Rectangle {
+                        anchors {
+                            left: parent.left
+                            right: parent.right
+                            bottom: parent.bottom
+                        }
+                        height: 2
+                        radius: 1
+                        color: tabButton.checked ? Kirigami.Theme.highlightColor : "transparent"
+
+                        Behavior on color {
+                            ColorAnimation {
+                                duration: Kirigami.Units.shortDuration
+                            }
+                        }
+                    }
+                }
+            }
         }
+    }
+
+    // 标签栏下的整行分隔线
+    Rectangle {
+        Layout.fillWidth: true
+        Layout.topMargin: -Kirigami.Units.smallSpacing
+        implicitHeight: 1
+        color: Qt.alpha(Kirigami.Theme.textColor, 0.15)
     }
 
     StackLayout {

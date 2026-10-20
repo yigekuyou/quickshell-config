@@ -17,6 +17,7 @@ BarButton {
     iconSize: Kirigami.Units.gridUnit
     text: Math.round(Volume.sinkVolume * 100) + "%"
     textBold: true
+    progress: Sizes.barRing ? Volume.sinkVolume : -1
     contentColor: root.muted ? Kirigami.Theme.negativeTextColor : Kirigami.Theme.activeTextColor
     checked: audioPanel.visible
 

@@ -11,7 +11,7 @@ Kirigami.ShadowedRectangle {
     color: Qt.alpha(Kirigami.Theme.backgroundColor, 0.5)
 
     radius: Sizes.cornerRadius
-    implicitHeight: Kirigami.Units.iconSizes.small
+    implicitHeight: Sizes.barHeight
     implicitWidth: layout.width + 20
 
     property Item activeItem: null
@@ -48,7 +48,7 @@ Kirigami.ShadowedRectangle {
                 Kirigami.Icon {
                     id: numText
                     anchors.centerIn: parent
-                    implicitHeight: Kirigami.Units.iconSizes.small
+                    implicitHeight: Sizes.barIconSize
                     implicitWidth: implicitHeight
                     source: ws ? (ws.active ? "notification-progress-active-symbolic" :"notification-progress-inactive-symbolic") : "notification-progress-inactive-symbolic"
                     color: ws ? (ws.active ? Kirigami.Theme.highlightColor: Kirigami.Theme.activeTextColor ): Kirigami.Theme.textColor

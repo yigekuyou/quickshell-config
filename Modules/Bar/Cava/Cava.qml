@@ -74,8 +74,8 @@ Kirigami.ShadowedRectangle {
 		    color: Kirigami.Theme.activeTextColor
 
 		    // 3. 像素对齐：使用标准小图标尺寸 (通常为 16px 或 22px，随 DPI 缩放)
-		    implicitWidth: Kirigami.Units.iconSizes.small
-		    implicitHeight: Kirigami.Units.iconSizes.small
+		    implicitWidth: Sizes.barIconSize
+		    implicitHeight: Sizes.barIconSize
 
 		    // 4. 布局对齐：确保在 RowLayout 中垂直居中
 		    		    isMask: true

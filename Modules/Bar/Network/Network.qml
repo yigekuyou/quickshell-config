@@ -18,11 +18,23 @@ BarButton {
     checked: wifiPanel.visible
     spacing: Kirigami.Units.mediumSpacing
 
+    // 已连接的网卡数量（0 时只显示「未连接」占位）
+    readonly property int connectedCount: Array.from(Networking.devices).filter(d => d && d.connected).length
+
     onClicked: wifiPanel.visible = !wifiPanel.visible
 
     content: Component {
         RowLayout {
             spacing: Kirigami.Units.mediumSpacing
+
+            Kirigami.Icon {
+                visible: root.connectedCount === 0
+                source: "network-wired-disconnected-symbolic"
+                implicitWidth: Math.round(Kirigami.Units.gridUnit * 0.85)
+                implicitHeight: implicitWidth
+                color: Kirigami.Theme.negativeTextColor
+                Layout.alignment: Qt.AlignVCenter
+            }
 
             // 只在网络不健康时冒出来提示
             Kirigami.Icon {
@@ -48,7 +60,8 @@ BarButton {
             }
 
             Repeater {
-                model: Networking.devices
+                // 只列已连接的网卡（原来把断开的也画出来，占宽度还容易看错）
+                model: Array.from(Networking.devices).filter(d => d && d.connected)
 
                 delegate: RowLayout {
                     spacing: Kirigami.Units.smallSpacing

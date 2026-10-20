@@ -6,8 +6,8 @@ import qs.Services
 import org.kde.kirigami as Kirigami
 import org.kde.kirigamiaddons.formcard as FormCard
 
-// 状态栏（顶栏）几何：高度与圆角。
-// 这两个值都是 gridUnit 的倍数，写进 settings.json 的 bar 段，
+// 状态栏（顶栏）几何与密度。
+// 所有值都是 gridUnit 的倍数，写进 settings.json 的 bar 段，
 // Config/Sizes.qml 直接读它，所以拖动滑块顶栏会立刻跟着变。
 SettingsPage {
     id: root
@@ -40,6 +40,7 @@ SettingsPage {
             value: Settings.bar.cornerRadius
             onMoved: value => Settings.bar.cornerRadius = Math.round(value * 20) / 20
         }
+
     }
 
     SettingsGroup {
@@ -68,7 +69,7 @@ SettingsPage {
                     Button {
                         text: qsTr("恢复默认")
                         onClicked: {
-                            Settings.bar.height = 1.6;
+                            Settings.bar.height = 1.4;
                             Settings.bar.cornerRadius = 0.5;
                         }
                     }

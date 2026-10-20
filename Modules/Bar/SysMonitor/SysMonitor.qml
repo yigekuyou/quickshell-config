@@ -145,7 +145,7 @@ Kirigami.AbstractCard {
     // ================= 5. 布局内容 =================
     contentItem: RowLayout {
         id: contentLayout
-        spacing: Kirigami.Units.largeSpacing  // 收起时去掉间距
+        spacing: Sizes.barSpacing  // 收起时去掉间距（跟随「托盘 → 按钮间距」）
         // 从右向左排：RAM 在最右边
         layoutDirection: Qt.RightToLeft
 
@@ -155,8 +155,8 @@ Kirigami.AbstractCard {
             spacing: Kirigami.Units.smallSpacing
             Kirigami.Icon {
 		    source: "memory"
-		    implicitWidth: Kirigami.Units.iconSizes.small
-		    implicitHeight: Kirigami.Units.iconSizes.small
+		    implicitWidth: Sizes.barIconSize
+		    implicitHeight: Sizes.barIconSize
 		    color: Kirigami.Theme.positiveTextColor
 	    }
 	    Label {
@@ -171,8 +171,8 @@ Kirigami.AbstractCard {
 		spacing: Kirigami.Units.smallSpacing
 		Kirigami.Icon {
 			source: "temp-symbolic"
-			implicitWidth: Kirigami.Units.iconSizes.small
-			implicitHeight: Kirigami.Units.iconSizes.small
+			implicitWidth: Sizes.barIconSize
+			implicitHeight: Sizes.barIconSize
 			color: getStatusColor(root.tempValue, 70, 85)
 		}
 		Label { text: root.tempValue + "°C" }
@@ -184,8 +184,8 @@ Kirigami.AbstractCard {
 		spacing: Kirigami.Units.smallSpacing
 		Kirigami.Icon {
 			source: "cpu"
-			implicitWidth: Kirigami.Units.iconSizes.small
-			implicitHeight: Kirigami.Units.iconSizes.small
+			implicitWidth: Sizes.barIconSize
+			implicitHeight: Sizes.barIconSize
 			color: getStatusColor(root.cpuValue, 70, 90)
 		}
 		Label { text: root.cpuValue + "%" }
@@ -198,8 +198,8 @@ Kirigami.AbstractCard {
 
 		Kirigami.Icon {
 			source: "video-display" // 或者使用 "gpu" (如果你的图标库支持)
-			implicitWidth: Kirigami.Units.iconSizes.small
-			implicitHeight: Kirigami.Units.iconSizes.small
+			implicitWidth: Sizes.barIconSize
+			implicitHeight: Sizes.barIconSize
 			// 负载高时变色
 			color: getStatusColor(root.gpuLoad, 70, 90)
 		}

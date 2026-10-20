@@ -8,7 +8,8 @@ Kirigami.Icon {
 	id: root
 	source:  modelData.icon
 	required property var modelData
-	implicitHeight:Kirigami.Units.iconSizes.small
+	// 跟随设置「托盘 → 图标大小」（原来是固定 iconSizes.small）
+	implicitHeight: Sizes.barIconSize
 	implicitWidth:implicitHeight
 	HoverHandler {
 		cursorShape: Qt.PointingHandCursor

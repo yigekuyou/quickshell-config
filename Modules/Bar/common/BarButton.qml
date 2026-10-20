@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import QtQuick.Shapes
 import qs.Config
 import org.kde.kirigami as Kirigami
 
@@ -28,7 +29,7 @@ Kirigami.ShadowedRectangle {
 
     // ======================= 内容 =======================
     property string icon: ""
-    property real iconSize: Kirigami.Units.gridUnit
+    property real iconSize: Sizes.barIconSize
     property string text: ""
     // -1 = 不限宽；>0 = 文字超过这个宽度用省略号截断
     property real textMaxWidth: -1
@@ -37,6 +38,11 @@ Kirigami.ShadowedRectangle {
     property string badge: ""
     // 任意内容，排在内置的 icon / text 之前（Workspaces、Tray 这类用）
     property Component content: null
+    // 图标外围的进度环（0..1，< 0 不画）：百分比画在图标外圈
+    property real progress: -1
+    // 环的直径 = iconSize * ringScale；线宽 ringWidth
+    property real ringScale: 1.7
+    property real ringWidth: 2
 
     // ======================= 状态 =======================
     // 对应“按钮背后的面板已打开”，用来点亮描边与背景
@@ -64,8 +70,8 @@ Kirigami.ShadowedRectangle {
     property real idleOpacity: 0.5
     property real hoverOpacity: 0.75
     property real pressedOpacity: 0.9
-    property real horizontalPadding: Kirigami.Units.largeSpacing
-    property real spacing: Kirigami.Units.smallSpacing
+    property real horizontalPadding: Sizes.barPadding
+    property real spacing: Sizes.barSpacing
     // 正方形（只放一个图标时用，配合 horizontalPadding: 0）
     property bool square: false
     // 实心底（危险按钮）：走 fillColor + onFillColor，不再叠透明度
@@ -123,21 +129,69 @@ Kirigami.ShadowedRectangle {
             Layout.alignment: Qt.AlignVCenter
         }
 
-        Kirigami.Icon {
-            visible: root.icon !== ""
-            source: root.icon
+        Item {
             implicitWidth: root.iconSize
             implicitHeight: root.iconSize
-            color: root.contentColor
             Layout.alignment: Qt.AlignVCenter
+
+            Kirigami.Icon {
+                anchors.centerIn: parent
+                source: root.icon
+                implicitWidth: root.iconSize
+                implicitHeight: root.iconSize
+                visible: root.icon !== ""
+                color: root.contentColor
+            }
+
+            // 进度环：底环 + 进度弧（从 12 点方向顺时针）
+            Shape {
+                id: ring
+
+                anchors.centerIn: parent
+                width: Math.round(root.iconSize * root.ringScale)
+                height: width
+                visible: root.icon !== "" && root.progress >= 0
+                preferredRendererType: Shape.CurveRenderer
+
+                ShapePath {
+                    fillColor: "transparent"
+                    strokeColor: Qt.alpha(root.contentColor, 0.22)
+                    strokeWidth: root.ringWidth
+
+                    PathAngleArc {
+                        centerX: ring.width / 2
+                        centerY: ring.height / 2
+                        radiusX: ring.width / 2 - root.ringWidth / 2
+                        radiusY: ring.height / 2 - root.ringWidth / 2
+                        startAngle: -90
+                        sweepAngle: 360
+                    }
+                }
+
+                ShapePath {
+                    fillColor: "transparent"
+                    strokeColor: root.checked ? root.accentColor : root.contentColor
+                    strokeWidth: root.ringWidth
+                    capStyle: ShapePath.RoundCap
+
+                    PathAngleArc {
+                        centerX: ring.width / 2
+                        centerY: ring.height / 2
+                        radiusX: ring.width / 2 - root.ringWidth / 2
+                        radiusY: ring.height / 2 - root.ringWidth / 2
+                        startAngle: -90
+                        sweepAngle: 360 * Math.max(0, Math.min(1, root.progress))
+                    }
+                }
+            }
         }
 
         Label {
-            visible: root.text !== ""
+            visible: root.text !== "" && Sizes.barLabels
             text: root.text
             // 不写 font: Kirigami.Theme.smallFont —— 给 font 整组赋值会把下面的
             // font.weight 顶掉（qmllint: duplicate-property-binding）。直接给子属性。
-            font.pixelSize: Math.round(Kirigami.Units.gridUnit * 0.8)
+            font.pixelSize: Math.round(root.implicitHeight * 0.42)
             font.weight: root.textBold ? Font.DemiBold : Font.Normal
             color: root.contentColor
             elide: Text.ElideRight

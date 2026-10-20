@@ -87,8 +87,8 @@ Variants {
             RowLayout {
 		    anchors.left: parent.left
 		    anchors.verticalCenter: parent.verticalCenter
-		    anchors.leftMargin: Kirigami.Units.largeSpacing
-		    spacing: Kirigami.Units.smallSpacing
+		    anchors.leftMargin: Math.round(Kirigami.Units.smallSpacing * 2)
+		    spacing: Sizes.barSpacing
 		    SettingsButton {}
     		    Workspaces {}
                 Cava {}
@@ -99,7 +99,7 @@ Variants {
             RowLayout {
 		    anchors.horizontalCenter: parent.horizontalCenter
 		    anchors.verticalCenter: parent.verticalCenter
-		    spacing: Kirigami.Units.mediumSpacing
+		    spacing: Sizes.barSpacing
 
 	    }
             RowLayout {
@@ -107,7 +107,7 @@ Variants {
 		    anchors.right: parent.right
 		    anchors.verticalCenter: parent.verticalCenter
 		    anchors.rightMargin: Kirigami.Units.largeSpacing
-		    spacing: Kirigami.Units.smallSpacing
+		    spacing: Sizes.barSpacing
                 SysMonitor {
                     Layout.alignment: Qt.AlignVCenter
                 }

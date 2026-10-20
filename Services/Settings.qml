@@ -188,8 +188,16 @@ Singleton {
             // 顶栏几何：数值是 gridUnit 的倍数（见 Config/Sizes.qml）
             property JsonObject bar: JsonObject {
                 id: barCfg
-                property real height: 1.6
+                property real height: 1.4
                 property real cornerRadius: 0.5
+                // 密度三件套：图标大小 / 胶囊左右内边距 / 按钮间距（都是 gridUnit 倍数）
+                property real iconSize: 0.85
+                property real padding: 0.28
+                property real spacing: 0.12
+                // 类型：true = 图标 + 文字，false = 只显示图标
+                property bool labels: true
+                // 百分比画在图标外圈（音量等），而不是只显示数字
+                property bool ring: true
             }
 
             // 空闲行为（见 Config/Idle.qml，秒）

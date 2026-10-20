@@ -11,11 +11,12 @@ BarButton {
     id: root
 
     interactive: false
-    horizontalPadding: Kirigami.Units.largeSpacing
+    // 内边距不再写死：跟随设置「托盘 → 内边距」（BarButton 默认 Sizes.barPadding）
 
     content: Component {
         RowLayout {
-            spacing: Math.round(Kirigami.Units.smallSpacing * 1.5)
+            // 图标间距跟随设置「托盘 → 按钮间距」
+            spacing: Sizes.barSpacing
 
             Repeater {
                 model: SystemTray.items

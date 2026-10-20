@@ -64,6 +64,11 @@ Variants {
                 "component": "BarPage.qml"
             },
             {
+                "icon": "preferences-system-symbolic",
+                "label": qsTr("托盘"),
+                "component": "TrayPage.qml"
+            },
+            {
                 "icon": "preferences-desktop-screensaver",
                 "label": qsTr("空闲"),
                 "component": "IdlePage.qml"
@@ -219,6 +224,7 @@ Variants {
 
                         WallpaperPage {}
                         BarPage {}
+                        TrayPage {}
                         IdlePage {}
                         AboutPage {}
                     }
@@ -270,7 +276,11 @@ Variants {
                 WidgetState.settingsOpen = !WidgetState.settingsOpen;
             }
 
-            function open(): void {
+            // qs ipc call settings page 0   -> 切到指定页（0 壁纸 1 状态栏 2 空闲 3 关于）
+        function page(index: int): void {
+            win.currentPage = Math.max(0, Math.min(win.pages.length - 1, index));
+        }
+        function open(): void {
                 WidgetState.settingsOpen = true;
             }
 
