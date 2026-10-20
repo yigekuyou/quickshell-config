@@ -7,6 +7,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import com.github.yigekuyou.appmenu
 import qs.Config
+import qs.Widget
 import org.kde.kirigami as Kirigami
 
 // 顶栏左栏：全局菜单（应用菜单栏）。
