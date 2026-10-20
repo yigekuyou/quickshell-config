@@ -10,6 +10,7 @@ import qs.Services
 import org.kde.kirigami as Kirigami
 
 Kirigami.CardsListView {
+    id: lyricsView
     anchors.fill: parent
     leftMargin: 0
     rightMargin: 0
@@ -20,6 +21,9 @@ Kirigami.CardsListView {
     snapMode: ListView.SnapOneItem
     highlightRangeMode: ListView.StrictlyEnforceRange
     interactive: false
+    // 自动翻到正在播放的播放器：索引由 Services/Lyrics 统一计算
+    // （Lyrics.activeIndex），StrictlyEnforceRange + SnapOneItem 会让视图翻到对应卡片。
+    currentIndex: Lyrics.activeIndex
     delegate: Kirigami.Card {
         id: actived
         background: Rectangle {

@@ -12,6 +12,9 @@ Singleton {
 
     readonly property var players: QMpris.Mpris.players
     property var player
+    // 正在播放的播放器在 players 列表中的索引，UI 层直接拿去做 currentIndex；
+    // player 失效或找不到对应条目时为 -1
+    property int activeIndex: -1
     // The data model other QML files will bind to
     readonly property alias playerManager: playerManager
 
@@ -87,6 +90,29 @@ Singleton {
             return ;
 
         parseLyric(asText, lyricsWTimes);
+    }
+
+    // ================= 活动播放器索引 =================
+    // player 跟踪的是 Instantiator 里的 wrapper，要拿它的 mprisData 去 players
+    // 列表里对号入座；播放器增删会让整条列表挪位，所以 players 一变也要重算。
+    onPlayerChanged: root.updateActiveIndex()
+    onPlayersChanged: root.updateActiveIndex()
+    Component.onCompleted: root.updateActiveIndex()
+
+    function updateActiveIndex() {
+        const p = root.player
+        if (!p) {
+            root.activeIndex = -1
+            return
+        }
+        const players = root.players
+        for (let i = 0; i < players.length; ++i) {
+            if (players[i] === p.mprisData) {
+                root.activeIndex = i
+                return
+            }
+        }
+        root.activeIndex = -1
     }
 
     Instantiator {
