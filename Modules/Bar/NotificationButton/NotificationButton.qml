@@ -1,81 +1,41 @@
 import QtQuick
-import QtQuick.Layouts
-import QtQuick.Controls
 import Quickshell
 import qs.Config
 import qs.Services
 import qs.Widget
+import qs.Modules.Bar.common
 import org.kde.kirigami as Kirigami
 
-// 顶栏通知入口。外观与 Clipboard / Network / Bluetooth 一致。
+// 顶栏通知入口。外观与 Clipboard / Network / Bluetooth 一致，统一来自 BarButton。
 //
 // 以前这里是 Process { command: ["qs","--path",".../Wallpaper/Notif.qml","ipc","call","notif","open"] }：
 // 每点一次都会另起一个 qs 进程去开另一个进程里的通知中心，那个子进程还持有
 // org.freedesktop.Notifications 这个名字，和主进程抢 D-Bus（应用发通知会时好时坏）。
 // 现在通知中心就在本进程里，点按钮只是切一个布尔值。
-Kirigami.ShadowedRectangle {
+BarButton {
     id: root
 
-    implicitWidth: layout.implicitWidth + Kirigami.Units.largeSpacing * 2
-    implicitHeight: Sizes.barHeight
-
-    readonly property bool popupOpen: WidgetState.notifOpen
-    readonly property bool containsMouse: hoverHandler.hovered
+    readonly property bool dnd: NotificationManager.dnd
     readonly property int notifCount: NotificationManager.count
 
-    color: Qt.alpha(Kirigami.Theme.backgroundColor, root.containsMouse || root.popupOpen ? 0.75 : 0.5)
-    radius: Sizes.cornerRadius
-    shadow.color: Qt.rgba(0, 0, 0, 0.2)
-    shadow.size: 10
-    shadow.yOffset: 2
-    border.width: 1
-    border.color: Qt.alpha(root.popupOpen ? Kirigami.Theme.highlightColor : Kirigami.Theme.dividerColor, 0.3)
+    checked: WidgetState.notifOpen
+    icon: root.dnd ? "notifications-disabled-symbolic" : (root.notifCount > 0 ? "notifications-active-symbolic" : "notifications-symbolic")
+    iconSize: Kirigami.Units.gridUnit * 0.9
+    // 免打扰时不报未读数；为 0 时 badge 为空 → 整段隐藏
+    badge: (root.notifCount > 0 && !root.dnd) ? String(root.notifCount) : ""
+    contentColor: root.dnd ? Kirigami.Theme.disabledTextColor : (WidgetState.notifOpen ? Kirigami.Theme.highlightColor : Kirigami.Theme.textColor)
+
+    onClicked: WidgetState.notifOpen = !WidgetState.notifOpen
 
     // --- 通知中心面板 ---
     NotificationWidget {
         id: popup
         anchorItem: root
-        visible: root.popupOpen
+        visible: WidgetState.notifOpen
         onCloseRequested: WidgetState.notifOpen = false
         // 面板因点击外部 / 合成器 popup_done 自己关掉时，把全局状态一起收回。
         // 否则 WidgetState.notifOpen 停在 true，下一次点击只是把它改回 false，
         // 面板仍然关着，用户会感觉"要点两次才打开"。
         onClosed: WidgetState.notifOpen = false
-    }
-
-    HoverHandler {
-        id: hoverHandler
-        cursorShape: Qt.PointingHandCursor
-    }
-    TapHandler {
-        acceptedButtons: Qt.LeftButton
-        onTapped: WidgetState.notifOpen = !WidgetState.notifOpen
-    }
-
-    RowLayout {
-        id: layout
-        anchors.centerIn: parent
-        spacing: Kirigami.Units.smallSpacing / 2
-
-        Kirigami.Icon {
-            implicitWidth: Kirigami.Units.gridUnit * 0.9
-            implicitHeight: Kirigami.Units.gridUnit * 0.9
-            source: {
-                if (NotificationManager.dnd)
-                    return "notifications-disabled-symbolic";
-                return root.notifCount > 0 ? "notifications-active-symbolic" : "notifications-symbolic";
-            }
-            color: NotificationManager.dnd ? Kirigami.Theme.disabledTextColor
-                : (root.popupOpen ? Kirigami.Theme.highlightColor : Kirigami.Theme.textColor)
-        }
-
-        // 未读条数；为 0 时整段隐藏，部件自动收窄
-        Label {
-            visible: root.notifCount > 0
-            text: root.notifCount
-            font: Kirigami.Theme.smallFont
-            color: NotificationManager.dnd ? Kirigami.Theme.disabledTextColor : Kirigami.Theme.textColor
-            opacity: 0.85
-        }
     }
 }

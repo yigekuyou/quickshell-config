@@ -1,33 +1,27 @@
-import Quickshell.Services.SystemTray
 import QtQuick
 import QtQuick.Layouts
+import Quickshell.Services.SystemTray
 import qs.Config
+import qs.Modules.Bar.common
 import org.kde.kirigami as Kirigami
 
-Rectangle {
+// 顶栏系统托盘。托盘里每个图标有自己的点击逻辑，所以这个胶囊只当容器：
+// interactive: false 关掉 BarButton 自己的光标/点击处理，避免和 TrayItem 抢事件。
+BarButton {
     id: root
 
-    // --- 样式：与其他模块完全统一 ---
-    color: Qt.alpha(Colorscheme.background, 0.5)
-    radius: Sizes.cornerRadius
+    interactive: false
+    horizontalPadding: Kirigami.Units.largeSpacing
 
-    // 高度固定为 40
-    implicitHeight: Sizes.barHeight
+    content: Component {
+        RowLayout {
+            spacing: Math.round(Kirigami.Units.smallSpacing * 1.5)
 
-    // 宽度 = 图标总宽 + 左右各 12px 的留白 (共 24px)
-    // 这样当没有托盘图标时，宽度会自动收缩，有图标时自动撑开
-    implicitWidth: content.width + 24
-
-    RowLayout {
-        id: content
-        anchors.centerIn: parent
-        spacing: 8 // 图标之间的间距
-
-        Repeater {
-            model: SystemTray.items
-            delegate: TrayItem {
-                // 确保图标在 40px 高度的条里垂直居中
-                Layout.alignment: Qt.AlignVCenter
+            Repeater {
+                model: SystemTray.items
+                delegate: TrayItem {
+                    Layout.alignment: Qt.AlignVCenter
+                }
             }
         }
     }

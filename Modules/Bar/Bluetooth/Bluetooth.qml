@@ -1,97 +1,66 @@
 import QtQuick
-import QtQuick.Layouts
-import QtQuick.Controls
 import Quickshell
 import Quickshell.Io
+import Quickshell.Bluetooth
 import qs.Services
 import qs.Config
 import qs.Widget
-import Quickshell.Bluetooth
+import qs.Modules.Bar.common
 import org.kde.kirigami as Kirigami
 
-Kirigami.ShadowedRectangle {
+// 顶栏蓝牙入口。外观与 Clipboard / Network / Volume 一致，统一来自 BarButton。
+BarButton {
     id: root
-    // --- 样式配置 ---
-    implicitWidth: layout.implicitWidth + Kirigami.Units.largeSpacing * 2
-    implicitHeight: Sizes.barHeight
 
-    // 使用 Kirigami 主题色配合半透明效果
-    color: Qt.alpha(Kirigami.Theme.backgroundColor, 0.5)
-    radius: Sizes.cornerRadius
-    shadow.color: Qt.rgba(0, 0, 0, 0.2)
-    shadow.size: 10
-    shadow.yOffset: 2
-    border.width: 1
-    border.color: Qt.alpha(Kirigami.Theme.dividerColor, 0.3)
-    // --- 【2】 实例化网络面板 ---
+    // 注意不能叫 enabled —— Item 自带这个属性
+    readonly property bool adapterOn: Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.state === BluetoothAdapterState.Enabled
+
+    icon: "preferences-system-bluetooth"
+    iconSize: Kirigami.Units.gridUnit
+    text: {
+        if (!Bluetooth.defaultAdapter)
+            return "未检测到适配器";
+        switch (Bluetooth.defaultAdapter.state) {
+        case BluetoothAdapterState.Enabled:
+            return "已开启";
+        case BluetoothAdapterState.Disabled:
+            return "已关闭";
+        case BluetoothAdapterState.Enabling:
+            return "打开中...";
+        case BluetoothAdapterState.Disabling:
+            return "关闭中...";
+        case BluetoothAdapterState.Blocked:
+            return "已禁用";
+        default:
+            return "未知状态";
+        }
+    }
+    contentColor: root.adapterOn ? Kirigami.Theme.activeTextColor : Kirigami.Theme.negativeTextColor
+    // 面板打开时点亮描边（IPC 打开也算）
+    checked: bluetoothPanel.visible
+
+    onClicked: bluetoothPanel.visible = !bluetoothPanel.visible
+
     BluetoothWidget {
         id: bluetoothPanel
         anchorItem: root
-        // 默认是关闭的
         visible: false
-
-        // 如果你想让面板的配色跟随全局 Colorscheme，可以在这里覆盖内部属性
-        // (前提是 NetworkWidget 内部没有把这些属性写死，而是开放了别名或者属性)
-        // 目前你的 NetworkWidget 是自包含配色的，直接用即可。
     }
 
     // IPC 控制面板（qs ipc call bt toggle）
     IpcHandler {
         target: "bt"
-        function toggle() { bluetoothPanel.visible = !bluetoothPanel.visible; }
-        function open() { bluetoothPanel.visible = true; }
-        function close() { bluetoothPanel.visible = false; }
+
+        function toggle() {
+            bluetoothPanel.visible = !bluetoothPanel.visible;
+        }
+
+        function open() {
+            bluetoothPanel.visible = true;
+        }
+
+        function close() {
+            bluetoothPanel.visible = false;
+        }
     }
-
-    // --- 交互区域 ---
-    HoverHandler {
-	    cursorShape: Qt.PointingHandCursor
-    }
-    TapHandler {
-	    acceptedButtons: Qt.LeftButton
-	    onTapped: {
-		    bluetoothPanel.visible = !bluetoothPanel.visible;
-	    }
-    }
-
-RowLayout {
-	id: layout
-	anchors.centerIn: parent
-	spacing: Kirigami.Units.smallSpacing
-	anchors.fill: parent
-            Layout.fillWidth: true
-                        Kirigami.Icon {
-				Layout.preferredWidth: Kirigami.Units.gridUnit
-				Layout.preferredHeight: Kirigami.Units.gridUnit
-
-				// 使用系统标准蓝牙图标
-				source: "preferences-system-bluetooth"
-
-				// 颜色反馈：仅在 Enabled 状态下使用高亮色，其余使用负面或中性色
-				color: (Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.state === BluetoothAdapterState.Enabled)
-				? Kirigami.Theme.activeTextColor
-				: Kirigami.Theme.negativeTextColor
-			}
-			Label {
-				text: {
-					if (!Bluetooth.defaultAdapter)
-						return "未检测到适配器";
-					switch (Bluetooth.defaultAdapter.state) {
-						case BluetoothAdapterState.Enabled:   return "已开启";
-						case BluetoothAdapterState.Disabled:  return "已关闭";
-						case BluetoothAdapterState.Enabling:  return "打开中...";
-						case BluetoothAdapterState.Disabling: return "关闭中...";
-						case BluetoothAdapterState.Blocked:   return "已禁用";
-						default:                              return "未知状态";
-					}
-				}
-				font.bold: true
-				font.pixelSize: Kirigami.Units.gridUnit * 0.8
-
-				// 文字颜色同步图标颜色
-				color: (Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.state === BluetoothAdapterState.Enabled)
-				? Kirigami.Theme.activeTextColor
-				: Kirigami.Theme.negativeTextColor
-                    }
-                }
 }

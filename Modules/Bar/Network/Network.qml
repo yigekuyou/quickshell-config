@@ -1,123 +1,112 @@
 import QtQuick
-import QtQuick.Layouts
 import QtQuick.Controls
+import QtQuick.Layouts
 import Quickshell
-import qs.Services
-import qs.Config
 import Quickshell.Io
 import Quickshell.Networking
+import qs.Services
+import qs.Config
 import qs.Widget
+import qs.Modules.Bar.common
 import org.kde.kirigami as Kirigami
-// 或者如果它就在旁边，直接用 import "." 即可
 
-Kirigami.ShadowedRectangle {
+// 顶栏网络入口。内容是「连接状态图标 + 每个网卡一行」，比固定 icon/text
+// 复杂，所以走 BarButton 的 content 通道；胶囊外观和交互仍由 BarButton 统一。
+BarButton {
     id: root
-    implicitHeight: Sizes.barHeight
-    implicitWidth: layout.implicitWidth + Kirigami.Units.largeSpacing * 2
 
-    // 使用 Kirigami 主题色，带透明度
-    color: Qt.alpha(Kirigami.Theme.backgroundColor, 0.5)
-    radius: Sizes.cornerRadius
-    shadow.color: Qt.rgba(0, 0, 0, 0.2)
-    shadow.size: 10
-    shadow.yOffset: 2
-    border.width: 1
-    border.color: Qt.alpha(Kirigami.Theme.dividerColor, 0.3)
-    // --- 【2】 实例化网络面板 ---
+    checked: wifiPanel.visible
+    spacing: Kirigami.Units.mediumSpacing
+
+    onClicked: wifiPanel.visible = !wifiPanel.visible
+
+    content: Component {
+        RowLayout {
+            spacing: Kirigami.Units.mediumSpacing
+
+            // 只在网络不健康时冒出来提示
+            Kirigami.Icon {
+                visible: Networking.connectivity !== NetworkConnectivity.Full
+                implicitWidth: Math.round(Kirigami.Units.gridUnit * 0.8)
+                implicitHeight: implicitWidth
+                Layout.alignment: Qt.AlignVCenter
+
+                source: {
+                    switch (Networking.connectivity) {
+                    case NetworkConnectivity.Portal:
+                        return "network-error-symbolic";
+                    case NetworkConnectivity.Limited:
+                        return "network-limited";
+                    case NetworkConnectivity.None:
+                        return "network-offline-symbolic";
+                    case NetworkConnectivity.Unknown:
+                        return "network-no-route-symbolic";
+                    }
+                }
+
+                color: (Networking.connectivity === NetworkConnectivity.Portal || Networking.connectivity === NetworkConnectivity.Limited) ? Kirigami.Theme.neutralTextColor : Kirigami.Theme.negativeTextColor
+            }
+
+            Repeater {
+                model: Networking.devices
+
+                delegate: RowLayout {
+                    spacing: Kirigami.Units.smallSpacing
+                    Layout.alignment: Qt.AlignVCenter
+
+                    readonly property bool isOnline: modelData.connected && Networking.connectivity === NetworkConnectivity.Full
+                    readonly property color statusColor: isOnline ? Kirigami.Theme.linkColor : Kirigami.Theme.negativeTextColor
+
+                    Kirigami.Icon {
+                        source: DeviceType.Wifi === modelData.type ? "network-wireless" : "network-wired"
+                        implicitWidth: Kirigami.Units.gridUnit
+                        implicitHeight: Kirigami.Units.gridUnit
+                        color: parent.statusColor
+                    }
+
+                    Label {
+                        text: {
+                            if (!modelData || !modelData.networks)
+                                return "未连接";
+                            const connectedList = Array.from(modelData.networks.values || []).filter(net => net.connected);
+                            connectedList.sort((a, b) => b.signalStrength - a.signalStrength);
+
+                            let name = connectedList[0]?.name ?? "未连接";
+
+                            // 如果有 Portal，在名字后面加个提醒
+                            if (modelData.connected && Networking.connectivity === NetworkConnectivity.Portal)
+                                return name + " (需登录)";
+                            return name;
+                        }
+                        font.pixelSize: Math.round(Kirigami.Units.gridUnit * 0.8)
+                        font.weight: Font.DemiBold
+                        color: parent.statusColor
+                    }
+                }
+            }
+        }
+    }
+
     NetworkWidget {
         id: wifiPanel
         anchorItem: root
-        // 默认是关闭的
         visible: false
-
-        // 如果你想让面板的配色跟随全局 Colorscheme，可以在这里覆盖内部属性
-        // (前提是 NetworkWidget 内部没有把这些属性写死，而是开放了别名或者属性)
-        // 目前你的 NetworkWidget 是自包含配色的，直接用即可。
     }
 
-
-    // IPC 控制面板（qs ipc call net toggle）
+    // IPC 控制面板（qs ipc call net toggle / open / close）
     IpcHandler {
         target: "net"
-        function toggle() { wifiPanel.visible = !wifiPanel.visible; }
-        function open() { wifiPanel.visible = true; }
-        function close() { wifiPanel.visible = false; }
-    }
 
-    // --- 交互区域 ---
-    HoverHandler {
-	    cursorShape: Qt.PointingHandCursor
-    }
-        TapHandler {
-	    acceptedButtons: Qt.LeftButton
-	    onTapped: {
-		    wifiPanel.visible = !wifiPanel.visible;
-	    }
-    }
+        function toggle() {
+            wifiPanel.visible = !wifiPanel.visible;
+        }
 
-        RowLayout {
-		id: layout
-            anchors.centerIn: parent
-            spacing: Kirigami.Units.mediumSpacing
-            Kirigami.Icon {
-		    id: connectivityIcon
-		    visible:(Networking.connectivity !==NetworkConnectivity.Full)
-		    implicitWidth: Kirigami.Units.gridUnit * 0.8
-		    implicitHeight: Kirigami.Units.gridUnit * 0.8
+        function open() {
+            wifiPanel.visible = true;
+        }
 
-		    // 根据 Networking.connectivity 切换图标和颜色
-		    source: {
-			    switch(Networking.connectivity) {
-				    case NetworkConnectivity.Portal:  return "network-error-symbolic"; // 需认证
-				    case NetworkConnectivity.Limited: return "network-limited";
-				    case NetworkConnectivity.None:    return "network-offline-symbolic";
-				    case NetworkConnectivity.Unknown: return "network-no-route-symbolic";
-			    }
-		    }
-
-		    color: {
-			    if (Networking.connectivity === NetworkConnectivity.Portal || Networking.connectivity === NetworkConnectivity.Limited)
-				    return Kirigami.Theme.neutralTextColor;
-			    return Kirigami.Theme.negativeTextColor;
-		    }
-	    }
-            Repeater {
-                model: Networking.devices
-                delegate: RowLayout {
-			spacing: Kirigami.Units.smallSpacing
-			id: innerRow
-			readonly property bool isOnline: modelData.connected && Networking.connectivity === NetworkConnectivity.Full
-			readonly property color statusColor: isOnline
-			? Kirigami.Theme.linkColor
-			: Kirigami.Theme.negativeTextColor
-
-                        Kirigami.Icon {
-                            source: (DeviceType.Wifi === modelData.type) ?"network-wireless" : "network-wired"
-			    implicitWidth: Kirigami.Units.gridUnit
-			    implicitHeight: Kirigami.Units.gridUnit
-			    color: statusColor
-			}
-                        Label {
-				text: {
-					if (!modelData || !modelData.networks)
-						return "未连接";
-					const connectedList = Array.from(modelData.networks.values || [])
-					.filter(net => net.connected);
-					connectedList.sort((a, b) => b.signalStrength - a.signalStrength);
-
-					let name = connectedList[0]?.name ?? "未连接";
-
-					// 如果有 Portal，在名字后面加个提醒
-					if (modelData.connected && Networking.connectivity === NetworkConnectivity.Portal) {
-						return name + " (需登录)";
-					}
-					return name;
-				}
-                            font.bold: true
-                            font.pixelSize: Kirigami.Units.gridUnit * 0.8
-                            color: statusColor
-			}
-                    }
-                }
+        function close() {
+            wifiPanel.visible = false;
         }
     }
+}
