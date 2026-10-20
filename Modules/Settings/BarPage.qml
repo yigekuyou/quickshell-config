@@ -52,6 +52,31 @@ SettingsPage {
     }
 
     FormCard.FormHeader {
+        title: qsTr("显示")
+    }
+
+    SettingsGroup {
+
+        title: qsTr("内容")
+
+        SettingsSwitchRow {
+            text: qsTr("显示文字")
+            description: qsTr("关闭后只保留图标：音量百分比、网络名、SysMonitor 的 CPU/温度/内存数值都会隐藏")
+            iconName: "format-text-bold-symbolic"
+            switchOn: Settings.bar.labels
+            onSwitchToggled: on => Settings.bar.labels = on
+        }
+
+        SettingsSwitchRow {
+            text: qsTr("图标圆环")
+            description: qsTr("把百分比画成图标外圈的进度环（音量等）")
+            iconName: "media-record-symbolic"
+            switchOn: Settings.bar.ring
+            onSwitchToggled: on => Settings.bar.ring = on
+        }
+    }
+
+    FormCard.FormHeader {
         title: qsTr("右侧（托盘 / 音量 / 网络 / 蓝牙 / 通知）")
     }
 

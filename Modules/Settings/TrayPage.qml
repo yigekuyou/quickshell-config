@@ -34,31 +34,10 @@ SettingsPage {
             contentItem: Label {
                 Layout.fillWidth: true
                 wrapMode: Text.WordWrap
-                text: qsTr("图标大小 / 内边距 / 按钮间距见「状态栏 → 右侧」。")
+                text: qsTr("密度、显示文字、图标圆环都在「状态栏」页；这页只做一键预设。")
                 font.pixelSize: Kirigami.Theme.smallFont.pixelSize
                 color: Kirigami.Theme.disabledTextColor
             }
-        }
-    }
-
-    SettingsGroup {
-
-        title: qsTr("类型")
-
-        SettingsSwitchRow {
-            text: qsTr("显示文字")
-            description: qsTr("关闭后只保留图标（音量百分比等文字会隐藏）")
-            iconName: "format-text-bold-symbolic"
-            switchOn: Settings.bar.labels
-            onSwitchToggled: on => Settings.bar.labels = on
-        }
-
-        SettingsSwitchRow {
-            text: qsTr("图标圆环")
-            description: qsTr("把百分比画成图标外圈的进度环（音量等）")
-            iconName: "media-record-symbolic"
-            switchOn: Settings.bar.ring
-            onSwitchToggled: on => Settings.bar.ring = on
         }
     }
 

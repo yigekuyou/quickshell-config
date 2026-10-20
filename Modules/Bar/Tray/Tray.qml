@@ -14,6 +14,11 @@ BarButton {
     interactive: false
     // 内边距不再写死：跟随设置「托盘 → 内边距」（BarButton 默认 Sizes.barPadding）
 
+
+    Timer {
+        interval: 600; repeat: false; running: true
+        onTriggered: console.log("TRAY pad", Sizes.secPad(root.section), "gap", Sizes.secGap(root.section), "icon", Sizes.secIcon(root.section), "w", root.implicitWidth)
+    }
     content: Component {
         RowLayout {
             // 图标间距跟随设置「托盘 → 按钮间距」

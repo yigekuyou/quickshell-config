@@ -15,11 +15,11 @@ Kirigami.AbstractCard {
 
     // 动态宽度：展开显示全部，收起只显示 RAM
     implicitHeight: Sizes.barHeight
-    padding: Kirigami.Units.smallSpacing
+    padding: Sizes.secPad("right")   // 跟随「状态栏 → 右侧 → 内边距」
     background: Kirigami.ShadowedRectangle {
 	    color: Kirigami.Theme.backgroundColor
 	    opacity: 0.5
-	    radius: Kirigami.Units.smallSpacing
+	    radius: Sizes.cornerRadius
 	    border.color: Kirigami.Theme.focusColor
 	    border.width: root.activeFocus ? 1 : 0
     }
@@ -152,7 +152,7 @@ Kirigami.AbstractCard {
         // ---  RAM (常驻) ---
         RowLayout {
             id: ramGroup
-            spacing: Kirigami.Units.smallSpacing
+            spacing: Sizes.secGap("right")
             Kirigami.Icon {
 		    source: "memory"
 		    implicitWidth: Sizes.secIcon("right")
@@ -160,6 +160,7 @@ Kirigami.AbstractCard {
 		    color: Kirigami.Theme.positiveTextColor
 	    }
 	    Label {
+		    visible: Sizes.barLabels
 		    text: root.memUsage +"%"
 	    }
         }
@@ -168,32 +169,40 @@ Kirigami.AbstractCard {
         // ---  Temp (展开显示) ---
         RowLayout {
 		visible: root.expanded //
-		spacing: Kirigami.Units.smallSpacing
+		spacing: Sizes.secGap("right")
 		Kirigami.Icon {
 			source: "temp-symbolic"
 			implicitWidth: Sizes.secIcon("right")
 			implicitHeight: Sizes.secIcon("right")
 			color: getStatusColor(root.tempValue, 70, 85)
 		}
-		Label { text: root.tempValue + "°C" }
+		Label {
+			visible: Sizes.barLabels
+			text: root.tempValue + "°C"
+			font.pixelSize: Math.round(Sizes.secIcon("right") * 0.95)
+		}
 	}
 
         // --- CPU (展开显示) ---
         RowLayout {
 		visible: root.expanded //
-		spacing: Kirigami.Units.smallSpacing
+		spacing: Sizes.secGap("right")
 		Kirigami.Icon {
 			source: "cpu"
 			implicitWidth: Sizes.secIcon("right")
 			implicitHeight: Sizes.secIcon("right")
 			color: getStatusColor(root.cpuValue, 70, 90)
 		}
-		Label { text: root.cpuValue + "%" }
+		Label {
+			visible: Sizes.barLabels
+			text: root.cpuValue + "%"
+			font.pixelSize: Math.round(Sizes.secIcon("right") * 0.95)
+		}
 	}
 	// --- GPU (展开显示) ---
 	RowLayout {
 		visible: root.expanded
-		spacing: Kirigami.Units.smallSpacing
+		spacing: Sizes.secGap("right")
 		Layout.preferredWidth: visible ? -1 : 0
 
 		Kirigami.Icon {
@@ -204,7 +213,9 @@ Kirigami.AbstractCard {
 			color: getStatusColor(root.gpuLoad, 70, 90)
 		}
 		Label {
+			visible: Sizes.barLabels
 			text: root.gpuLoad + "% | " + root.gpuPower + "W"
+			font.pixelSize: Math.round(Sizes.secIcon("right") * 0.95)
 		}
 
 	}
