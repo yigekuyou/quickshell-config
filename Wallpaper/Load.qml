@@ -65,6 +65,9 @@ Scope {
 	function lockNow() {
 		lock.startDetached();
 		lockLoader = true;
+		// 锁屏时暂停壁纸（ScreenSaverPolicy = 1）；锁屏 UI 在独立进程，
+		// 主进程这边只能靠这个入口/解锁 IPC 来跟踪状态
+		WallpaperPause.locked = true;
 	}
 
 	IpcHandler {
@@ -74,6 +77,7 @@ Scope {
 		}
 		function close(){
 			lockLoader=false
+			WallpaperPause.locked = false;
 		}
 	}
 

@@ -38,6 +38,12 @@ Item {
     property bool muted: Settings.wallpaper.muted
     property bool paused: Settings.wallpaper.paused
 
+    // 自动暂停（窗口策略 / 锁屏）：由 Services/WallpaperPause 驱动，
+    // 不写回 settings.json，也不顶掉用户手动点出来的 paused。
+    // 渲染端一律读 suspended。
+    property bool autoPaused: false
+    readonly property bool suspended: root.paused || root.autoPaused
+
     // 本地 -> settings.json（Settings 内部 150ms 去抖后落盘）
     onWallpaperIdChanged: Settings.wallpaper.wallpaperId = root.wallpaperId
     onFpsChanged: Settings.wallpaper.fps = root.fps

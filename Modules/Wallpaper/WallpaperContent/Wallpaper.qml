@@ -18,6 +18,10 @@ Item {
 
     readonly property bool isVulkan: String(Quickshell.env("QSG_RHI_BACKEND") || "").toLowerCase() === "vulkan"
 
+    // 实例化自动暂停服务（窗口策略 / 锁屏）；它只写 WallpaperPath.autoPaused，
+    // 渲染端读 WallpaperPath.suspended。放在渲染进程里创建，场景子进程也能生效。
+    readonly property var autoPause: WallpaperPause
+
     // ==================== 窗口层（scene / video） ====================
     Instantiator {
         // 只有满足条件的组合才创建窗口
@@ -39,6 +43,9 @@ Item {
             aboveWindows: false
             focusable: false
             exclusionMode: ExclusionMode.Ignore
+            // 后端没出画之前是空白表面；PanelWindow 默认白底，在深色桌面里
+            // 就是“壁纸变成纯白”，所以显式压黑
+            color: "#000000"
             WlrLayershell.namespace: "Nox:wallpaper"
             WlrLayershell.layer: WlrLayer.Background
             implicitHeight: height
@@ -58,23 +65,42 @@ Item {
                 SceneViewer {
                     id: sceneView
 
+                    // 参数全部对齐 WE 插件 backend/Scene.qml 传给 SceneViewer 的那一组
                     source: WallpaperPath.source
                     assets: WallpaperPath.assetsPath
                     speed: WallpaperPath.speed
                     muted: WallpaperPath.muted
                     fps: WallpaperPath.fps
+                    presentMode: Settings.wallpaper.presentMode
+                    msaaMode: Settings.wallpaper.msaaMode
+                    renderScale: Settings.wallpaper.renderScale / 100.0   // 插件里也是 /100
+                    hdrOutput: Settings.wallpaper.hdrOutput
+                    systemAudioCapture: Settings.wallpaper.systemAudioCapture
+                    // 显示模式：0 保持宽高比（信箱） / 1 裁剪填充 / 2 拉伸填充
+                    fillMode: Settings.wallpaper.displayMode === 0
+                        ? SceneViewer.ASPECTFIT
+                        : (Settings.wallpaper.displayMode === 1 ? SceneViewer.ASPECTCROP : SceneViewer.STRETCH)
 
+                    // 插件里 scene 是吃鼠标的（交互式场景），这里跟设置项走
                     Component.onCompleted: {
-                        setAcceptMouse(false);
-                        setAcceptHover(false);
-                        if (WallpaperPath.paused)
+                        setAcceptMouse(Settings.wallpaper.mouseInput);
+                        setAcceptHover(Settings.wallpaper.mouseInput);
+                        if (WallpaperPath.suspended)
                             sceneView.pause();
                     }
 
                     Connections {
+                        target: Settings.wallpaper
+                        function onMouseInputChanged() {
+                            sceneView.setAcceptMouse(Settings.wallpaper.mouseInput);
+                            sceneView.setAcceptHover(Settings.wallpaper.mouseInput);
+                        }
+                    }
+
+                    Connections {
                         target: WallpaperPath
-                        function onPausedChanged() {
-                            if (WallpaperPath.paused)
+                        function onSuspendedChanged() {
+                            if (WallpaperPath.suspended)
                                 sceneView.pause();
                             else
                                 sceneView.play();
@@ -113,14 +139,18 @@ Item {
 
                     Component.onCompleted: {
                         applyOptions();
-                        if (WallpaperPath.paused)
+                        // 先 play() 让 mpv 载入第一帧，再 pause()。
+                        // 直接在未载入时 pause() 会得到一个没有任何画面的表面（纯色）。
+                        if (WallpaperPath.suspended) {
+                            player.play();
                             player.pause();
+                        }
                     }
 
                     Connections {
                         target: WallpaperPath
-                        function onPausedChanged() {
-                            if (WallpaperPath.paused)
+                        function onSuspendedChanged() {
+                            if (WallpaperPath.suspended)
                                 player.pause();
                             else
                                 player.play();
@@ -151,7 +181,7 @@ Item {
                     id: videoItem
 
                     source: WallpaperPath.source
-                    autoPlay: !WallpaperPath.paused
+                    autoPlay: !WallpaperPath.suspended
                     loops: MediaPlayer.Infinite
                     muted: WallpaperPath.muted
                     volume: WallpaperPath.volume
@@ -159,8 +189,8 @@ Item {
 
                     Connections {
                         target: WallpaperPath
-                        function onPausedChanged() {
-                            if (WallpaperPath.paused)
+                        function onSuspendedChanged() {
+                            if (WallpaperPath.suspended)
                                 videoItem.pause();
                             else
                                 videoItem.play();
@@ -216,12 +246,12 @@ Item {
         const url = String(WallpaperPath.source);
         if (webProc.running && root.webUrl === url
                 && root.webMuted === WallpaperPath.muted
-                && root.webPaused === WallpaperPath.paused)
+                && root.webPaused === WallpaperPath.suspended)
             return;
 
         root.webUrl = url;
         root.webMuted = WallpaperPath.muted;
-        root.webPaused = WallpaperPath.paused;
+        root.webPaused = WallpaperPath.suspended;
         webProc.running = false;
         webRestart.restart();
     }
@@ -239,7 +269,7 @@ Item {
         function onWallpaperTypeChanged() { root.syncWeb(); }
         function onSourceChanged() { root.syncWeb(); }
         function onMutedChanged() { root.syncWeb(); }
-        function onPausedChanged() { root.syncWeb(); }
+        function onSuspendedChanged() { root.syncWeb(); }
     }
 
     Component.onCompleted: root.syncWeb()

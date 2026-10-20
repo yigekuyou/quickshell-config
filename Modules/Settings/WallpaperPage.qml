@@ -412,7 +412,7 @@ SettingsPage {
                         text: qsTr("暂停")
                         iconName: "media-playback-pause"
                         description: qsTr("检测到指定窗口时自动暂停壁纸")
-                        wired: false
+                        wired: true
                         model: [
                             { text: qsTr("焦点或最大化窗口"), value: 0 },
                             { text: qsTr("焦点窗口"), value: 1 },
@@ -455,7 +455,7 @@ SettingsPage {
                     SettingsComboRow {
                         text: qsTr("锁屏时")
                         iconName: "system-lock-screen"
-                        wired: false
+                        wired: true
                         model: [
                             { text: qsTr("继续运行"), value: 0 },
                             { text: qsTr("暂停（推荐）"), value: 1 }
@@ -475,7 +475,7 @@ SettingsPage {
                     SettingsComboRow {
                         text: qsTr("渲染分辨率")
                         iconName: "video-display"
-                        wired: false
+                        wired: true
                         description: qsTr("以更低分辨率绘制再放大：画面更软，GPU 开销大幅下降")
                         model: [
                             { text: qsTr("原生（100%）"), value: 100 },
@@ -490,7 +490,7 @@ SettingsPage {
                     SettingsComboRow {
                         text: qsTr("抗锯齿")
                         iconName: "video-display"
-                        wired: false
+                        wired: true
                         model: [
                             { text: qsTr("自动（推荐）"), value: 0 },
                             { text: qsTr("关"), value: 1 },
@@ -517,7 +517,7 @@ SettingsPage {
                     SettingsSliderRow {
                         text: qsTr("恢复延迟")
                         iconName: "chronometer"
-                        wired: false
+                        wired: true
                         description: qsTr("从暂停恢复播放前等待多久")
                         from: 1
                         to: 60000
@@ -596,7 +596,7 @@ SettingsPage {
                     SettingsSwitchRow {
                         text: qsTr("捕获系统音频")
                         iconName: "audio-input-microphone"
-                        wired: false
+                        wired: true
                         description: qsTr("音频响应型壁纸跟随全部系统声音，而不是只跟壁纸自带音乐")
                         switchOn: Settings.wallpaper.systemAudioCapture
                         onSwitchToggled: on => Settings.wallpaper.systemAudioCapture = on
@@ -605,7 +605,7 @@ SettingsPage {
                     SettingsSwitchRow {
                         text: qsTr("鼠标输入")
                         iconName: "input-mouse"
-                        wired: false
+                        wired: true
                         switchOn: Settings.wallpaper.mouseInput
                         onSwitchToggled: on => Settings.wallpaper.mouseInput = on
                     }
@@ -681,7 +681,7 @@ SettingsPage {
                     SettingsComboRow {
                         text: qsTr("呈现模式")
                         iconName: "video-display"
-                        wired: false
+                        wired: true
                         model: [
                             { text: qsTr("自动"), value: 0 },
                             { text: qsTr("立即"), value: 1 },
@@ -695,7 +695,7 @@ SettingsPage {
                     SettingsSwitchRow {
                         text: qsTr("HDR 输出")
                         iconName: "video-display-brightness"
-                        wired: false
+                        wired: true
                         switchOn: Settings.wallpaper.hdrOutput
                         onSwitchToggled: on => Settings.wallpaper.hdrOutput = on
                     }

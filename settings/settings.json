@@ -33,7 +33,7 @@
         "pauseOnBattery": true,
         "paused": false,
         "playlistNotify": false,
-        "presentMode": 1,
+        "presentMode": 0,
         "randomizeWallpaper": false,
         "renderScale": 100,
         "resumeTime": 500,
@@ -44,6 +44,6 @@
         "verboseLogging": false,
         "videoBackend": 1,
         "volume": 1,
-        "wallpaperId": "3541689554"
+        "wallpaperId": "1761310151"
     }
 }
