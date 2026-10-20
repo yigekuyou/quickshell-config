@@ -31,6 +31,7 @@ Singleton {
 
     // 常用段落单独暴露，省得每次写 Settings.options.xxx
     readonly property alias bar: barCfg
+    readonly property alias island: islandCfg
     readonly property alias idle: idleCfg
     readonly property alias wallpaper: wallpaperCfg
 
@@ -188,16 +189,40 @@ Singleton {
             // 顶栏几何：数值是 gridUnit 的倍数（见 Config/Sizes.qml）
             property JsonObject bar: JsonObject {
                 id: barCfg
+                // 统一设置：整栏高度 / 圆角 / 是否显示文字 / 图标圆环
                 property real height: 1.4
                 property real cornerRadius: 0.5
-                // 密度三件套：图标大小 / 胶囊左右内边距 / 按钮间距（都是 gridUnit 倍数）
-                property real iconSize: 0.85
-                property real padding: 0.28
-                property real spacing: 0.12
-                // 类型：true = 图标 + 文字，false = 只显示图标
                 property bool labels: true
-                // 百分比画在图标外圈（音量等），而不是只显示数字
                 property bool ring: true
+                // 分区设置：左 / 中 / 右 各自的 图标大小、内边距、按钮间距
+                // （扁平键，避免 JsonAdapter 嵌套对象在写回时互相覆盖）
+                property real leftIconSize: 0.85
+                property real leftPadding: 0.28
+                property real leftSpacing: 0.12
+                property real centerIconSize: 0.85
+                property real centerPadding: 0.28
+                property real centerSpacing: 0.12
+                property real rightIconSize: 0.85
+                property real rightPadding: 0.28
+                property real rightSpacing: 0.12
+            }
+
+            // 灵动岛（顶栏中间那个浮动面板）的尺寸，单位 = gridUnit
+            property JsonObject island: JsonObject {
+                id: islandCfg
+                // 灵动岛（顶栏中间那个浮动面板）的尺寸，单位 = gridUnit
+                property real collapsedWidth: 12
+                property real collapsedHeight: 2
+                property real expandedWidth: 24
+                property real expandedHeight: 12
+                property real lyricsWidth: 28
+                property real lyricsHeight: 2
+                property real dashboardWidth: 45
+                property real dashboardHeight: 24
+                property real authWidth: 30
+                property real authHeight: 15
+                // 圆角：小尺寸状态用 radius，大面板用 radius * 1.5
+                property real radius: 1.0
             }
 
             // 空闲行为（见 Config/Idle.qml，秒）

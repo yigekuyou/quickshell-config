@@ -18,9 +18,14 @@ Singleton {
     // 设置面板「状态栏」页里的两个滑块就是它们
     readonly property real cornerRadius: Kirigami.Units.gridUnit * Settings.bar.cornerRadius
     readonly property real barHeight: Kirigami.Units.gridUnit * Settings.bar.height
-    readonly property real barIconSize: Kirigami.Units.gridUnit * Settings.bar.iconSize
-    readonly property real barPadding: Kirigami.Units.gridUnit * Settings.bar.padding
-    readonly property real barSpacing: Kirigami.Units.gridUnit * Settings.bar.spacing
+    // 分区密度：section = "left" / "center" / "right"
+    function secIcon(section) { return Kirigami.Units.gridUnit * Settings.bar[section + "IconSize"]; }
+    function secPad(section) { return Kirigami.Units.gridUnit * Settings.bar[section + "Padding"]; }
+    function secGap(section) { return Kirigami.Units.gridUnit * Settings.bar[section + "Spacing"]; }
+    // 兼容旧调用：默认按右侧（托盘）算
+    readonly property real barIconSize: root.secIcon("right")
+    readonly property real barPadding: root.secPad("right")
+    readonly property real barSpacing: root.secGap("right")
     readonly property bool barLabels: Settings.bar.labels
     readonly property bool barRing: Settings.bar.ring
 

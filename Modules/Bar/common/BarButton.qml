@@ -29,7 +29,9 @@ Kirigami.ShadowedRectangle {
 
     // ======================= 内容 =======================
     property string icon: ""
-    property real iconSize: Sizes.barIconSize
+    // 所在分区：left / center / right，决定图标/留白/间距取哪一套设置
+    property string section: "left"
+    property real iconSize: Sizes.secIcon(root.section)
     property string text: ""
     // -1 = 不限宽；>0 = 文字超过这个宽度用省略号截断
     property real textMaxWidth: -1
@@ -70,8 +72,8 @@ Kirigami.ShadowedRectangle {
     property real idleOpacity: 0.5
     property real hoverOpacity: 0.75
     property real pressedOpacity: 0.9
-    property real horizontalPadding: Sizes.barPadding
-    property real spacing: Sizes.barSpacing
+    property real horizontalPadding: Sizes.secPad(root.section)
+    property real spacing: Sizes.secGap(root.section)
     // 正方形（只放一个图标时用，配合 horizontalPadding: 0）
     property bool square: false
     // 实心底（危险按钮）：走 fillColor + onFillColor，不再叠透明度

@@ -13,6 +13,7 @@ import org.kde.kirigami as Kirigami
 // 这里不再重复注册，只翻转同一个 WidgetState.settingsOpen。
 BarButton {
     id: root
+    section: "left"
 
     icon: "settings-configure"
     iconSize: Math.round(Kirigami.Units.gridUnit * 0.9)

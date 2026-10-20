@@ -107,7 +107,7 @@ Kirigami.AbstractCard {
                     visible: UPower.displayDevice.ready
                     source: UPower.displayDevice.onBattery ? UPower.displayDevice.iconName : "ac-adapter-symbolic"
                     color: Kirigami.Theme.activeTextColor
-                    implicitHeight: Sizes.barIconSize
+                    implicitHeight: Sizes.secIcon("right")
                     implicitWidth: implicitHeight
                     TapHandler {
                         acceptedButtons: Qt.LeftButton
@@ -123,7 +123,7 @@ Kirigami.AbstractCard {
                     visible: warning //
                     source: "emblem-warning"
                     color: Kirigami.Theme.activeTextColor
-                    implicitHeight: Sizes.barIconSize
+                    implicitHeight: Sizes.secIcon("right")
                     implicitWidth: implicitHeight
                     TapHandler {
                         acceptedButtons: Qt.LeftButton
@@ -137,7 +137,7 @@ Kirigami.AbstractCard {
                 Kirigami.Icon {
                     id: nowpower
                     color: Kirigami.Theme.activeTextColor
-                    implicitHeight: Sizes.barIconSize
+                    implicitHeight: Sizes.secIcon("right")
                     implicitWidth: implicitHeight
                     TapHandler {
                         acceptedButtons: Qt.LeftButton
@@ -176,7 +176,7 @@ Kirigami.AbstractCard {
                 id: performance
                 source: "power-profile-performance-symbolic"
                 color: Kirigami.Theme.activeTextColor
-                implicitHeight: Sizes.barIconSize
+                implicitHeight: Sizes.secIcon("right")
                 implicitWidth: implicitHeight
                 TapHandler {
                     onTapped: {
@@ -189,7 +189,7 @@ Kirigami.AbstractCard {
                 id: balanced
                 source: "power-profile-balanced-symbolic"
                 color: Kirigami.Theme.activeTextColor
-                implicitHeight: Sizes.barIconSize
+                implicitHeight: Sizes.secIcon("right")
                 implicitWidth: implicitHeight
                 TapHandler {
                     onTapped: {
@@ -202,7 +202,7 @@ Kirigami.AbstractCard {
                 id: powerSaver
                 source: "power-profile-power-saver-symbolic"
                 color: Kirigami.Theme.activeTextColor
-                implicitHeight: Sizes.barIconSize
+                implicitHeight: Sizes.secIcon("right")
                 implicitWidth: implicitHeight
                 TapHandler {
                     onTapped: {
@@ -276,7 +276,7 @@ Kirigami.AbstractCard {
                             return modelData.iconName;
                         }
                         color: Kirigami.Theme.activeTextColor
-                        implicitHeight: Sizes.barIconSize
+                        implicitHeight: Sizes.secIcon("right")
                         implicitWidth: implicitHeight
                     }
                 }

@@ -14,6 +14,7 @@ import org.kde.kirigami as Kirigami
 // 复杂，所以走 BarButton 的 content 通道；胶囊外观和交互仍由 BarButton 统一。
 BarButton {
     id: root
+    section: "right"
 
     checked: wifiPanel.visible
     spacing: Kirigami.Units.mediumSpacing

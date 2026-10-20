@@ -11,6 +11,7 @@ import org.kde.kirigami as Kirigami
 // 顶栏蓝牙入口。外观与 Clipboard / Network / Volume 一致，统一来自 BarButton。
 BarButton {
     id: root
+    section: "right"
 
     // 注意不能叫 enabled —— Item 自带这个属性
     readonly property bool adapterOn: Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.state === BluetoothAdapterState.Enabled

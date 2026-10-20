@@ -6,57 +6,38 @@ import qs.Services
 import org.kde.kirigami as Kirigami
 import org.kde.kirigamiaddons.formcard as FormCard
 
-// 托盘（顶栏右侧那排图标按钮）的密度与外观。
-// 数值都是 gridUnit 的倍数，写进 settings.json 的 bar 段，
-// Config/Sizes.qml 立刻生效。
+// 顶栏右侧那一组（系统托盘 + 状态指示）的密度与外观。
+// 数值是 gridUnit 的倍数，写进 settings.json 的 bar 段，改动即时生效。
 SettingsPage {
     id: root
 
     title: qsTr("托盘")
     icon: "preferences-system-symbolic"
 
-    function applyPreset(height, iconSize, padding, spacing) {
-        Settings.bar.height = height;
-        Settings.bar.iconSize = iconSize;
-        Settings.bar.padding = padding;
-        Settings.bar.spacing = spacing;
+    // 预设只动右侧三项（高度是全局的，不在这里改）
+    function applyPreset(iconSize, padding, spacing) {
+        Settings.bar.rightIconSize = iconSize;
+        Settings.bar.rightPadding = padding;
+        Settings.bar.rightSpacing = spacing;
     }
 
-    SettingsGroup {
+    FormCard.FormHeader {
+        title: qsTr("右侧外观")
+    }
 
-        title: qsTr("密度")
+    FormCard.FormCard {
 
-        SettingsSliderRow {
-            text: qsTr("图标大小")
-            description: qsTr("实际图标 %1 px").arg(Math.round(Sizes.barIconSize))
-            from: 0.55
-            to: 1.4
-            stepSize: 0.05
-            decimals: 2
-            value: Settings.bar.iconSize
-            onMoved: value => Settings.bar.iconSize = Math.round(value * 20) / 20
-        }
+        FormCard.AbstractFormDelegate {
+            Layout.fillWidth: true
+            background: null
 
-        SettingsSliderRow {
-            text: qsTr("内边距")
-            description: qsTr("胶囊左右留白，实际 %1 px").arg(Math.round(Sizes.barPadding))
-            from: 0
-            to: 0.9
-            stepSize: 0.02
-            decimals: 2
-            value: Settings.bar.padding
-            onMoved: value => Settings.bar.padding = Math.round(value * 50) / 50
-        }
-
-        SettingsSliderRow {
-            text: qsTr("按钮间距")
-            description: qsTr("相邻按钮之间，实际 %1 px").arg(Math.round(Sizes.barSpacing))
-            from: 0
-            to: 0.6
-            stepSize: 0.02
-            decimals: 2
-            value: Settings.bar.spacing
-            onMoved: value => Settings.bar.spacing = Math.round(value * 50) / 50
+            contentItem: Label {
+                Layout.fillWidth: true
+                wrapMode: Text.WordWrap
+                text: qsTr("图标大小 / 内边距 / 按钮间距见「状态栏 → 右侧」。")
+                font.pixelSize: Kirigami.Theme.smallFont.pixelSize
+                color: Kirigami.Theme.disabledTextColor
+            }
         }
     }
 
@@ -94,8 +75,7 @@ SettingsPage {
 
                 Label {
                     Layout.fillWidth: true
-                    text: qsTr("一键写入上面几项（高度 + 图标 + 留白 + 间距）")
-                    wrapMode: Text.WordWrap
+                    text: qsTr("一键写入右侧的图标 / 留白 / 间距")
                     font.pixelSize: Kirigami.Theme.smallFont.pixelSize
                     color: Kirigami.Theme.disabledTextColor
                 }
@@ -106,17 +86,17 @@ SettingsPage {
 
                     Button {
                         text: qsTr("紧凑")
-                        onClicked: root.applyPreset(1.3, 0.78, 0.22, 0.08)
+                        onClicked: root.applyPreset(0.78, 0.22, 0.08)
                     }
 
                     Button {
                         text: qsTr("标准")
-                        onClicked: root.applyPreset(1.4, 0.85, 0.28, 0.12)
+                        onClicked: root.applyPreset(0.85, 0.28, 0.12)
                     }
 
                     Button {
                         text: qsTr("舒适")
-                        onClicked: root.applyPreset(1.6, 1.0, 0.55, 0.25)
+                        onClicked: root.applyPreset(1.0, 0.5, 0.24)
                     }
 
                     Item {

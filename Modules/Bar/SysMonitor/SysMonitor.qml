@@ -155,8 +155,8 @@ Kirigami.AbstractCard {
             spacing: Kirigami.Units.smallSpacing
             Kirigami.Icon {
 		    source: "memory"
-		    implicitWidth: Sizes.barIconSize
-		    implicitHeight: Sizes.barIconSize
+		    implicitWidth: Sizes.secIcon("right")
+		    implicitHeight: Sizes.secIcon("right")
 		    color: Kirigami.Theme.positiveTextColor
 	    }
 	    Label {
@@ -171,8 +171,8 @@ Kirigami.AbstractCard {
 		spacing: Kirigami.Units.smallSpacing
 		Kirigami.Icon {
 			source: "temp-symbolic"
-			implicitWidth: Sizes.barIconSize
-			implicitHeight: Sizes.barIconSize
+			implicitWidth: Sizes.secIcon("right")
+			implicitHeight: Sizes.secIcon("right")
 			color: getStatusColor(root.tempValue, 70, 85)
 		}
 		Label { text: root.tempValue + "°C" }
@@ -184,8 +184,8 @@ Kirigami.AbstractCard {
 		spacing: Kirigami.Units.smallSpacing
 		Kirigami.Icon {
 			source: "cpu"
-			implicitWidth: Sizes.barIconSize
-			implicitHeight: Sizes.barIconSize
+			implicitWidth: Sizes.secIcon("right")
+			implicitHeight: Sizes.secIcon("right")
 			color: getStatusColor(root.cpuValue, 70, 90)
 		}
 		Label { text: root.cpuValue + "%" }
@@ -198,8 +198,8 @@ Kirigami.AbstractCard {
 
 		Kirigami.Icon {
 			source: "video-display" // 或者使用 "gpu" (如果你的图标库支持)
-			implicitWidth: Sizes.barIconSize
-			implicitHeight: Sizes.barIconSize
+			implicitWidth: Sizes.secIcon("right")
+			implicitHeight: Sizes.secIcon("right")
 			// 负载高时变色
 			color: getStatusColor(root.gpuLoad, 70, 90)
 		}

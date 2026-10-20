@@ -10,6 +10,7 @@ import org.kde.kirigami as Kirigami
 // 外观与交互全部交给 qs.Modules.Bar.common.BarButton。
 BarButton {
     id: root
+    section: "right"
 
     readonly property bool muted: Volume.sinkMuted || Volume.sinkVolume <= 0
 

@@ -34,9 +34,9 @@ Kirigami.ShadowedRectangle {
             when: isAuthMode
             PropertyChanges {
                 target: root
-                width: unit * 30
-                height: unit * 15
-                radius: unit * 1.5
+                width: unit * Settings.island.authWidth
+                height: unit * Settings.island.authHeight
+                radius: unit * Settings.island.radius * 1.5
             }
         },
         State {
@@ -44,9 +44,9 @@ Kirigami.ShadowedRectangle {
             when: showDashboard
             PropertyChanges {
                 target: root
-                width: unit * 45
-                height: unit * 24
-                radius: unit * 1.5
+                width: unit * Settings.island.dashboardWidth
+                height: unit * Settings.island.dashboardHeight
+                radius: unit * Settings.island.radius * 1.5
             }
         },
         State {
@@ -54,9 +54,9 @@ Kirigami.ShadowedRectangle {
             when: expanded&&(Lyrics.playerManager.count >0)
             PropertyChanges {
                 target: root
-                width: unit * 24
-                height: unit * 12
-                radius: unit * 1.5
+                width: unit * Settings.island.expandedWidth
+                height: unit * Settings.island.expandedHeight
+                radius: unit * Settings.island.radius * 1.5
             }
         },
         State {
@@ -64,9 +64,9 @@ Kirigami.ShadowedRectangle {
             when: showLyrics && !showDashboard &&(Lyrics.playerManager.count >0)
             PropertyChanges {
                 target: root
-                width: unit * 28
-                height: unit * 2
-                radius: unit
+                width: unit * Settings.island.lyricsWidth
+                height: unit * Settings.island.lyricsHeight
+                radius: unit * Settings.island.radius
             }
         },
         State {
@@ -74,9 +74,9 @@ Kirigami.ShadowedRectangle {
             when: true
             PropertyChanges {
                 target: root
-                width: unit * 12
-                height: unit * 2
-                radius: unit * 0.8
+                width: unit * Settings.island.collapsedWidth
+                height: unit * Settings.island.collapsedHeight
+                radius: unit * Settings.island.radius * 0.8
             }
         }
     ]

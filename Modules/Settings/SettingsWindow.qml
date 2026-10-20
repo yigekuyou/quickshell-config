@@ -64,6 +64,11 @@ Variants {
                 "component": "BarPage.qml"
             },
             {
+                "icon": "preferences-desktop-effects",
+                "label": qsTr("灵动岛"),
+                "component": "IslandPage.qml"
+            },
+            {
                 "icon": "preferences-system-symbolic",
                 "label": qsTr("托盘"),
                 "component": "TrayPage.qml"
@@ -224,6 +229,7 @@ Variants {
 
                         WallpaperPage {}
                         BarPage {}
+                        IslandPage {}
                         TrayPage {}
                         IdlePage {}
                         AboutPage {}

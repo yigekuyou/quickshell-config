@@ -184,7 +184,7 @@ Kirigami.ShadowedRectangle {
                         elide: Text.ElideRight
                         font.pointSize: Sizes.menuBarFontSize
                         text: topItem.barText !== "" ? topItem.barText : "…"
-                        color: Kirigami.Theme.textColor
+                        color: Kirigami.Theme.highlightColor
                     }
 
                     // 压缩后标题被省略：悬停时把完整标题浮在本项上方（纯绘制，

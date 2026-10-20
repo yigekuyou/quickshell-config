@@ -9,6 +9,7 @@ import org.kde.kirigami as Kirigami
 // interactive: false 关掉 BarButton 自己的光标/点击处理，避免和 TrayItem 抢事件。
 BarButton {
     id: root
+    section: "right"
 
     interactive: false
     // 内边距不再写死：跟随设置「托盘 → 内边距」（BarButton 默认 Sizes.barPadding）

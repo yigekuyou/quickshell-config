@@ -14,6 +14,7 @@ import org.kde.kirigami as Kirigami
 // 现在通知中心就在本进程里，点按钮只是切一个布尔值。
 BarButton {
     id: root
+    section: "right"
 
     readonly property bool dnd: NotificationManager.dnd
     readonly property int notifCount: NotificationManager.count

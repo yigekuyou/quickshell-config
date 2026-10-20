@@ -43,6 +43,22 @@ SettingsPage {
 
     }
 
+    FormCard.FormHeader {
+        title: qsTr("左侧（应用菜单 / 工作区 / 剪贴板 / 设置）")
+    }
+
+    SectionDensity {
+        section: "left"
+    }
+
+    FormCard.FormHeader {
+        title: qsTr("右侧（托盘 / 音量 / 网络 / 蓝牙 / 通知）")
+    }
+
+    SectionDensity {
+        section: "right"
+    }
+
     SettingsGroup {
 
         title: qsTr("默认值")
