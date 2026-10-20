@@ -56,7 +56,8 @@ Variants {
 		// 不再往下留间距
 		anchor.margins.top: 0
 
-		visible: true
+		// 全屏（游戏/视频/演示）时不显示灵动岛，别挡画面
+		visible: !FullscreenState.covers(modelData)
 		// 只让“岛”本身可点击：弹窗其余透明区域把点击透传给下面的栏内容
 		// （否则居中的弹窗会盖住 Workspaces，点不动）
 		mask: Region {

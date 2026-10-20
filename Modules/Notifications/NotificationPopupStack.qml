@@ -42,7 +42,8 @@ PanelWindow {
     implicitHeight: list.contentHeight
 
     // 没有弹窗时把表面整个收掉，不留 0 高度的空 surface
-    visible: NotificationManager.hasPopups
+    // 全屏时也收掉（通知仍在队列里，退出全屏后照常弹出）
+    visible: NotificationManager.hasPopups && !FullscreenState.covers(root.screen)
 
     // 跟随当前聚焦的显示器；非 Hyprland 会话退回第一块屏
     function pickScreen() {
