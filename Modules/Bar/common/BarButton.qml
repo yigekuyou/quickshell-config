@@ -43,8 +43,12 @@ Kirigami.ShadowedRectangle {
     // 图标外围的进度环（0..1，< 0 不画）：百分比画在图标外圈
     property real progress: -1
     // 环的直径 = iconSize * ringScale；线宽 ringWidth
-    property real ringScale: 1.7
-    property real ringWidth: 2
+    property real ringScale: Sizes.barRingScale
+    property real ringWidth: Sizes.barRingWidth
+    property real ringTrackOpacity: Sizes.barRingTrackOpacity
+    readonly property bool ringShown: root.progress >= 0 && Sizes.barRing
+    // 直径跟着图标走，上限是栏高（Sizes.ringSize 里夹好）
+    readonly property real ringSize: Sizes.ringSize(root.iconSize)
 
     // ======================= 状态 =======================
     // 对应“按钮背后的面板已打开”，用来点亮描边与背景
@@ -132,7 +136,9 @@ Kirigami.ShadowedRectangle {
         }
 
         Item {
-            implicitWidth: root.iconSize
+            // 环比图标大时按环的直径占位（环是居中的），
+            // 否则相邻按钮的环会伸进对方的地盘里互相压住
+            implicitWidth: root.ringShown ? Math.max(root.iconSize, root.ringSize) : root.iconSize
             implicitHeight: root.iconSize
             Layout.alignment: Qt.AlignVCenter
 
@@ -145,46 +151,14 @@ Kirigami.ShadowedRectangle {
                 color: root.contentColor
             }
 
-            // 进度环：底环 + 进度弧（从 12 点方向顺时针）
-            Shape {
-                id: ring
-
+            // 进度环（实现见 common/Ring.qml）
+            Ring {
                 anchors.centerIn: parent
-                width: Math.round(root.iconSize * root.ringScale)
-                height: width
-                visible: root.icon !== "" && root.progress >= 0
-                preferredRendererType: Shape.CurveRenderer
-
-                ShapePath {
-                    fillColor: "transparent"
-                    strokeColor: Qt.alpha(root.contentColor, 0.22)
-                    strokeWidth: root.ringWidth
-
-                    PathAngleArc {
-                        centerX: ring.width / 2
-                        centerY: ring.height / 2
-                        radiusX: ring.width / 2 - root.ringWidth / 2
-                        radiusY: ring.height / 2 - root.ringWidth / 2
-                        startAngle: -90
-                        sweepAngle: 360
-                    }
-                }
-
-                ShapePath {
-                    fillColor: "transparent"
-                    strokeColor: root.checked ? root.accentColor : root.contentColor
-                    strokeWidth: root.ringWidth
-                    capStyle: ShapePath.RoundCap
-
-                    PathAngleArc {
-                        centerX: ring.width / 2
-                        centerY: ring.height / 2
-                        radiusX: ring.width / 2 - root.ringWidth / 2
-                        radiusY: ring.height / 2 - root.ringWidth / 2
-                        startAngle: -90
-                        sweepAngle: 360 * Math.max(0, Math.min(1, root.progress))
-                    }
-                }
+                size: root.ringSize
+                lineWidth: root.ringWidth
+                trackOpacity: root.ringTrackOpacity
+                color: root.checked ? root.accentColor : root.contentColor
+                progress: root.ringShown ? root.progress : -1
             }
         }
 

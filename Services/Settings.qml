@@ -194,6 +194,11 @@ Singleton {
                 property real cornerRadius: 0.5
                 property bool labels: true
                 property bool ring: true
+                // 圆环几何：直径 = 图标 × ringScale（超出栏高时按栏高收住），
+                // ringWidth 线宽，ringTrackOpacity 底环（未走完那圈）的浓度
+                property real ringScale: 1.3
+                property real ringWidth: 1.6
+                property real ringTrackOpacity: 0.16
                 // 分区设置：左 / 中 / 右 各自的 图标大小、内边距、按钮间距
                 // （扁平键，避免 JsonAdapter 嵌套对象在写回时互相覆盖）
                 property real leftIconSize: 0.85

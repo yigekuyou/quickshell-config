@@ -69,10 +69,58 @@ SettingsPage {
 
         SettingsSwitchRow {
             text: qsTr("图标圆环")
-            description: qsTr("把百分比画成图标外圈的进度环（音量等）")
+            description: qsTr("把百分比画成图标外圈的进度环（音量、SysMonitor 等）")
             iconName: "media-record-symbolic"
             switchOn: Settings.bar.ring
             onSwitchToggled: on => Settings.bar.ring = on
+        }
+    }
+
+    SettingsGroup {
+
+        title: qsTr("圆环")
+
+        SettingsSliderRow {
+            text: qsTr("环大小")
+            description: qsTr("环直径 = 图标 × 倍数，但不超过栏高（当前上限约 %1 px）。图标 %2 px，环 %3 px")
+                .arg(Math.round(Sizes.barHeight - 2))
+                .arg(Math.round(Sizes.secIcon("right")))
+                .arg(Math.round(Sizes.ringSize(Sizes.secIcon("right"))))
+            iconName: "media-record-symbolic"
+            from: 0.9
+            to: 2.0
+            stepSize: 0.05
+            decimals: 2
+            value: Settings.bar.ringScale
+            wired: Settings.bar.ring
+            onMoved: value => Settings.bar.ringScale = Math.round(value * 20) / 20
+        }
+
+        SettingsSliderRow {
+            text: qsTr("线宽")
+            description: qsTr("数值越小越精致，太小会碎成点")
+            iconName: "transform-scale-horizontal"
+            from: 1.0
+            to: 3.0
+            stepSize: 0.1
+            decimals: 1
+            value: Settings.bar.ringWidth
+            suffix: " px"
+            wired: Settings.bar.ring
+            onMoved: value => Settings.bar.ringWidth = Math.round(value * 10) / 10
+        }
+
+        SettingsSliderRow {
+            text: qsTr("底环浓度")
+            description: qsTr("未走完那圈的透明度，0 = 只画进度弧")
+            iconName: "color-management"
+            from: 0
+            to: 0.5
+            stepSize: 0.02
+            decimals: 2
+            value: Settings.bar.ringTrackOpacity
+            wired: Settings.bar.ring
+            onMoved: value => Settings.bar.ringTrackOpacity = Math.round(value * 50) / 50
         }
     }
 
@@ -112,6 +160,9 @@ SettingsPage {
                         onClicked: {
                             Settings.bar.height = 1.4;
                             Settings.bar.cornerRadius = 0.5;
+                            Settings.bar.ringScale = 1.3;
+                            Settings.bar.ringWidth = 1.6;
+                            Settings.bar.ringTrackOpacity = 0.16;
                         }
                     }
 

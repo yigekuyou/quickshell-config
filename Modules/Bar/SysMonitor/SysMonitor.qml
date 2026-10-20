@@ -4,6 +4,7 @@ import QtQuick.Controls
 import Quickshell
 import Quickshell.Io
 import qs.Config
+import qs.Modules.Bar.common
 import org.kde.kirigami as Kirigami
 Kirigami.AbstractCard {
     id: root
@@ -143,81 +144,83 @@ Kirigami.AbstractCard {
 	    }
     }
     // ================= 5. 布局内容 =================
-    contentItem: RowLayout {
-        id: contentLayout
-        spacing: Sizes.barSpacing  // 收起时去掉间距（跟随「托盘 → 按钮间距」）
-        // 从右向左排：RAM 在最右边
-        layoutDirection: Qt.RightToLeft
+    // 每个指标 = 图标 + 可选进度环 + 可选数值。
+    // 环（common/Ring.qml）用图标外圈表示百分比，受「状态栏 → 显示 → 图标圆环」控制；
+    // 数值受「显示文字」控制，两者关掉后只剩图标。
+    component Metric: RowLayout {
+        id: metric
+        property string icon: ""
+        property color tint: Kirigami.Theme.textColor
+        property real ratio: -1          // 0..1，<0 不画环
+        property string text: ""
 
-        // ---  RAM (常驻) ---
-        RowLayout {
-            id: ramGroup
-            spacing: Sizes.secGap("right")
+        spacing: Sizes.secGap("right")
+
+        Item {
+            // 环比图标大时按环的直径占位，免得四个指标之间的环互压
+            implicitWidth: Sizes.barRing ? Math.max(Sizes.secIcon("right"), Sizes.ringSize(Sizes.secIcon("right")))
+                                         : Sizes.secIcon("right")
+            implicitHeight: Sizes.secIcon("right")
+
             Kirigami.Icon {
-		    source: "memory"
-		    implicitWidth: Sizes.secIcon("right")
-		    implicitHeight: Sizes.secIcon("right")
-		    color: Kirigami.Theme.positiveTextColor
-	    }
-	    Label {
-		    visible: Sizes.barLabels
-		    text: root.memUsage +"%"
-	    }
+                anchors.centerIn: parent
+                source: metric.icon
+                implicitWidth: Sizes.secIcon("right")
+                implicitHeight: Sizes.secIcon("right")
+                color: metric.tint
+            }
+
+            Ring {
+                anchors.centerIn: parent
+                size: Sizes.ringSize(Sizes.secIcon("right"))
+                lineWidth: Sizes.barRingWidth
+                trackOpacity: Sizes.barRingTrackOpacity
+                color: metric.tint
+                progress: (Sizes.barRing && metric.ratio >= 0) ? Math.min(1, metric.ratio) : -1
+            }
         }
 
+        Label {
+            visible: Sizes.barLabels && metric.text !== ""
+            text: metric.text
+            font.pixelSize: Math.round(Sizes.secIcon("right") * 0.95)
+        }
+    }
 
-        // ---  Temp (展开显示) ---
-        RowLayout {
-		visible: root.expanded //
-		spacing: Sizes.secGap("right")
-		Kirigami.Icon {
-			source: "temp-symbolic"
-			implicitWidth: Sizes.secIcon("right")
-			implicitHeight: Sizes.secIcon("right")
-			color: getStatusColor(root.tempValue, 70, 85)
-		}
-		Label {
-			visible: Sizes.barLabels
-			text: root.tempValue + "°C"
-			font.pixelSize: Math.round(Sizes.secIcon("right") * 0.95)
-		}
-	}
+    contentItem: RowLayout {
+        id: contentLayout
+        spacing: Sizes.barSpacing
+        layoutDirection: Qt.RightToLeft   // RAM 在最右
 
-        // --- CPU (展开显示) ---
-        RowLayout {
-		visible: root.expanded //
-		spacing: Sizes.secGap("right")
-		Kirigami.Icon {
-			source: "cpu"
-			implicitWidth: Sizes.secIcon("right")
-			implicitHeight: Sizes.secIcon("right")
-			color: getStatusColor(root.cpuValue, 70, 90)
-		}
-		Label {
-			visible: Sizes.barLabels
-			text: root.cpuValue + "%"
-			font.pixelSize: Math.round(Sizes.secIcon("right") * 0.95)
-		}
-	}
-	// --- GPU (展开显示) ---
-	RowLayout {
-		visible: root.expanded
-		spacing: Sizes.secGap("right")
-		Layout.preferredWidth: visible ? -1 : 0
+        Metric {
+            icon: "memory"
+            tint: Kirigami.Theme.positiveTextColor
+            ratio: root.memUsage / 100
+            text: root.memUsage + "%"
+        }
 
-		Kirigami.Icon {
-			source: "video-display" // 或者使用 "gpu" (如果你的图标库支持)
-			implicitWidth: Sizes.secIcon("right")
-			implicitHeight: Sizes.secIcon("right")
-			// 负载高时变色
-			color: getStatusColor(root.gpuLoad, 70, 90)
-		}
-		Label {
-			visible: Sizes.barLabels
-			text: root.gpuLoad + "% | " + root.gpuPower + "W"
-			font.pixelSize: Math.round(Sizes.secIcon("right") * 0.95)
-		}
+        Metric {
+            visible: root.expanded
+            icon: "temp-symbolic"
+            tint: getStatusColor(root.tempValue, 70, 85)
+            ratio: root.tempValue / 100
+            text: root.tempValue + "°C"
+        }
 
-	}
+        Metric {
+            visible: root.expanded
+            icon: "cpu"
+            tint: getStatusColor(root.cpuValue, 70, 90)
+            ratio: root.cpuValue / 100
+            text: root.cpuValue + "%"
+        }
+
+        Metric {
+            visible: root.expanded
+            icon: "video-display"
+            tint: getStatusColor(root.gpuLoad, 70, 90)
+            ratio: root.gpuLoad / 100
+            text: root.gpuLoad + "% | " + root.gpuPower + "W"
+        }
     }
 }

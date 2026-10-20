@@ -21,6 +21,10 @@ PanelWindow {
 
     readonly property int cardWidth: Kirigami.Units.gridUnit * 21
 
+    // 这块表面跟随哪块屏。单独存一份，不要直接读 PanelWindow.screen：
+    // 表面隐藏时 screen 会变空，而 visible 又要读它来判断全屏 → 绑定环。
+    property var targetScreen: null
+
     color: "transparent"
 
     WlrLayershell.namespace: "quickshell-notification"
@@ -41,9 +45,11 @@ PanelWindow {
     implicitWidth: cardWidth
     implicitHeight: list.contentHeight
 
+    screen: root.targetScreen
+
     // 没有弹窗时把表面整个收掉，不留 0 高度的空 surface
     // 全屏时也收掉（通知仍在队列里，退出全屏后照常弹出）
-    visible: NotificationManager.hasPopups && !FullscreenState.covers(root.screen)
+    visible: NotificationManager.hasPopups && !FullscreenState.covers(root.targetScreen)
 
     // 跟随当前聚焦的显示器；非 Hyprland 会话退回第一块屏
     function pickScreen() {
@@ -55,9 +61,19 @@ PanelWindow {
         return Quickshell.screens.length > 0 ? Quickshell.screens[0] : null;
     }
 
-    onVisibleChanged: {
-        if (visible)
-            root.screen = root.pickScreen();
+    // 屏幕只在启动时定一次，之后跟着焦点显示器走。
+    // 不要在 onVisibleChanged 里赋值：visible 的绑定要读 root.screen，
+    // 在它的变更回调里再改 screen 会形成 visible ↔ screen 的绑定环。
+    Component.onCompleted: root.targetScreen = root.pickScreen()
+
+    Connections {
+        target: Hyprland
+
+        function onFocusedMonitorChanged() {
+            const s = root.pickScreen();
+            if (s && s !== root.targetScreen)
+                root.targetScreen = s;
+        }
     }
 
     ListView {

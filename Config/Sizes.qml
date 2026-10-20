@@ -28,6 +28,16 @@ Singleton {
     readonly property real barSpacing: root.secGap("right")
     readonly property bool barLabels: Settings.bar.labels
     readonly property bool barRing: Settings.bar.ring
+    // 圆环（BarButton / SysMonitor 共用）：直径 = 图标 × 倍数，
+    // 但不得超过栏高（否则会被栏边裁掉，也会压到邻居）
+    readonly property real barRingScale: Settings.bar.ringScale
+    readonly property real barRingWidth: Settings.bar.ringWidth
+    readonly property real barRingTrackOpacity: Settings.bar.ringTrackOpacity
+    function ringSize(iconPx) {
+        const wanted = Math.round(iconPx * root.barRingScale);
+        const capPx = Math.round(root.barHeight - 2);   // 上下各留 1px，别贴边
+        return Math.max(4, Math.min(wanted, capPx));
+    }
 
     // ==================== 字体 ====================
     readonly property string fontFamily: Kirigami.Theme.defaultFont.family
