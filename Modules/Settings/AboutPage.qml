@@ -32,8 +32,9 @@ SettingsPage {
         }
     ]
 
-    FormCard.FormCard {
-        Layout.fillWidth: true
+    SettingsGroup {
+
+        title: qsTr("配置位置")
 
         Repeater {
             model: root.entries
@@ -93,8 +94,9 @@ SettingsPage {
         }
     }
 
-    FormCard.FormCard {
-        Layout.fillWidth: true
+    SettingsGroup {
+
+        title: qsTr("维护")
 
         FormCard.AbstractFormDelegate {
             Layout.fillWidth: true

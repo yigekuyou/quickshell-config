@@ -14,8 +14,9 @@ SettingsPage {
     title: qsTr("空闲")
     icon: "preferences-desktop-screensaver"
 
-    FormCard.FormCard {
-        Layout.fillWidth: true
+    SettingsGroup {
+
+        title: qsTr("空闲行为")
 
         SettingsSwitchRow {
             text: qsTr("自动锁屏")
@@ -42,8 +43,9 @@ SettingsPage {
         }
     }
 
-    FormCard.FormCard {
-        Layout.fillWidth: true
+    SettingsGroup {
+
+        title: qsTr("等待时间")
 
         SettingsSliderRow {
             text: qsTr("锁屏等待")

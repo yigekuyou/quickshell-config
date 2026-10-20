@@ -214,6 +214,36 @@ Singleton {
                 property real volume: 1
                 property bool muted: true
                 property bool paused: false
+
+                // ---- 以下对齐 Plasma Wallpaper Engine 插件
+                // (com.github.captsilver.wallpaperEngineKde) 的设置面。
+                // 字段名与语义跟它的 cfg_* 一一对应，默认值也取它的默认。
+                // 标注 wired 的才是当前渲染器真正消费的，其余保留以便将来接入。
+                property int pauseMode: 0              // 0 焦点或最大化 / 1 焦点 / 2 最大化 / 3 全屏 / 4 任意 / 5 从不
+                property bool pauseFilterByScreen: false
+                property bool pauseOnBattery: true
+                property int pauseBatPercent: 20
+                property int screenSaverPolicy: 1      // 0 继续运行 / 1 暂停
+                property bool pauseDebugLogging: false
+                property int renderScale: 100          // 100 / 75 / 50 / 25
+                property int msaaMode: 0               // 0 自动 / 1 关 / 2 2x / 4 4x
+                property int displayMode: 1            // 0 保持宽高比 / 1 裁剪填充 / 2 拉伸填充
+                property string backgroundColor: "#000000"
+                property int resumeTime: 500           // ms
+                property bool randomizeWallpaper: false
+                property int switchTimer: 60           // 分钟
+                property bool noRandomWhilePaused: true
+                property bool playlistNotify: false
+                property bool systemAudioCapture: false
+                property bool mouseInput: true
+                property bool animatedPreview: true
+                property bool verboseLogging: false
+                property int videoBackend: 1           // 0 QtMultimedia / 1 mpv
+                property bool mpvStats: false
+                property bool mpvPowerSaving: false
+                property int presentMode: 1
+                property bool hdrOutput: false
+                property int cacheQuotaMB: 2048
             }
         }
     }

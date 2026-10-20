@@ -19,10 +19,14 @@ KDelegate.SwitchSubtitleDelegate {
 
     // 不用 checked / toggled：QQC2.SwitchDelegate 已经占了这两个名字
     property bool switchOn: false
+    // false = 该选项属于 WE 插件但当前渲染器不消费，整行置灰
+    property bool wired: true
+
     signal switchToggled(bool on)
 
     Layout.fillWidth: true
 
+    enabled: root.wired
     checked: root.switchOn
     onToggled: root.switchToggled(root.checked)
     onSwitchOnChanged: {

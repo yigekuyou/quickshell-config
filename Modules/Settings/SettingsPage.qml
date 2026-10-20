@@ -3,8 +3,12 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import org.kde.kirigami as Kirigami
 
-// 设置页容器：页头（图标 + 标题）+ 可滚动内容。
+// 设置页容器：页头（图标 + 标题 + 说明）+ 可滚动内容。
 // 页面内容直接写在里面（SettingsPage { FormCard.FormCard { ... } }）。
+//
+// 注意这里的 `data: [ ... ]`：本组件的默认属性被 aliases 给了 body.data
+// （页面内容要进 Flickable 里的 ColumnLayout），所以自身这套页头 + Flickable
+// 必须用 data: 显式塞给 Item，否则会被默认属性一起吸进 body，造成布局环。
 Item {
     id: root
 
@@ -13,71 +17,70 @@ Item {
     property string description: ""
     default property alias content: body.data
 
-    ColumnLayout {
-        anchors.fill: parent
-        spacing: Kirigami.Units.largeSpacing
+    data: [
+        ColumnLayout {
+            anchors.fill: parent
+            spacing: Kirigami.Units.largeSpacing
 
-        // ---------- 页头 ----------
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: Kirigami.Units.smallSpacing
-
-            Kirigami.Icon {
-                visible: root.icon !== ""
-                source: root.icon
-                implicitWidth: Kirigami.Units.iconSizes.medium
-                implicitHeight: implicitWidth
-                color: Kirigami.Theme.highlightColor
-                Layout.alignment: Qt.AlignVCenter
-            }
-
-            ColumnLayout {
+            RowLayout {
                 Layout.fillWidth: true
-                spacing: 0
+                spacing: Kirigami.Units.smallSpacing
 
-                Kirigami.Heading {
-                    text: root.title
-                    level: 2
-                    Layout.fillWidth: true
+                Kirigami.Icon {
+                    visible: root.icon !== ""
+                    source: root.icon
+                    implicitWidth: Kirigami.Units.iconSizes.medium
+                    implicitHeight: implicitWidth
+                    color: Kirigami.Theme.highlightColor
+                    Layout.alignment: Qt.AlignVCenter
                 }
 
-                Label {
+                ColumnLayout {
                     Layout.fillWidth: true
-                    visible: root.description !== ""
-                    text: root.description
-                    wrapMode: Text.WordWrap
-                    font: Kirigami.Theme.smallFont
-                    color: Kirigami.Theme.disabledTextColor
+                    spacing: 0
+
+                    Kirigami.Heading {
+                        text: root.title
+                        level: 2
+                        Layout.fillWidth: true
+                    }
+
+                    Label {
+                        Layout.fillWidth: true
+                        visible: root.description !== ""
+                        text: root.description
+                        wrapMode: Text.WordWrap
+                        font.pixelSize: Kirigami.Theme.smallFont.pixelSize
+                        color: Kirigami.Theme.disabledTextColor
+                    }
+                }
+            }
+
+            Kirigami.Separator {
+                Layout.fillWidth: true
+            }
+
+            Flickable {
+                id: flick
+
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                clip: true
+                contentWidth: width
+                contentHeight: body.implicitHeight
+                boundsBehavior: Flickable.StopAtBounds
+
+                ColumnLayout {
+                    id: body
+
+                    width: flick.width
+                    spacing: Kirigami.Units.largeSpacing
+                }
+
+                ScrollBar.vertical: ScrollBar {
+                    policy: flick.contentHeight > flick.height + 1 ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff
                 }
             }
         }
-
-        Kirigami.Separator {
-            Layout.fillWidth: true
-        }
-
-        // ---------- 内容 ----------
-        // Flickable 里的 ColumnLayout：FormCard 的 Layout.fillWidth 靠它生效
-        Flickable {
-            id: flick
-
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            clip: true
-            contentWidth: width
-            contentHeight: body.implicitHeight
-            boundsBehavior: Flickable.StopAtBounds
-
-            ColumnLayout {
-                id: body
-
-                width: flick.width
-                spacing: Kirigami.Units.largeSpacing
-            }
-
-            ScrollBar.vertical: ScrollBar {
-                policy: flick.contentHeight > flick.height + 1 ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff
-            }
-        }
-    }
+    ]
 }

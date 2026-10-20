@@ -43,6 +43,11 @@ Singleton {
     // （tmpfs、0700、仅本用户可访问）。不要用 /tmp 下的固定名字：那是全局共享的，
     // 多用户 / 多实例会互相覆盖，还能被预置符号链接。
     readonly property string shotCropFile: runtimeDir + "/quickshell-crop.png"
+    // 区域截图的「中间图」：只是给裁切器当解码源，用完即弃，所以用 BMP。
+    // BMP 的编码/解码是 memcpy 级（1920x1080 约 4~15ms），PNG 要 90~185ms，
+    // 而这两步都跑在 GUI 线程上 —— 点击复制之后那一下卡顿就是它。
+    // 成品（剪贴板 / 保存文件）仍然是 PNG。
+    readonly property string shotRawFile: runtimeDir + "/quickshell-shot.bmp"
 
     // ==================== XDG 用户目录 ====================
     // Qt StandardPaths 解析 user-dirs.dirs，本地化目录名（如中文的 ~/图片）自动适配

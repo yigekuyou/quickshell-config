@@ -15,8 +15,9 @@ SettingsPage {
     title: qsTr("状态栏")
     icon: "preferences-desktop-theme"
 
-    FormCard.FormCard {
-        Layout.fillWidth: true
+    SettingsGroup {
+
+        title: qsTr("尺寸")
 
         SettingsSliderRow {
             text: qsTr("高度")
@@ -41,8 +42,9 @@ SettingsPage {
         }
     }
 
-    FormCard.FormCard {
-        Layout.fillWidth: true
+    SettingsGroup {
+
+        title: qsTr("默认值")
 
         FormCard.AbstractFormDelegate {
             Layout.fillWidth: true

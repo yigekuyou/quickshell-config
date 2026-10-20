@@ -96,8 +96,10 @@ Item {
                     maxFps: WallpaperPath.fps
 
                     function applyOptions() {
-                        player.setProperty("keepaspect", true);
-                        player.setProperty("panscan", 1);
+                        // 显示模式对齐 WE 插件：0 保持宽高比 / 1 裁剪填充 / 2 拉伸填充
+                        const mode = Settings.wallpaper.displayMode;
+                        player.setProperty("keepaspect", mode !== 2);
+                        player.setProperty("panscan", mode === 1 ? 1 : 0);
                         player.setProperty("speed", WallpaperPath.speed);
                         player.setProperty("volume", WallpaperPath.volume);
                     }
@@ -125,6 +127,17 @@ Item {
                         }
                         function onSpeedChanged() {
                             player.setProperty("speed", WallpaperPath.speed);
+                        }
+                        function onVolumeChanged() {
+                            player.setProperty("volume", WallpaperPath.volume);
+                        }
+                    }
+
+                    // 显示模式在 Settings 里（对齐 WE 插件的 cfg_DisplayMode）
+                    Connections {
+                        target: Settings.wallpaper
+                        function onDisplayModeChanged() {
+                            player.applyOptions();
                         }
                     }
                 }

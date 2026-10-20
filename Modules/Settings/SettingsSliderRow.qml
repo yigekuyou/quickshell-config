@@ -18,6 +18,8 @@ FormCard.AbstractFormDelegate {
     property real value: 0
     property int decimals: 0
     property string suffix: ""
+    // false = 该选项属于 WE 插件但当前渲染器不消费，控件置灰
+    property bool wired: true
 
     signal moved(real value)
 
@@ -54,7 +56,7 @@ FormCard.AbstractFormDelegate {
             Label {
                 text: root.displayValue + root.suffix
                 font.weight: Font.DemiBold
-                color: Kirigami.Theme.highlightColor
+                color: root.wired ? Kirigami.Theme.highlightColor : Kirigami.Theme.disabledTextColor
             }
         }
 
@@ -71,6 +73,7 @@ FormCard.AbstractFormDelegate {
             id: slider
 
             Layout.fillWidth: true
+            enabled: root.wired
             from: root.from
             to: root.to
             stepSize: root.stepSize
