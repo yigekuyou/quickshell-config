@@ -73,7 +73,7 @@ Item {
         border.width: root.critical ? 2 : 1
         border.color: root.critical
             ? Kirigami.Theme.negativeTextColor
-            : Qt.alpha(Kirigami.Theme.dividerColor, 0.6)
+            : Qt.alpha(Kirigami.Theme.textColor, 0.15)
         clip: true
 
         ColumnLayout {

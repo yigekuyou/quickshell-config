@@ -1,0 +1,14 @@
+[Desktop Entry]
+Type=Application
+Version=1.5
+Name=Quickshell Bar
+Name[zh_CN]=Quickshell 桌面栏
+Comment=Hyprland/KDE Wayland desktop shell: bar, dynamic island, launcher
+Comment[zh_CN]=Wayland 桌面外壳：任务栏、灵动岛、启动器
+# qs 默认读取 $XDG_CONFIG_HOME/quickshell/shell.qml（XDG Base Directory 规范）
+Exec=/bin/qs
+Icon=org.quickshell
+Categories=Utility;DesktopSettings;System;
+Keywords=quickshell;bar;shell;island;
+Terminal=false
+StartupNotify=false

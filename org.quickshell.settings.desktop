@@ -1,0 +1,14 @@
+[Desktop Entry]
+Type=Application
+Version=1.5
+Name=Quickshell Settings
+Name[zh_CN]=Quickshell 设置
+Comment=Wallpaper, bar geometry and idle policy for the Quickshell shell
+Comment[zh_CN]=Quickshell 外壳设置：壁纸、顶栏尺寸、空闲策略
+# 设置窗口跑在已经在运行的 shell 里，这里只是发一条 IPC 把它叫出来
+Exec=/bin/qs ipc call settings toggle
+Icon=preferences-system
+Categories=Settings;DesktopSettings;
+Keywords=quickshell;settings;wallpaper;bar;
+Terminal=false
+StartupNotify=false

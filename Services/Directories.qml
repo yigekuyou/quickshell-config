@@ -28,11 +28,15 @@ Singleton {
     readonly property string cacheDir: cacheHome + "/quickshell"
     readonly property string dataDir: dataHome + "/quickshell"
     readonly property string stateDir: stateHome + "/quickshell"
-    readonly property string scriptsDir: configDir + "/scripts"
     readonly property string pamDir: configDir + "/Modules/Lock/pam"
 
+    // 本 shell 的用户配置目录：settings.json（Services/Settings.qml 负责读写）
+    // 与 cava.conf（cava 进程自己读）都放这里，和其它代码分开放
+    readonly property string settingsDir: configDir + "/settings"
+    readonly property string settingsFile: settingsDir + "/settings.json"
+    readonly property string cavaConfigFile: settingsDir + "/cava.conf"
+
     // ==================== 本 shell 的固定文件 ====================
-    readonly property string wallpaperConfigFile: configDir + "/wallpaper.json"
     readonly property string scheduleCacheFile: cacheDir + "/schedule.json"
     readonly property string shotTempFile: runtimeDir + "/quickshell-shot.png"
 
@@ -47,4 +51,13 @@ Singleton {
 
     // 截图保存目录（本 shell 约定：图片目录下的 Screenshots）
     readonly property string screenshotsDir: pictures + "/Screenshots"
+
+    // ==================== 启动自检 ====================
+    // 配置目录在仓库里就有；用户把 settings/ 删掉后也要能自愈，
+    // 否则 Services/Settings 的 FileView 写文件时会因为目录不存在而失败。
+    Component.onCompleted: {
+        Quickshell.execDetached(["/bin/mkdir", "-p", root.settingsDir]);
+        Quickshell.execDetached(["/bin/mkdir", "-p", root.cacheDir]);
+        Quickshell.execDetached(["/bin/mkdir", "-p", root.stateDir]);
+    }
 }

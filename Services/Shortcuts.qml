@@ -31,6 +31,7 @@ Singleton {
 	signal screenshotInstantRequested()
 	signal lockRequested()
 	signal volumeMuteRequested()
+	signal settingsRequested()
 
 	// 统一入口：Hyprland 的 GlobalShortcut、别的合成器按键处理、代码调用都从这几个函数进
 	function triggerLauncherToggle() {
@@ -52,6 +53,10 @@ Singleton {
 	function triggerVolumeMute() {
 		root.volumeMuteRequested();
 		Volume.toggleSinkMute();
+	}
+
+	function triggerSettings() {
+		root.settingsRequested();
 	}
 
 	// ==================== 合成器检测 ====================
@@ -104,6 +109,12 @@ Singleton {
 				name: "volume-mute"
 				description: "切换默认音频输出的静音状态"
 				onPressed: root.triggerVolumeMute()
+			}
+
+			GlobalShortcut {
+				name: "settings"
+				description: "打开 / 关闭设置"
+				onPressed: root.triggerSettings()
 			}
 		}
 	}

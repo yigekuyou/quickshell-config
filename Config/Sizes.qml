@@ -1,5 +1,6 @@
 pragma Singleton
 import Quickshell
+import qs.Services
 import org.kde.kirigami as Kirigami
 
 // 全项目尺寸 / 字体的唯一来源。
@@ -13,8 +14,10 @@ Singleton {
     readonly property real gridUnit: Kirigami.Units.gridUnit
     readonly property real smallSpacing: Kirigami.Units.smallSpacing
     readonly property real largeSpacing: Kirigami.Units.largeSpacing
-    readonly property real cornerRadius: Kirigami.Units.gridUnit * 0.5
-    readonly property real barHeight: Kirigami.Units.gridUnit * 1.6
+    // 这两个可以由用户改：settings/settings.json 的 bar 段（值是 gridUnit 的倍数），
+    // 设置面板「状态栏」页里的两个滑块就是它们
+    readonly property real cornerRadius: Kirigami.Units.gridUnit * Settings.bar.cornerRadius
+    readonly property real barHeight: Kirigami.Units.gridUnit * Settings.bar.height
 
     // ==================== 字体 ====================
     readonly property string fontFamily: Kirigami.Theme.defaultFont.family

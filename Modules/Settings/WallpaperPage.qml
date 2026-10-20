@@ -1,32 +1,28 @@
 import QtQuick
-import QtQuick.Layouts
 import QtQuick.Controls
+import QtQuick.Layouts
 import Quickshell
 import qs.Config
 import qs.Services
-import qs.Widget.common
 import org.kde.kirigami as Kirigami
 import org.kde.kirigamiaddons.formcard as FormCard
 
-// 壁纸面板：预览、切换 Wallpaper Engine 壁纸，以及播放参数（播放/暂停、帧率、速度、静音）。
-// 结构与 NetworkWidget / NotificationWidget 一致：SlideWindow（圆角卡片 + 标题栏）+ 内容。
+// ============================================================================
+// 壁纸页。
+//
+// 以前这一整套是顶栏的 WallpaperButton + WallpaperPanel（占一个胶囊的位置）。
+// 现在壁纸只是设置里的一页，顶栏不再有入口。
 //
 // 渲染约束（见 Wallpaper/Load.qml）：
 //   scene  -> 单独的 qs 进程，QSG_RHI_BACKEND=opengl（场景渲染器只有 GL 后端）
 //   video  -> 主进程，Vulkan
-//   web    -> 单独的 QtWebEngine 渲染进程（QS 本体无法加载 WebEngine，见 Wallpaper/Web.qml）
-SlideWindow {
+//   web    -> 单独的 QtWebEngine 渲染进程（QS 本体无法加载 WebEngine）
+// ============================================================================
+SettingsPage {
     id: root
+
     title: qsTr("壁纸")
     icon: "preferences-desktop-wallpaper"
-    windowHeight: 680
-
-    signal closeRequested()
-
-    Shortcut {
-        sequence: "Escape"
-        onActivated: root.closeRequested()
-    }
 
     // 当前壁纸条目（切换后立即用于标题栏）
     readonly property var current: {
@@ -51,33 +47,7 @@ SlideWindow {
         }
     }
 
-    function applyWallpaper(id) {
-        WallpaperPath.wallpaperId = id;
-    }
-
     Component.onCompleted: WallpaperLibrary.refresh()
-
-    headerTools: RowLayout {
-        spacing: Kirigami.Units.smallSpacing
-
-        ToolButton {
-            enabled: !WallpaperLibrary.scanning
-            onClicked: WallpaperLibrary.refresh()
-            contentItem: Kirigami.Icon {
-                source: "view-refresh"
-                color: parent.enabled ? Kirigami.Theme.textColor : Kirigami.Theme.disabledTextColor
-                implicitWidth: Kirigami.Units.iconSizes.smallMedium
-                implicitHeight: implicitWidth
-                RotationAnimation on rotation {
-                    running: WallpaperLibrary.scanning
-                    from: 0
-                    to: 360
-                    duration: 900
-                    loops: Animation.Infinite
-                }
-            }
-        }
-    }
 
     // ==================== 当前壁纸 + 播放参数 ====================
     FormCard.FormCard {
@@ -86,6 +56,7 @@ SlideWindow {
         FormCard.AbstractFormDelegate {
             Layout.fillWidth: true
             background: null
+
             contentItem: ColumnLayout {
                 spacing: Kirigami.Units.smallSpacing
 
@@ -110,7 +81,7 @@ SlideWindow {
                             text: qsTr("%1 · %2").arg(root.typeLabel(root.current ? root.current.type : WallpaperPath.wallpaperType)).arg(WallpaperPath.wallpaperId)
                             elide: Text.ElideRight
                             maximumLineCount: 1
-                            font: Kirigami.Theme.smallFont
+                            font.pixelSize: Math.round(Kirigami.Units.gridUnit * 0.65)
                             color: Kirigami.Theme.disabledTextColor
                         }
                     }
@@ -143,71 +114,43 @@ SlideWindow {
                 }
 
                 // ---- 帧率 ----
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: Kirigami.Units.smallSpacing
-
-                    Label {
-                        text: qsTr("帧率")
-                        font: Kirigami.Theme.smallFont
-                        color: Kirigami.Theme.disabledTextColor
-                        Layout.preferredWidth: Kirigami.Units.gridUnit * 3
-                    }
-
-                    Slider {
-                        id: fpsSlider
-                        Layout.fillWidth: true
-                        from: 10
-                        to: 144
-                        stepSize: 2
-                        value: WallpaperPath.fps
-                        onMoved: WallpaperPath.fps = Math.round(value * 2) / 2
-                    }
-
-                    Label {
-                        text: Math.round(fpsSlider.value)
-                        font: Kirigami.Theme.smallFont
-                        color: Kirigami.Theme.textColor
-                        Layout.preferredWidth: Kirigami.Units.gridUnit * 2
-                        horizontalAlignment: Text.AlignRight
-                    }
+                SettingsSliderRow {
+                    text: qsTr("帧率")
+                    from: 10
+                    to: 144
+                    stepSize: 2
+                    value: WallpaperPath.fps
+                    suffix: " fps"
+                    onMoved: value => WallpaperPath.fps = Math.round(value)
                 }
 
                 // ---- 速度 ----
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: Kirigami.Units.smallSpacing
+                SettingsSliderRow {
+                    text: qsTr("速度")
+                    from: 0.25
+                    to: 2
+                    stepSize: 0.05
+                    decimals: 2
+                    value: WallpaperPath.speed
+                    suffix: "×"
+                    onMoved: value => WallpaperPath.speed = Math.round(value * 20) / 20
+                }
 
-                    Label {
-                        text: qsTr("速度")
-                        font: Kirigami.Theme.smallFont
-                        color: Kirigami.Theme.disabledTextColor
-                        Layout.preferredWidth: Kirigami.Units.gridUnit * 3
-                    }
-
-                    Slider {
-                        id: speedSlider
-                        Layout.fillWidth: true
-                        from: 0.25
-                        to: 2.0
-                        stepSize: 0.05
-                        value: WallpaperPath.speed
-                        onMoved: WallpaperPath.speed = Math.round(value * 20) / 20
-                    }
-
-                    Label {
-                        text: speedSlider.value.toFixed(2) + "×"
-                        font: Kirigami.Theme.smallFont
-                        color: Kirigami.Theme.textColor
-                        Layout.preferredWidth: Kirigami.Units.gridUnit * 2
-                        horizontalAlignment: Text.AlignRight
-                    }
+                // ---- 音量 ----
+                SettingsSliderRow {
+                    text: qsTr("音量")
+                    from: 0
+                    to: 1
+                    stepSize: 0.05
+                    decimals: 2
+                    value: WallpaperPath.volume
+                    onMoved: value => WallpaperPath.volume = Math.round(value * 20) / 20
                 }
 
                 Label {
                     Layout.fillWidth: true
                     wrapMode: Text.WordWrap
-                    font: Kirigami.Theme.smallFont
+                    font.pixelSize: Math.round(Kirigami.Units.gridUnit * 0.65)
                     color: Kirigami.Theme.disabledTextColor
                     text: WallpaperPath.wallpaperType === "web"
                         ? qsTr("Web 壁纸由独立的 QtWebEngine 进程渲染（QS 本体无法加载 WebEngine），帧率设置对它无效。")
@@ -234,8 +177,26 @@ SlideWindow {
 
         Label {
             text: WallpaperLibrary.scanning ? qsTr("扫描中…") : qsTr("%1 张").arg(WallpaperLibrary.items.length)
-            font: Kirigami.Theme.smallFont
+            font.pixelSize: Math.round(Kirigami.Units.gridUnit * 0.65)
             color: Kirigami.Theme.disabledTextColor
+        }
+
+        ToolButton {
+            enabled: !WallpaperLibrary.scanning
+            onClicked: WallpaperLibrary.refresh()
+            contentItem: Kirigami.Icon {
+                source: "view-refresh"
+                color: parent.enabled ? Kirigami.Theme.textColor : Kirigami.Theme.disabledTextColor
+                implicitWidth: Kirigami.Units.iconSizes.smallMedium
+                implicitHeight: implicitWidth
+                RotationAnimation on rotation {
+                    running: WallpaperLibrary.scanning
+                    from: 0
+                    to: 360
+                    duration: 900
+                    loops: Animation.Infinite
+                }
+            }
         }
     }
 
@@ -243,7 +204,7 @@ SlideWindow {
     GridView {
         id: grid
         Layout.fillWidth: true
-        Layout.preferredHeight: 430
+        Layout.preferredHeight: Kirigami.Units.gridUnit * 22
         clip: true
         cellWidth: width / 2
         cellHeight: Math.round(cellWidth * 0.64)
@@ -269,12 +230,12 @@ SlideWindow {
             Rectangle {
                 anchors.fill: parent
                 anchors.margins: Kirigami.Units.smallSpacing / 2
-                radius: Kirigami.Units.gridUnit * 0.4
+                radius: Sizes.cornerRadius
                 color: Qt.alpha(Kirigami.Theme.alternateBackgroundColor, 0.6)
                 border.width: cell.isCurrent ? 2 : 1
                 border.color: cell.isCurrent
                     ? Kirigami.Theme.highlightColor
-                    : Qt.alpha(Kirigami.Theme.dividerColor, 0.5)
+                    : Qt.alpha(Kirigami.Theme.textColor, 0.12)
                 clip: true
 
                 Image {
@@ -323,13 +284,13 @@ SlideWindow {
                             text: cell.modelData.title
                             elide: Text.ElideRight
                             maximumLineCount: 1
-                            font: Kirigami.Theme.smallFont
+                            font.pixelSize: Math.round(Kirigami.Units.gridUnit * 0.65)
                             color: "white"
                         }
 
                         Label {
                             text: root.typeLabel(cell.modelData.type)
-                            font: Kirigami.Theme.smallFont
+                            font.pixelSize: Math.round(Kirigami.Units.gridUnit * 0.65)
                             color: "white"
                             opacity: 0.75
                         }
@@ -358,7 +319,7 @@ SlideWindow {
 
             TapHandler {
                 acceptedButtons: Qt.LeftButton
-                onTapped: root.applyWallpaper(cell.modelData.id)
+                onTapped: WallpaperPath.wallpaperId = cell.modelData.id
             }
         }
     }
@@ -382,7 +343,7 @@ SlideWindow {
         text: WallpaperLibrary.error
         elide: Text.ElideRight
         maximumLineCount: 1
-        font: Kirigami.Theme.smallFont
+        font.pixelSize: Math.round(Kirigami.Units.gridUnit * 0.65)
         color: Kirigami.Theme.negativeTextColor
     }
 }

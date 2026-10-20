@@ -25,7 +25,8 @@ Kirigami.ShadowedRectangle {
     radius: Sizes.cornerRadius
     color: Qt.alpha(Kirigami.Theme.textColor, 0.035)
     border.width: 1
-    border.color: Qt.alpha(Kirigami.Theme.dividerColor, 0.25)
+    // Kirigami.Theme 里没有 dividerColor（读到 undefined，会刷 Unable to assign [undefined] to QColor）
+    border.color: Qt.alpha(Kirigami.Theme.textColor, 0.12)
     shadow.color: Qt.rgba(0, 0, 0, 0)
     shadow.size: 0
 

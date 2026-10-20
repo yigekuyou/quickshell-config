@@ -17,8 +17,8 @@ Kirigami.ShadowedRectangle {
     // 1. 属性定义
     // ============================================================
     property bool expanded: false
-    // 路径统一由 Services/Directories 提供
-    property string confPath: Directories.scriptsDir + "/cava.conf"
+    // 配置统一放在 settings/ 目录（XDG 路径由 Directories 提供）
+    readonly property string confPath: Directories.cavaConfigFile
 
     // 从 Lyrics 单例读取播放状态与当前曲目
     property var activePlayer: Lyrics.player ? Lyrics.player.mprisData : null

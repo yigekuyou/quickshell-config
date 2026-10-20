@@ -17,7 +17,7 @@ Kirigami.ShadowedRectangle {
     radius: unit
     // 边框处理（MD3 典型特征）
     border.width: 1
-    border.color: Qt.alpha(Kirigami.Theme.dividerColor, 0.5) // 更细腻的边框
+    border.color: Qt.alpha(Kirigami.Theme.textColor, 0.15) // 更细腻的边框（Kirigami 没有 dividerColor）
     readonly property real unit: Kirigami.Units.gridUnit
     layer.enabled: true
     // ================= 状态控制变量 =================
