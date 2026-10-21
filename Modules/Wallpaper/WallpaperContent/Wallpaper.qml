@@ -236,6 +236,20 @@ Item {
     property string webUrl: ""
     property bool webMuted: false
     property bool webPaused: false
+    // Web 选项的快照：改了选项要重启子进程才会生效（跨进程只能靠启动参数）
+    property string webProps: ""
+
+    // 键序无关的序列化：webSaved / webDefaults 每次重建顺序可能不同，
+    // 直接比 JSON.stringify 会把“内容没变”判成变了，于是 Web 壁纸被反复重启
+    function canonicalProps(obj) {
+        if (!obj || typeof obj !== "object")
+            return "{}";
+        const keys = Object.keys(obj).sort();
+        const out = {};
+        for (const k of keys)
+            out[k] = obj[k];
+        return JSON.stringify(out);
+    }
 
     function syncWeb() {
         if (!root.webActive) {
@@ -244,21 +258,43 @@ Item {
         }
 
         const url = String(WallpaperPath.source);
+        const props = root.canonicalProps(WallpaperPath.webProperties);
+        const paused = WallpaperPath.suspended;
+
         if (webProc.running && root.webUrl === url
                 && root.webMuted === WallpaperPath.muted
-                && root.webPaused === WallpaperPath.suspended)
+                && root.webProps === props) {
+            // 只有暂停/恢复变了：SIGSTOP / SIGCONT 就够，不用重启。
+            // 以前把暂停也算进“需要重启”的条件里，于是切工作区（自动暂停）
+            // 会让 Web 壁纸整个重载一次。
+            if (paused !== root.webPaused) {
+                root.webPaused = paused;
+                if (webProc.processId)
+                    Quickshell.execDetached(["kill", paused ? "-STOP" : "-CONT",
+                                             String(webProc.processId)]);
+            }
             return;
+        }
 
+        // url / 选项 / 静音变了：跨进程只能靠启动参数，必须重启。
+        // 先 CONT 再 KILL：被 SIGSTOP 冻住的进程收不到 TERM，只 CONT 的话
+        // 会留成孤儿，新进程再起来就是两个 WebEngine 同时在画背景
+        if (webProc.running && webProc.processId) {
+            Quickshell.execDetached(["kill", "-CONT", String(webProc.processId)]);
+            Quickshell.execDetached(["kill", "-KILL", String(webProc.processId)]);
+        }
         root.webUrl = url;
         root.webMuted = WallpaperPath.muted;
-        root.webPaused = WallpaperPath.suspended;
+        root.webPaused = paused;
+        root.webProps = props;
         webProc.running = false;
         webRestart.restart();
     }
 
     Timer {
         id: webRestart
-        interval: 250
+        // 改一个选项就重启一次子进程太贵；等一下让连续改动合并成一次
+        interval: 600
         repeat: false
         onTriggered: if (root.webActive)
             webProc.running = true
@@ -270,6 +306,7 @@ Item {
         function onSourceChanged() { root.syncWeb(); }
         function onMutedChanged() { root.syncWeb(); }
         function onSuspendedChanged() { root.syncWeb(); }
+        function onWebPropertiesChanged() { root.syncWeb(); }
     }
 
     Component.onCompleted: root.syncWeb()
@@ -278,8 +315,11 @@ Item {
     // 显式按 pid 杀掉，避免孤儿 qml6 继续占着背景层
     Component.onDestruction: {
         webRestart.stop();
-        if (webProc.running && webProc.processId)
-            Quickshell.execDetached(["kill", String(webProc.processId)]);
+        if (webProc.running && webProc.processId) {
+            // 暂停时进程是 SIGSTOP 状态，先 CONT 才能被信号杀死
+            Quickshell.execDetached(["kill", "-CONT", String(webProc.processId)]);
+            Quickshell.execDetached(["kill", "-KILL", String(webProc.processId)]);
+        }
     }
 
     Process {
@@ -294,7 +334,8 @@ Item {
             root.webUrl,
             String(WallpaperPath.fps),
             root.webMuted ? "true" : "false",
-            root.webPaused ? "true" : "false"
+            root.webPaused ? "true" : "false",
+            root.webProps.length > 0 ? root.webProps : "{}"
         ]
     }
 }

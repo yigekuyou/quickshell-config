@@ -36,6 +36,10 @@ Singleton {
     readonly property string settingsFile: settingsDir + "/settings.json"
     readonly property string cavaConfigFile: settingsDir + "/cava.conf"
 
+    // 每张壁纸各自的 Web 选项覆盖值：settings/wallpaper/<壁纸 id>.json
+    // （选项定义来自壁纸自己的 project.json，这里只存用户改过的值）
+    readonly property string wallpaperSettingsDir: settingsDir + "/wallpaper"
+
     // ==================== 本 shell 的固定文件 ====================
     readonly property string scheduleCacheFile: cacheDir + "/schedule.json"
     readonly property string shotTempFile: runtimeDir + "/quickshell-shot.png"
@@ -66,6 +70,7 @@ Singleton {
     // 否则 Services/Settings 的 FileView 写文件时会因为目录不存在而失败。
     Component.onCompleted: {
         Quickshell.execDetached(["/bin/mkdir", "-p", root.settingsDir]);
+        Quickshell.execDetached(["/bin/mkdir", "-p", root.wallpaperSettingsDir]);
         Quickshell.execDetached(["/bin/mkdir", "-p", root.cacheDir]);
         Quickshell.execDetached(["/bin/mkdir", "-p", root.stateDir]);
     }

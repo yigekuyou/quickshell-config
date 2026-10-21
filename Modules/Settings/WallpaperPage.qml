@@ -2,17 +2,20 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
+import Quickshell.Io
 import qs.Config
 import qs.Services
 import org.kde.kirigami as Kirigami
 import org.kde.kirigamiaddons.formcard as FormCard
+import com.github.captsilver.wallpaperEngineKde
 
 // ============================================================================
 // 壁纸页。版式照 Plasma 的 Wallpaper Engine 壁纸插件
 // (/usr/share/plasma/wallpapers/com.github.captsilver.wallpaperEngineKde)：
-//   顶部 TabBar（壁纸 / 播放） + StackLayout
+//   顶部 TabBar（壁纸 / 播放 / Web） + StackLayout
 //   壁纸页：搜索框 + 缩略图网格（选中打绿勾，悬停播放 GIF）
-//   播放页：分组表单（帧率 / 速度 / 音量 + 静音 / 暂停）
+//   播放页：分组表单（帧率 / 速度 / 音量 + 静音 / 暂停 + 视频 / 场景选项）
+//   Web 页：壁纸自己的 project.json 选项，按壁纸分别存 settings/wallpaper/<id>.json
 //
 // 渲染约束（见 Wallpaper/Load.qml）：
 //   scene  -> 单独的 qs 进程，QSG_RHI_BACKEND=opengl（场景渲染器只有 GL 后端）
@@ -73,6 +76,42 @@ SettingsPage {
 
 
 
+    // ==================== Web 壁纸选项定义 ====================
+    // 键 -> {type, text, tip, value, order}；值本身由 WallpaperPath 管
+    //（project.json 默认值 + settings/wallpaper/<id>.json 的覆盖值）。
+    // 直接用 WallpaperPath 已经解析好的 project.json：同一个文件不再读第二遍，
+    // 换壁纸时 UI 与渲染端读到的永远是同一份内容。
+    readonly property var webPropertiesDef: {
+        const out = {};
+        const project = WallpaperPath.project || ({});
+        const props = project.general ? project.general.properties : null;
+        if (props) {
+            for (const key in props) {
+                const p = props[key] || {};
+                out[key] = {
+                    type: p.type !== undefined ? String(p.type) : "string",
+                    text: p.text !== undefined ? String(p.text) : key,
+                    tip: p.tip !== undefined ? String(p.tip) : "",
+                    value: p.value,
+                    order: p.order !== undefined ? Number(p.order) : 0
+                };
+            }
+        }
+        return out;
+    }
+
+    // 选项键列表：按 project.json 里的 order 排（和 WE 自己的设置面板一致），
+    // 没有 order 的排在后面。返回普通数组，Repeater 换壁纸时整体重建一次即可。
+    function webPropertyKeys(): var {
+        const defs = root.webPropertiesDef;
+        if (!defs || typeof defs !== "object")
+            return [];
+        return Object.keys(defs).sort((a, b) => {
+            const oa = defs[a] && defs[a].order !== undefined ? Number(defs[a].order) : 100000;
+            const ob = defs[b] && defs[b].order !== undefined ? Number(defs[b].order) : 100000;
+            return oa - ob;
+        });
+    }
 
     // ==================== 分页 ====================
     // 标签栏：两枚文字标签 + 选中下划线（Plasma 配置页的样子）。
@@ -89,7 +128,7 @@ SettingsPage {
         background: null
 
         Repeater {
-            model: [qsTr("壁纸"), qsTr("播放")]
+            model: [qsTr("壁纸"), qsTr("播放"), qsTr("Web")]
 
             delegate: TabButton {
                 id: tabButton
@@ -491,7 +530,7 @@ SettingsPage {
             }
         }
 
-        // ==================== 二、播放 / 渲染 ====================
+    // ==================== 二、播放 / 渲染 ====================
         // 分组、顺序、档位、默认值全部照 Plasma 的 Wallpaper Engine 插件
         // (/usr/share/plasma/wallpapers/com.github.captsilver.wallpaperEngineKde,
         //  contents/ui/page/SettingPage.qml)：Common / Video / Scene 三组。
@@ -500,6 +539,10 @@ SettingsPage {
         Flickable {
             id: playFlick
 
+            // StackLayout 只按 Layout 附加属性给当前页分配尺寸：
+            // 少了这两个，播放页永远是 0×0（切过去也是空的/挤成一条）
+            Layout.fillWidth: true
+            Layout.fillHeight: true
             clip: true
             contentWidth: width
             contentHeight: playCol.implicitHeight
@@ -900,5 +943,216 @@ SettingsPage {
                 policy: playFlick.contentHeight > playFlick.height + 1 ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff
             }
         }
+        // ==================== 三、Web 选项 ====================
+        Flickable {
+            id: webFlick
+
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            clip: true
+            contentWidth: width
+            contentHeight: webCol.implicitHeight
+            boundsBehavior: Flickable.StopAtBounds
+
+            ColumnLayout {
+                id: webCol
+
+                width: webFlick.width
+                spacing: Kirigami.Units.largeSpacing
+
+                // ---------------- Web Option ----------------
+                // 选项定义来自壁纸自己的 project.json（general.properties），
+                // 用户改过的值按壁纸分别存 settings/wallpaper/<壁纸 id>.json，
+                // 没改过的继续用 project.json 的默认值。
+                SettingsGroup {
+                    title: qsTr("Web 选项")
+                    visible: root.current && root.current.type === "web"
+
+                    Label {
+                        Layout.fillWidth: true
+                        Layout.margins: Kirigami.Units.smallSpacing
+                        wrapMode: Text.WordWrap
+                        font.pixelSize: Kirigami.Theme.smallFont.pixelSize
+                        color: Kirigami.Theme.disabledTextColor
+                        text: qsTr("选项来自壁纸的 project.json，改动按壁纸分别保存在 settings/wallpaper/壁纸 id.json，切换壁纸不会互相覆盖。")
+                    }
+
+                    Label {
+                        Layout.fillWidth: true
+                        Layout.margins: Kirigami.Units.smallSpacing
+                        wrapMode: Text.WordWrap
+                        visible: root.webPropertyKeys().length === 0
+                        font.pixelSize: Kirigami.Theme.smallFont.pixelSize
+                        color: Kirigami.Theme.disabledTextColor
+                        text: qsTr("这张壁纸没有可配置的选项。")
+                    }
+
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 0
+
+                        Repeater {
+                            model: root.webPropertyKeys()
+
+                            // 每行都是布局项：宽度/高度全交给 ColumnLayout / RowLayout 算，
+                            // 不再自己绑 width / implicitHeight —— 模型从 0 涨到上百项时
+                            // 也不会出现宽度还是 0、控件挤成一团的情况。
+                            delegate: ColumnLayout {
+                                id: propItem
+
+                                Layout.fillWidth: true
+                                spacing: 0
+
+                                // 壁纸换掉时 webPropertiesDef 会是空的，用 key 自己兜底
+                                property string key: modelData
+                                property var propDef: (root.webPropertiesDef || {})[propItem.key]
+                                readonly property string propType: propDef && propDef.type ? String(propDef.type) : "string"
+                                readonly property string propText: propDef && propDef.text ? String(propDef.text) : propItem.key
+                                readonly property string propTip: propDef && propDef.tip ? String(propDef.tip) : ""
+                                readonly property var propValue: WallpaperPath.webProperties[propItem.key]
+
+                                function store(v) {
+                                    const cur = WallpaperPath.webProperties[propItem.key];
+                                    // 值没变就不写：控件被销毁时也会发 editingFinished，
+                                    // 不能因此给这张壁纸凭空建一份覆盖文件
+                                    if (cur === v)
+                                        return;
+                                    WallpaperPath.setWebProperty(propItem.key, v);
+                                }
+
+
+                                Loader {
+                                    id: propLoader
+                                    Layout.fillWidth: true
+                                    // Loader 会把加载出来的项撑到自己的大小，
+                                    // 所以行内的 RowLayout 只管排布，不用管尺寸
+                                    sourceComponent: {
+                                        if (propItem.propType === "bool")
+                                            return boolComponent;
+                                        if (propItem.propType === "color")
+                                            return colorComponent;
+                                        if (propItem.propType === "file")
+                                            return fileComponent;
+                                        if (propItem.propType === "number" || propItem.propType === "int"
+                                                || propItem.propType === "slider")
+                                            return numberComponent;
+                                        return textComponent;
+                                    }
+                                }
+
+                                // 布尔：直接用标准设置行，悬停/无障碍都由 Kirigami 负责
+                                Component {
+                                    id: boolComponent
+
+                                    SettingsSwitchRow {
+                                        text: propItem.propText
+                                        description: propItem.propTip
+                                        switchOn: propItem.propValue === true
+                                        onSwitchToggled: on => propItem.store(on)
+                                    }
+                                }
+
+                                // 颜色（十六进制字符串）
+                                Component {
+                                    id: colorComponent
+
+                                    SettingsFieldRow {
+                                        label: propItem.propText
+                                        description: propItem.propTip
+
+                                        RowLayout {
+                                            Layout.fillWidth: true
+                                            spacing: Kirigami.Units.smallSpacing
+
+                                            Rectangle {
+                                                Layout.preferredWidth: Kirigami.Units.gridUnit * 1.2
+                                                Layout.preferredHeight: Kirigami.Units.gridUnit * 1.2
+                                                Layout.alignment: Qt.AlignVCenter
+                                                radius: height / 4
+                                                color: String(propItem.propValue || "#000000")
+                                                border.width: 1
+                                                border.color: Kirigami.Theme.disabledTextColor
+                                            }
+
+                                            TextField {
+                                                Layout.fillWidth: true
+                                                Layout.minimumWidth: Kirigami.Units.gridUnit * 6
+                                                text: String(propItem.propValue || "")
+                                                placeholderText: qsTr("十六进制颜色，如 #1e90ff")
+                                                onEditingFinished: propItem.store(text)
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // 文本
+                                Component {
+                                    id: textComponent
+
+                                    SettingsFieldRow {
+                                        label: propItem.propText
+                                        description: propItem.propTip
+
+                                        TextField {
+                                            Layout.fillWidth: true
+                                            Layout.minimumWidth: Kirigami.Units.gridUnit * 6
+                                            text: propItem.propValue !== undefined ? String(propItem.propValue) : ""
+                                            onEditingFinished: propItem.store(text)
+                                        }
+                                    }
+                                }
+
+                                // 文件（壁纸目录内的相对路径）
+                                Component {
+                                    id: fileComponent
+
+                                    SettingsFieldRow {
+                                        label: propItem.propText
+                                        description: propItem.propTip
+
+                                        TextField {
+                                            Layout.fillWidth: true
+                                            Layout.minimumWidth: Kirigami.Units.gridUnit * 6
+                                            text: propItem.propValue !== undefined ? String(propItem.propValue) : ""
+                                            placeholderText: qsTr("壁纸目录内的文件路径")
+                                            onEditingFinished: propItem.store(text)
+                                        }
+                                    }
+                                }
+
+                                // 数字（number / int / slider）
+                                Component {
+                                    id: numberComponent
+
+                                    SettingsFieldRow {
+                                        label: propItem.propText
+                                        description: propItem.propTip
+
+                                        TextField {
+                                            id: numberField
+                                            Layout.fillWidth: true
+                                            Layout.minimumWidth: Kirigami.Units.gridUnit * 6
+                                            text: propItem.propValue !== undefined ? String(propItem.propValue) : ""
+                                            placeholderText: propItem.propType === "int" ? qsTr("整数") : qsTr("数字")
+                                            inputMethodHints: Qt.ImhFormattedNumbersOnly
+                                            onEditingFinished: {
+                                                const n = parseFloat(text);
+                                                if (isNaN(n)) {
+                                                    // 输入不是数字：还原成当前值
+                                                    text = propItem.propValue !== undefined ? String(propItem.propValue) : "";
+                                                    return;
+                                                }
+                                                propItem.store(propItem.propType === "int" ? Math.round(n) : n);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
     }
 }

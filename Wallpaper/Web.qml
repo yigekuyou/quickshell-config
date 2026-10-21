@@ -12,7 +12,7 @@ import org.kde.layershell as LayerShell
 //   进程，再通过 LayerShellQt 把它挂成背景层，效果等同于壁纸。
 //
 // 用法（由 Modules/Wallpaper/WallpaperContent/Wallpaper.qml 启动）：
-//   qml6 Wallpaper/Web.qml -- <file-url> <fps> <muted> <paused>
+//   qml6 Wallpaper/Web.qml -- <file-url> <fps> <muted> <paused> <properties-json>
 // 渲染后端沿用父进程的 QSG_RHI_BACKEND（主进程是 vulkan）。
 Window {
     id: root
@@ -27,6 +27,8 @@ Window {
         ? Qt.application.arguments[dash + 3] === "true" : true
     readonly property bool paused: dash >= 0 && Qt.application.arguments.length > dash + 4
         ? Qt.application.arguments[dash + 4] === "true" : false
+    readonly property string propertiesJson: dash >= 0 && Qt.application.arguments.length > dash + 5
+        ? Qt.application.arguments[dash + 5] : "{}"
 
     LayerShell.Window.layer: LayerShell.Window.LayerBackground
     LayerShell.Window.anchors: LayerShell.Window.AnchorTop | LayerShell.Window.AnchorBottom
@@ -62,10 +64,59 @@ Window {
             settings.autoLoadIconsForPage = false;
             settings.fullScreenSupportEnabled = true;
 
+            // 注入 Wallpaper Engine 的属性 API。
+            // 兼容两种页面写法：
+            //   A) window.wallpaperPropertyListener = { applyUserProperties: fn }
+            //   B) window.wallpaperPropertyListener = {};
+            //      window.wallpaperPropertyListener.applyUserProperties = fn
+            // 脚本注入点比页面脚本早，所以用 getter/setter 接管赋值，
+            // 等页面把自己的 listener 挂好之后再把属性推过去。
+            let props = ({});
+            try {
+                props = JSON.parse(root.propertiesJson) || ({});
+            } catch (e) {
+                console.warn("[web-wallpaper] 属性 JSON 解析失败:", e);
+            }
+
+            const bootstrap = `(function () {
+  var values = ${JSON.stringify(props)};
+  var page = null;
+  function payload() {
+    var out = {};
+    for (var k in values) out[k] = { value: values[k] };
+    return out;
+  }
+  function push(target) {
+    if (target && typeof target.applyUserProperties === "function") {
+      try { target.applyUserProperties(payload()); }
+      catch (e) { console.warn("applyUserProperties:", e); }
+    }
+  }
+  var proxy = {
+    applyUserProperties: function (p) {
+      if (page && typeof page.applyUserProperties === "function")
+        page.applyUserProperties(p);
+    }
+  };
+  try {
+    Object.defineProperty(window, "wallpaperPropertyListener", {
+      configurable: true,
+      get: function () { return page || proxy; },
+      set: function (v) { page = v; setTimeout(function () { push(page || proxy); }, 0); }
+    });
+  } catch (e) {
+    window.wallpaperPropertyListener = window.wallpaperPropertyListener || proxy;
+  }
+  window.wallpaperRegisterAudioListener = window.wallpaperRegisterAudioListener || function () {};
+  window.wallpaperRequestRandomFileForProperty = window.wallpaperRequestRandomFileForProperty || function () {};
+  [0, 250, 1000].forEach(function (ms) {
+    setTimeout(function () { push(page || proxy); }, ms);
+  });
+})();`;
+
             userScripts.insert([{
                 "name": "qs-webwall-compat",
-                "sourceCode": "window.wallpaperPropertyListener = window.wallpaperPropertyListener || {};"
-                    + "window.wallpaperRegisterAudioListener = window.wallpaperRegisterAudioListener || function () {};",
+                "sourceCode": bootstrap,
                 "injectionPoint": WebEngineScript.DocumentCreation,
                 "worldId": WebEngineScript.MainWorld,
                 "runOnSubframes": false

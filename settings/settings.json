@@ -34,8 +34,8 @@
         "collapsedWidth": 11,
         "dashboardHeight": 24,
         "dashboardWidth": 45,
-        "expandedHeight": 12,
-        "expandedWidth": 19,
+        "expandedHeight": 13,
+        "expandedWidth": 28,
         "lyricsHeight": 2,
         "lyricsWidth": 28,
         "radius": 1
@@ -71,6 +71,6 @@
         "verboseLogging": false,
         "videoBackend": 1,
         "volume": 1,
-        "wallpaperId": "884307090"
+        "wallpaperId": "1828698678"
     }
 }

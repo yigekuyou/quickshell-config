@@ -32,5 +32,10 @@ ColumnLayout {
         id: card
 
         Layout.fillWidth: true
+        // Kirigami 的 FormCard 默认把宽度限制在 30 gridUnit（≈540px）再居中：
+        // 1920 的窗口里就缩成中间窄窄一条，和左对齐的页头、标签栏完全对不上，
+        // 行里的下拉框也被挤成一截。这里放开上限，让它跟着页面宽度走。
+        maximumWidth: Number.POSITIVE_INFINITY
     }
+
 }
