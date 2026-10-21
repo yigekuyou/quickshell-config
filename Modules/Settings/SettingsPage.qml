@@ -67,13 +67,16 @@ Item {
                 Layout.fillHeight: true
                 clip: true
                 contentWidth: width
-                contentHeight: body.implicitHeight
+                // 内容不足一屏时也要占满视口：页面里带 fillHeight 的块（列表 /
+                // 网格 / 内层 Flickable）才有地方铺开，不会被裁在窗口底部。
+                contentHeight: Math.max(flick.height, body.implicitHeight)
                 boundsBehavior: Flickable.StopAtBounds
 
                 ColumnLayout {
                     id: body
 
                     width: flick.width
+                    height: Math.max(flick.height, implicitHeight)
                     spacing: Kirigami.Units.largeSpacing
                 }
 

@@ -154,13 +154,15 @@ SettingsPage {
 
     StackLayout {
         Layout.fillWidth: true
-        Layout.preferredHeight: Kirigami.Units.gridUnit * 29
+        // 跟着窗口拉伸；以前写死 gridUnit * 29，窗口矮的时候网格会被裁掉
+        Layout.fillHeight: true
         currentIndex: tabs.currentIndex
 
         // ==================== 一、壁纸库 ====================
         ColumnLayout {
             spacing: Kirigami.Units.smallSpacing
 
+            // 搜索 + 计数 + 重新扫描（SearchField 自带 Ctrl+F 与清空按钮）
             RowLayout {
                 Layout.fillWidth: true
                 spacing: Kirigami.Units.smallSpacing
@@ -173,32 +175,27 @@ SettingsPage {
                     onTextChanged: root.query = text
                 }
 
-                ComboBox {
-                    id: typeFilter
-
-                    Layout.preferredWidth: Kirigami.Units.gridUnit * 7
-                    model: [qsTr("全部类型"), qsTr("场景"), qsTr("视频"), qsTr("Web")]
-                    onActivated: index => root.typeKey = ["", "scene", "video", "web"][index]
-                }
-
                 Label {
                     text: WallpaperLibrary.scanning
                         ? qsTr("扫描中…")
                         : qsTr("%1 / %2").arg(root.filtered.length).arg(WallpaperLibrary.items.length)
-                    font.pixelSize: Kirigami.Theme.smallFont.pixelSize
+                    font: Kirigami.Theme.smallFont
                     color: Kirigami.Theme.disabledTextColor
                 }
 
                 ToolButton {
+                    id: refreshButton
+
                     enabled: !WallpaperLibrary.scanning
                     onClicked: WallpaperLibrary.refresh()
+                    Accessible.name: qsTr("重新扫描")
                     ToolTip.visible: hovered
                     ToolTip.text: qsTr("重新扫描")
                     ToolTip.delay: Kirigami.Units.toolTipDelay
 
                     contentItem: Kirigami.Icon {
                         source: "view-refresh"
-                        color: parent.enabled ? Kirigami.Theme.textColor : Kirigami.Theme.disabledTextColor
+                        color: refreshButton.enabled ? Kirigami.Theme.textColor : Kirigami.Theme.disabledTextColor
                         implicitWidth: Kirigami.Units.iconSizes.smallMedium
                         implicitHeight: implicitWidth
 
@@ -213,158 +210,262 @@ SettingsPage {
                 }
             }
 
+            // 类型筛选用 Kirigami.Chip：文档里 Chip 就是拿来表示“属性 / 筛选条件”
+            // 的一排小元素，比下拉框少一次点击，当前筛的是什么也一眼能看到。
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: Kirigami.Units.smallSpacing
+
+                Repeater {
+                    model: [
+                        {
+                            "key": "",
+                            "label": qsTr("全部")
+                        },
+                        {
+                            "key": "scene",
+                            "label": qsTr("场景")
+                        },
+                        {
+                            "key": "video",
+                            "label": qsTr("视频")
+                        },
+                        {
+                            "key": "web",
+                            "label": qsTr("Web")
+                        }
+                    ]
+
+                    Kirigami.Chip {
+                        id: typeChip
+
+                        required property var modelData
+
+                        // closable: false 时 Chip 自动变成可勾选（checkable）
+                        text: modelData.label
+                        closable: false
+                        // 点已选中的 Chip 时 AbstractButton 会把它反勾掉，
+                        // 这里按页面状态重新断言一次（Binding 是元素形式，
+                        // 直接赋值不会把它顶掉）。
+                        onClicked: {
+                            root.typeKey = typeChip.modelData.key;
+                            typeChip.checked = root.typeKey === typeChip.modelData.key;
+                        }
+
+                        // 选中态跟着页面状态走。这里必须用 Binding：直接写
+                        // checked: ... 的话，点一下 Chip 就会把绑定顶掉，
+                        // 之后切别的 Chip 它也不再跟着变了。
+                        Binding on checked {
+                            value: root.typeKey === typeChip.modelData.key
+                            restoreMode: Binding.RestoreBindingOrValue
+                        }
+                    }
+                }
+
+                Item {
+                    Layout.fillWidth: true
+                }
+            }
+
+            // 扫描出错用 InlineMessage（Kirigami 标准的行内提示）放在网格上方，
+            // 不用滚到最底下才看得见
+            Kirigami.InlineMessage {
+                Layout.fillWidth: true
+                visible: WallpaperLibrary.error !== ""
+                type: Kirigami.MessageType.Error
+                text: WallpaperLibrary.error
+            }
+
+            // 缩略图网格：卡片用 Kirigami.AbstractCard（主题化背景 + 悬停/按下
+            // 反馈 + 圆角都由 Kirigami 负责），虚拟化和键盘导航交给 GridView。
+            // 文档里 CardsLayout / CardsListView 适合“少量卡片”，几十上百张时
+            // 用 GridView + 卡片 delegate。
             GridView {
                 id: grid
 
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 clip: true
-                cellWidth: width / 3
-                cellHeight: Math.round(cellWidth * 0.56) + Kirigami.Units.gridUnit * 1.6
                 model: root.filtered
                 boundsBehavior: Flickable.StopAtBounds
-                cacheBuffer: 600
+                cacheBuffer: 800
                 reuseItems: true
+                visible: root.filtered.length > 0
+
+                // 响应式列数：每张卡片至少 11 个 gridUnit 宽
+                readonly property int columns: Math.max(2, Math.min(5, Math.floor(width / (Kirigami.Units.gridUnit * 11))))
+                readonly property real cardWidth: Math.floor(width / columns) - Kirigami.Units.largeSpacing
+                readonly property real thumbHeight: Math.round((cardWidth - 2 * Kirigami.Units.smallSpacing) * 9 / 16)
+                readonly property real cardHeight: Math.round(thumbHeight + 2 * Kirigami.Units.smallSpacing + Kirigami.Units.gridUnit * 2.2)
+
+                cellWidth: Math.floor(width / columns)
+                cellHeight: cardHeight + Kirigami.Units.largeSpacing
 
                 ScrollBar.vertical: ScrollBar {
                     policy: grid.contentHeight > grid.height + 1 ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff
                 }
 
-                delegate: Item {
-                    id: cell
+                delegate: Kirigami.AbstractCard {
+                    id: card
 
                     required property var modelData
 
-                    readonly property bool isCurrent: cell.modelData.id === WallpaperPath.wallpaperId
-                    readonly property bool isHovered: cellHover.hovered
+                    readonly property bool isCurrent: card.modelData.id === WallpaperPath.wallpaperId
+                    readonly property bool isGif: card.modelData.isGif === true
+                    readonly property bool isHovered: cardHover.hovered
 
-                    width: grid.cellWidth
-                    height: grid.cellHeight
+                    width: grid.cardWidth
+                    height: grid.cardHeight
+                    padding: 0
+                    showClickFeedback: true
 
-                    // ---- 缩略图 ----
-                    Rectangle {
-                        id: frame
+                    Accessible.role: Accessible.Button
+                    Accessible.name: card.modelData.title
+                    Accessible.description: root.typeLabel(card.modelData.type)
 
-                        anchors {
-                            left: parent.left
-                            right: parent.right
-                            top: parent.top
-                            margins: Kirigami.Units.smallSpacing
-                        }
-                        height: Math.round(cell.width * 0.56) - Kirigami.Units.smallSpacing
-                        radius: Kirigami.Units.smallSpacing
-                        color: Kirigami.Theme.alternateBackgroundColor
-                        border.width: cell.isCurrent ? 2 : 1
-                        border.color: cell.isCurrent
-                            ? Kirigami.Theme.highlightColor
-                            : Qt.alpha(Kirigami.Theme.textColor, cell.isHovered ? 0.3 : 0.12)
-                        clip: true
+                    onClicked: WallpaperPath.wallpaperId = card.modelData.id
 
-                        Image {
-                            id: thumb
+                    contentItem: ColumnLayout {
+                        spacing: 0
 
-                            anchors.fill: parent
-                            anchors.margins: frame.border.width
-                            source: cell.modelData.preview
-                            fillMode: Image.PreserveAspectCrop
-                            asynchronous: true
-                            cache: true
-                            sourceSize.width: 320
-                            visible: !(cell.modelData.isGif && gif.playing)
-                        }
-
-                        // GIF 只在悬停时解码，避免几十个动图同时跑
-                        AnimatedImage {
-                            id: gif
-
-                            anchors.fill: thumb
-                            source: (cell.modelData.isGif && cell.isHovered && Settings.wallpaper.animatedPreview) ? cell.modelData.preview : ""
-                            fillMode: Image.PreserveAspectCrop
-                            playing: cell.isHovered
-                            cache: false
-                        }
-
-                        // 悬停时压暗一点，暗示可点
+                        // ---- 缩略图 ----
                         Rectangle {
-                            anchors.fill: parent
-                            color: Qt.rgba(0, 0, 0, 0.25)
-                            opacity: cell.isHovered && !cell.isCurrent ? 1 : 0
-                            Behavior on opacity { NumberAnimation { duration: Kirigami.Units.shortDuration } }
-                        }
+                            Layout.fillWidth: true
+                            Layout.leftMargin: Kirigami.Units.smallSpacing
+                            Layout.rightMargin: Kirigami.Units.smallSpacing
+                            Layout.topMargin: Kirigami.Units.smallSpacing
+                            Layout.preferredHeight: grid.thumbHeight
 
-                        // 选中标记：绿底白勾（跟 Plasma 壁纸对话框一样）
-                        Rectangle {
-                            visible: cell.isCurrent
-                            anchors {
-                                top: parent.top
-                                right: parent.right
-                                margins: Kirigami.Units.smallSpacing
+                            radius: Kirigami.Units.cornerRadius
+                            color: Kirigami.Theme.alternateBackgroundColor
+                            clip: true
+
+                            Image {
+                                id: thumb
+
+                                anchors.fill: parent
+                                source: card.modelData.preview
+                                fillMode: Image.PreserveAspectCrop
+                                asynchronous: true
+                                cache: true
+                                sourceSize.width: 320
+                                visible: !(card.isGif && gif.playing)
                             }
-                            implicitWidth: Kirigami.Units.gridUnit * 1.2
-                            implicitHeight: implicitWidth
-                            radius: width / 2
-                            color: Kirigami.Theme.positiveTextColor
-                            border.width: 1
-                            border.color: Qt.rgba(0, 0, 0, 0.45)
 
-                            Kirigami.Icon {
-                                anchors.centerIn: parent
-                                source: "emblem-ok-symbolic"
-                                color: "white"
-                                implicitWidth: parent.width * 0.65
+                            // GIF 只在悬停时解码，避免几十个动图同时跑
+                            AnimatedImage {
+                                id: gif
+
+                                anchors.fill: parent
+                                source: (card.isGif && card.isHovered && Settings.wallpaper.animatedPreview) ? card.modelData.preview : ""
+                                fillMode: Image.PreserveAspectCrop
+                                playing: card.isHovered
+                                cache: false
+                            }
+
+                            // 悬停时压暗一点，暗示可点
+                            Rectangle {
+                                anchors.fill: parent
+                                color: Qt.rgba(0, 0, 0, 0.25)
+                                opacity: card.isHovered && !card.isCurrent ? 1 : 0
+
+                                Behavior on opacity {
+                                    NumberAnimation {
+                                        duration: Kirigami.Units.shortDuration
+                                    }
+                                }
+                            }
+
+                            // 选中标记：绿底白勾
+                            Rectangle {
+                                visible: card.isCurrent
+                                anchors {
+                                    top: parent.top
+                                    right: parent.right
+                                    margins: Kirigami.Units.smallSpacing
+                                }
+                                implicitWidth: Kirigami.Units.gridUnit * 1.2
                                 implicitHeight: implicitWidth
+                                radius: width / 2
+                                color: Kirigami.Theme.positiveTextColor
+                                border.width: 1
+                                border.color: Qt.rgba(0, 0, 0, 0.45)
+
+                                Kirigami.Icon {
+                                    anchors.centerIn: parent
+                                    source: "emblem-ok-symbolic"
+                                    color: "white"
+                                    implicitWidth: parent.width * 0.65
+                                    implicitHeight: implicitWidth
+                                }
+                            }
+
+                            // 类型角标
+                            Rectangle {
+                                anchors {
+                                    top: parent.top
+                                    left: parent.left
+                                    margins: Kirigami.Units.smallSpacing
+                                }
+                                implicitWidth: typeLabel.implicitWidth + Kirigami.Units.smallSpacing * 2
+                                implicitHeight: typeLabel.implicitHeight + 2
+                                radius: 3
+                                color: Qt.rgba(0, 0, 0, 0.55)
+
+                                Label {
+                                    id: typeLabel
+
+                                    anchors.centerIn: parent
+                                    text: root.typeLabel(card.modelData.type)
+                                    font: Kirigami.Theme.smallFont
+                                    color: "white"
+                                }
                             }
                         }
 
-                        // 类型角标
-                        Rectangle {
-                            anchors {
-                                top: parent.top
-                                left: parent.left
-                                margins: Kirigami.Units.smallSpacing
-                            }
-                            implicitWidth: typeLabel.implicitWidth + Kirigami.Units.smallSpacing * 2
-                            implicitHeight: typeLabel.implicitHeight + 2
-                            radius: 3
-                            color: Qt.rgba(0, 0, 0, 0.55)
+                        // ---- 标题 + 类型 ----
+                        Column {
+                            Layout.fillWidth: true
+                            Layout.leftMargin: Kirigami.Units.smallSpacing
+                            Layout.rightMargin: Kirigami.Units.smallSpacing
+                            Layout.bottomMargin: Kirigami.Units.smallSpacing
+                            Layout.preferredHeight: Kirigami.Units.gridUnit * 2.2
+                            spacing: 0
 
                             Label {
-                                id: typeLabel
+                                width: parent.width
+                                text: card.modelData.title
+                                elide: Text.ElideRight
+                                maximumLineCount: 1
+                                font.weight: card.isCurrent ? Font.DemiBold : Font.Normal
+                                color: card.isCurrent ? Kirigami.Theme.highlightColor : Kirigami.Theme.textColor
+                            }
 
-                                anchors.centerIn: parent
-                                text: root.typeLabel(cell.modelData.type)
-                                font.pixelSize: Kirigami.Theme.smallFont.pixelSize
-                                color: "white"
+                            Label {
+                                width: parent.width
+                                text: root.typeLabel(card.modelData.type)
+                                elide: Text.ElideRight
+                                maximumLineCount: 1
+                                font: Kirigami.Theme.smallFont
+                                color: Kirigami.Theme.disabledTextColor
                             }
                         }
-                    }
-
-                    // ---- 标题（缩略图下方，两行内截断） ----
-                    Label {
-                        anchors {
-                            left: parent.left
-                            right: parent.right
-                            top: frame.bottom
-                            leftMargin: Kirigami.Units.smallSpacing + 2
-                            rightMargin: Kirigami.Units.smallSpacing + 2
-                            topMargin: 2
-                        }
-                        text: cell.modelData.title
-                        elide: Text.ElideRight
-                        maximumLineCount: 1
-                        font.pixelSize: Kirigami.Theme.smallFont.pixelSize
-                        font.weight: cell.isCurrent ? Font.DemiBold : Font.Normal
-                        color: cell.isCurrent ? Kirigami.Theme.highlightColor : Kirigami.Theme.textColor
                     }
 
                     HoverHandler {
-                        id: cellHover
+                        id: cardHover
                         cursorShape: Qt.PointingHandCursor
                     }
 
-                    TapHandler {
-                        acceptedButtons: Qt.LeftButton
-                        onTapped: WallpaperPath.wallpaperId = cell.modelData.id
+                    // 选中边框叠在卡片最上层（AbstractCard 的背景不对外开放，
+                    // 不用自己去画背景，避免和主题/圆角打架）
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: Kirigami.Units.cornerRadius
+                        color: "transparent"
+                        visible: card.isCurrent
+                        border.width: 2
+                        border.color: Kirigami.Theme.highlightColor
                     }
                 }
             }
@@ -380,6 +481,13 @@ SettingsPage {
                     : (WallpaperLibrary.error !== ""
                         ? WallpaperLibrary.error
                         : qsTr("检查 Wallpaper Engine 创意工坊目录是否存在：%1").arg(WallpaperPath.workshopBase))
+
+                helpfulAction: Kirigami.Action {
+                    text: qsTr("重新扫描")
+                    icon.name: "view-refresh"
+                    enabled: !WallpaperLibrary.scanning
+                    onTriggered: WallpaperLibrary.refresh()
+                }
             }
         }
 
@@ -792,15 +900,5 @@ SettingsPage {
                 policy: playFlick.contentHeight > playFlick.height + 1 ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff
             }
         }
-    }
-    // 扫描出错时提示（有壁纸也照样提示，方便排查）
-    Label {
-        Layout.fillWidth: true
-        visible: WallpaperLibrary.error !== ""
-        text: WallpaperLibrary.error
-        elide: Text.ElideRight
-        maximumLineCount: 1
-        font.pixelSize: Kirigami.Theme.smallFont.pixelSize
-        color: Kirigami.Theme.negativeTextColor
     }
 }

@@ -4,15 +4,18 @@
         "centerPadding": 0.22,
         "centerSpacing": 0.08,
         "cornerRadius": 0.55,
-        "height": 1.4,
+        "height": 1.65,
         "labels": false,
-        "leftIconSize": 0.58,
+        "leftIconSize": 0.64,
         "leftPadding": 0.16,
         "leftSpacing": 0.06,
-        "rightIconSize": 1.18,
+        "rightIconSize": 1.04,
         "rightPadding": 0.34,
         "rightSpacing": 0.12,
-        "ring": true
+        "ring": true,
+        "ringScale": 0.9,
+        "ringTrackOpacity": 0.14,
+        "ringWidth": 3
     },
     "idle": {
         "backlight": false,
