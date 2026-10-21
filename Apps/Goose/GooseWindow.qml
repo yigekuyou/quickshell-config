@@ -72,10 +72,38 @@ Kirigami.AbstractApplicationWindow {
                 level: 2
             }
 
-            Kirigami.Chip {
-                text: chatStore.busy ? qsTr("生成中…") : qsTr("演示模式 · 未连接 ACP")
-                closable: false
-                interactive: false
+            // ACP 连接状态指示器
+            RowLayout {
+                spacing: Kirigami.Units.smallSpacing
+
+                Kirigami.Chip {
+                    id: connectionChip
+                    text: {
+                        switch (chatStore.connectionStatus) {
+                            case "connected": return qsTr("已连接 · %1 / %2").arg(chatStore.currentProvider, chatStore.currentModel)
+                            case "connecting": return qsTr("连接中…")
+                            case "error": return qsTr("连接错误")
+                            default: return qsTr("未连接 ACP")
+                        }
+                    }
+                    closable: false
+                    interactive: false
+                }
+
+                Button {
+                    id: connectButton
+                    text: chatStore.connectionStatus === "connected" ? qsTr("断开") : qsTr("连接 ACP")
+                    enabled: chatStore.connectionStatus !== "connecting"
+                    onClicked: {
+                        if (chatStore.connectionStatus === "connected") {
+                            chatStore.disconnectACP()
+                        } else {
+                            chatStore.connectACP()
+                        }
+                    }
+                    ToolTip.text: chatStore.connectionStatus === "connected" ? qsTr("断开 ACP 连接") : qsTr("连接到 Goose ACP")
+                    ToolTip.visible: hovered
+                }
             }
 
             // 模型选择下拉框
@@ -107,6 +135,39 @@ Kirigami.AbstractApplicationWindow {
                         chatStore.setModel(modelCombo.model[currentIndex].id)
                 }
                 ToolTip.text: qsTr("选择模型")
+                ToolTip.visible: hovered
+                Layout.preferredWidth: Kirigami.Units.gridUnit * 18
+            }
+
+            // 提供商选择下拉框
+            ComboBox {
+                id: providerCombo
+                model: chatStore.availableProviders
+                currentIndex: chatStore.availableProviders.findIndex(p => p.id === chatStore.currentProvider)
+                displayText: chatStore.availableProviders.find(p => p.id === chatStore.currentProvider)?.name ?? chatStore.currentProvider
+                delegate: ItemDelegate {
+                    required property int index
+                    required property var modelData
+                    width: providerCombo.popup.width
+                    text: modelData.name
+                    font: providerCombo.font
+                    highlighted: providerCombo.highlightedIndex === index
+                    onClicked: {
+                        providerCombo.currentIndex = index
+                        providerCombo.popup.close()
+                    }
+                }
+                indicator: Kirigami.Icon {
+                    source: "go-down"
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.margins: Kirigami.Units.smallSpacing
+                }
+                onCurrentIndexChanged: {
+                    if (currentIndex >= 0)
+                        chatStore.setProvider(providerCombo.model[currentIndex].id)
+                }
+                ToolTip.text: qsTr("选择提供商")
                 ToolTip.visible: hovered
                 Layout.preferredWidth: Kirigami.Units.gridUnit * 18
             }
