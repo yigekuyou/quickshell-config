@@ -1,298 +1,267 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import Quickshell
 import Quickshell.Io
-import Quickshell.Wayland
 import qs.Config
 import qs.Services
 import org.kde.kirigami as Kirigami
 
 // ============================================================================
-// 设置窗口（全屏遮罩 + 居中卡片：顶部标题栏 / 左侧导航 / 右侧内容）。
+// 设置窗口：Kirigami.AbstractApplicationWindow，一个真的 xdg toplevel。
 //
-// 全部用标准组件搭：ListView + ItemDelegate 做导航、ToolButton 做关闭、
-// StackLayout 做翻页、Kirigami.Separator 做分隔线。没有手画的悬停高亮/
-// 自绘点击区，交互行为都来自 QtQuick.Controls 自己的实现。
+// 以前这里是 Overlay 层的 PanelWindow + 全屏遮罩，Hyprland 完全管不了：
+// 不在 clients 里，不能 focus / 移动 / 归工作区 / 全屏 / 浮动。现在改成一个
+// 普通应用窗口，合成器怎么管别的窗口就怎么管它。
 //
-// 打开方式（不占用顶栏）：
-//   qs ipc call settings toggle | open | close
+// 内容直接长在窗口里（没有遮罩、没有居中卡片）：左侧导航 + 右侧页面 +
+// 底部配置文件路径；标题栏残留系统的，我们只补一条自己的标题行，同时充当
+// 拖动区（拖它 = startSystemMove），保证哪种装饰风格下都能移动窗口。
+//
+// 打开方式（不变）：
+//   qs ipc call settings toggle | open | close | page 1
 //   顶栏最左边的齿轮（Modules/Bar/SettingsButton）
-//   全局快捷键 quickshell:settings（见 Services/Shortcuts.qml）
+//   全局快捷键 quickshell:settings（Services/Shortcuts.qml）
 //
-// 所有可调参数都存在 settings/settings.json，由 Services/Settings.qml 读写；
+// 所有可调参数存在 settings/settings.json，由 Services/Settings.qml 读写；
 // 页面只是它的视图，改完立刻生效并去抖落盘。
 // ============================================================================
-Variants {
-    model: Quickshell.screens
+Kirigami.AbstractApplicationWindow {
+    id: win
 
-    PanelWindow {
-        id: win
+    // ==================== 页面表 ====================
+    // 导航和内容都从这里取，加一页 = 加一条 + StackLayout 里加一个页面组件
+    readonly property var pages: [
+        {
+            "icon": "preferences-desktop-wallpaper",
+            "label": qsTr("壁纸"),
+            "component": "WallpaperPage.qml"
+        },
+        {
+            "icon": "preferences-desktop-theme",
+            "label": qsTr("状态栏"),
+            "component": "BarPage.qml"
+        },
+        {
+            "icon": "preferences-desktop-effects",
+            "label": qsTr("灵动岛"),
+            "component": "IslandPage.qml"
+        },
+        {
+            "icon": "preferences-system-symbolic",
+            "label": qsTr("托盘"),
+            "component": "TrayPage.qml"
+        },
+        {
+            "icon": "preferences-desktop-screensaver",
+            "label": qsTr("空闲"),
+            "component": "IdlePage.qml"
+        },
+        {
+            "icon": "help-about",
+            "label": qsTr("关于"),
+            "component": "AboutPage.qml"
+        }
+    ]
+    // IPC 的 page N 需要页数
+    readonly property int pageCount: win.pages.length
+    property int currentPage: 0
 
-        required property var modelData
+    title: qsTr("Quickshell 设置")
+    // Kirigami 默认 visible: true，这里覆盖成跟着开关走
+    visible: WidgetState.settingsOpen
 
-        // 只在主屏开一份：设置窗口是单例性质的，多屏各来一份会互相抢键盘
-        readonly property bool isPrimaryScreen: win.modelData === Quickshell.screens[0]
+    width: Kirigami.Units.gridUnit * 60
+    height: Kirigami.Units.gridUnit * 42
+    minimumWidth: Kirigami.Units.gridUnit * 42
+    minimumHeight: Kirigami.Units.gridUnit * 30
 
-        visible: WidgetState.settingsOpen && win.isPrimaryScreen
-        screen: modelData
+    color: Kirigami.Theme.backgroundColor
 
-        color: "transparent"
-        exclusionMode: ExclusionMode.Ignore
-        WlrLayershell.namespace: "quickshell-settings"
-        WlrLayershell.layer: WlrLayer.Overlay
-        WlrLayershell.keyboardFocus: visible ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+    // 不叫 close()：QQuickWindow(QWindow) 自带 close()，重名会被当成覆盖
+    function dismiss(): void {
+        WidgetState.settingsOpen = false;
+    }
 
-        anchors {
-            top: true
-            bottom: true
-            left: true
-            right: true
+    // 点系统标题栏的关闭按钮 / Alt+F4：只隐藏，不销毁，下次打开还在原页
+    onClosing: (close) => {
+        close.accepted = false;
+        win.dismiss();
+    }
+
+    Shortcut {
+        sequence: "Escape"
+        onActivated: win.dismiss()
+    }
+
+    // 全局快捷键 quickshell:settings（Hyprland 侧绑 SUPER+S）
+    Connections {
+        target: Shortcuts
+
+        function onSettingsRequested(): void {
+            WidgetState.settingsOpen = !WidgetState.settingsOpen;
+        }
+    }
+
+    ColumnLayout {
+        anchors.fill: parent
+        spacing: 0
+
+        // ---------- 标题栏 ----------
+        // 窗口自己有系统标题栏；这条只放标题、关闭按钮，并兼作拖动区。
+        RowLayout {
+            Layout.fillWidth: true
+            Layout.preferredHeight: Kirigami.Units.gridUnit * 3
+            Layout.leftMargin: Kirigami.Units.largeSpacing
+            Layout.rightMargin: Kirigami.Units.smallSpacing
+            spacing: Kirigami.Units.smallSpacing
+
+            Kirigami.Heading {
+                text: qsTr("设置")
+                level: 2
+                Layout.fillWidth: true
+            }
+
+            ToolButton {
+                icon.name: "window-close"
+                display: AbstractButton.IconOnly
+                flat: true
+                onClicked: win.dismiss()
+                ToolTip.visible: hovered
+                ToolTip.text: qsTr("关闭 (Esc)")
+                ToolTip.delay: Kirigami.Units.toolTipDelay
+            }
+
+            // 拖动标题栏 = 移动窗口，交给窗口本身的 startSystemMove
+            DragHandler {
+                target: null
+                grabPermissions: PointerHandler.CanTakeOverFromAnything
+                onActiveChanged: {
+                    if (active)
+                        win.startSystemMove();
+                }
+            }
         }
 
-        // ==================== 页面表 ====================
-        // 导航和内容都从这里取，加一页 = 加一条 + 加一个页面组件
-        readonly property var pages: [
-            {
-                "icon": "preferences-desktop-wallpaper",
-                "label": qsTr("壁纸"),
-                "component": "WallpaperPage.qml"
-            },
-            {
-                "icon": "preferences-desktop-theme",
-                "label": qsTr("状态栏"),
-                "component": "BarPage.qml"
-            },
-            {
-                "icon": "preferences-desktop-effects",
-                "label": qsTr("灵动岛"),
-                "component": "IslandPage.qml"
-            },
-            {
-                "icon": "preferences-system-symbolic",
-                "label": qsTr("托盘"),
-                "component": "TrayPage.qml"
-            },
-            {
-                "icon": "preferences-desktop-screensaver",
-                "label": qsTr("空闲"),
-                "component": "IdlePage.qml"
-            },
-            {
-                "icon": "help-about",
-                "label": qsTr("关于"),
-                "component": "AboutPage.qml"
-            }
-        ]
-        property int currentPage: 0
+        Kirigami.Separator {
+            Layout.fillWidth: true
+        }
 
-        // 不叫 close()：QQuickWindow(QWindow) 自带 close()，重名会被当成覆盖
-        function dismiss(): void {
+        // ---------- 主体 ----------
+        RowLayout {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            spacing: 0
+
+            // 左侧导航
+            ListView {
+                id: navList
+
+                Layout.preferredWidth: Kirigami.Units.gridUnit * 10
+                Layout.fillHeight: true
+                Layout.leftMargin: Kirigami.Units.smallSpacing
+                Layout.rightMargin: Kirigami.Units.smallSpacing
+                Layout.topMargin: Kirigami.Units.smallSpacing
+                Layout.bottomMargin: Kirigami.Units.smallSpacing
+                spacing: Kirigami.Units.smallSpacing
+                clip: true
+                model: win.pages
+                currentIndex: win.currentPage
+
+                delegate: ItemDelegate {
+                    id: navDelegate
+
+                    required property var modelData
+                    required property int index
+
+                    width: ListView.view.width
+                    implicitHeight: Kirigami.Units.gridUnit * 2
+                    text: navDelegate.modelData.label
+                    icon.name: navDelegate.modelData.icon
+                    highlighted: win.currentPage === navDelegate.index
+                    onClicked: win.currentPage = navDelegate.index
+                }
+
+                // 键盘上下键也能换页
+                Keys.onUpPressed: win.currentPage = Math.max(0, win.currentPage - 1)
+                Keys.onDownPressed: win.currentPage = Math.min(win.pages.length - 1, win.currentPage + 1)
+            }
+
+            // 竖分隔线：Separator 没有 orientation，靠 1px 宽 + 撑满高度成竖线
+            Kirigami.Separator {
+                Layout.preferredWidth: 1
+                Layout.fillHeight: true
+            }
+
+            // 右侧内容
+            StackLayout {
+                id: pageStack
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                Layout.margins: Kirigami.Units.largeSpacing
+                currentIndex: win.currentPage
+
+                WallpaperPage {}
+                BarPage {}
+                IslandPage {}
+                TrayPage {}
+                IdlePage {}
+                AboutPage {}
+            }
+        }
+
+        Kirigami.Separator {
+            Layout.fillWidth: true
+        }
+
+        // ---------- 底栏：配置文件路径 ----------
+        RowLayout {
+            Layout.fillWidth: true
+            Layout.leftMargin: Kirigami.Units.largeSpacing
+            Layout.rightMargin: Kirigami.Units.largeSpacing
+            Layout.topMargin: Kirigami.Units.smallSpacing
+            Layout.bottomMargin: Kirigami.Units.smallSpacing
+            spacing: Kirigami.Units.smallSpacing
+
+            Kirigami.Icon {
+                source: "document-open-folder"
+                implicitWidth: Kirigami.Units.iconSizes.small
+                implicitHeight: implicitWidth
+                color: Kirigami.Theme.disabledTextColor
+            }
+
+            Label {
+                Layout.fillWidth: true
+                text: Settings.path
+                elide: Text.ElideMiddle
+                font: Kirigami.Theme.smallFont
+                color: Kirigami.Theme.disabledTextColor
+
+                TapHandler {
+                    onTapped: Qt.openUrlExternally("file://" + Settings.path)
+                }
+            }
+        }
+    }
+
+    // ==================== IPC ====================
+    // qs ipc call settings toggle / open / close / page N
+    IpcHandler {
+        target: "settings"
+
+        function toggle(): void {
+            WidgetState.settingsOpen = !WidgetState.settingsOpen;
+        }
+
+        function open(): void {
+            WidgetState.settingsOpen = true;
+        }
+
+        function close(): void {
             WidgetState.settingsOpen = false;
         }
 
-        Shortcut {
-            sequence: "Escape"
-            onActivated: win.dismiss()
-        }
-
-        // 全局快捷键 quickshell:settings（Hyprland 侧绑 SUPER+S 即可）：
-        // 只在主屏那份窗口上处理，否则 N 块屏会切换 N 次
-        Connections {
-            target: Shortcuts
-            enabled: win.isPrimaryScreen
-
-            function onSettingsRequested(): void {
-                WidgetState.settingsOpen = !WidgetState.settingsOpen;
-            }
-        }
-
-        // ==================== 遮罩 ====================
-        Rectangle {
-            anchors.fill: parent
-            color: Qt.rgba(0, 0, 0, 0.4)
-
-            MouseArea {
-                anchors.fill: parent
-                onClicked: win.dismiss()
-            }
-        }
-
-        // ==================== 卡片 ====================
-        Kirigami.ShadowedRectangle {
-            id: card
-
-            anchors.centerIn: parent
-            width: Math.min(parent.width - Kirigami.Units.gridUnit * 4, Kirigami.Units.gridUnit * 60)
-            height: Math.min(parent.height - Kirigami.Units.gridUnit * 4, Kirigami.Units.gridUnit * 42)
-
-            color: Kirigami.Theme.backgroundColor
-            radius: Kirigami.Units.gridUnit * 0.6
-            border.width: 1
-            border.color: Qt.alpha(Kirigami.Theme.textColor, 0.12)
-            shadow.size: Kirigami.Units.gridUnit * 1.2
-            shadow.yOffset: 6
-            shadow.color: Qt.rgba(0, 0, 0, 0.35)
-
-            // 卡片自己的空白处吞掉点击（别穿透到遮罩把窗口关了）。
-            // 声明在最前面 → 始终在所有内容下面，不会挡住控件。
-            MouseArea {
-                anchors.fill: parent
-            }
-
-            ColumnLayout {
-                anchors.fill: parent
-                spacing: 0
-
-                // ---------- 标题栏 ----------
-                RowLayout {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: Kirigami.Units.gridUnit * 3
-                    Layout.leftMargin: Kirigami.Units.largeSpacing
-                    Layout.rightMargin: Kirigami.Units.smallSpacing
-                    spacing: Kirigami.Units.smallSpacing
-
-                    Kirigami.Heading {
-                        text: qsTr("设置")
-                        level: 2
-                        Layout.fillWidth: true
-                    }
-
-                    ToolButton {
-                        icon.name: "window-close"
-                        display: AbstractButton.IconOnly
-                        flat: true
-                        onClicked: win.dismiss()
-                        ToolTip.visible: hovered
-                        ToolTip.text: qsTr("关闭 (Esc)")
-                        ToolTip.delay: Kirigami.Units.toolTipDelay
-                    }
-                }
-
-                Kirigami.Separator {
-                    Layout.fillWidth: true
-                }
-
-                // ---------- 主体 ----------
-                RowLayout {
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    spacing: 0
-
-                    // 左侧导航
-                    ListView {
-                        id: navList
-
-                        Layout.preferredWidth: Kirigami.Units.gridUnit * 10
-                        Layout.fillHeight: true
-                        Layout.leftMargin: Kirigami.Units.smallSpacing
-                        Layout.rightMargin: Kirigami.Units.smallSpacing
-                        Layout.topMargin: Kirigami.Units.smallSpacing
-                        Layout.bottomMargin: Kirigami.Units.smallSpacing
-                        spacing: Kirigami.Units.smallSpacing
-                        clip: true
-                        model: win.pages
-                        currentIndex: win.currentPage
-
-                        delegate: ItemDelegate {
-                            id: navDelegate
-
-                            required property var modelData
-                            required property int index
-
-                            width: ListView.view.width
-                            implicitHeight: Kirigami.Units.gridUnit * 2
-                            text: navDelegate.modelData.label
-                            icon.name: navDelegate.modelData.icon
-                            highlighted: win.currentPage === navDelegate.index
-                            onClicked: win.currentPage = navDelegate.index
-                        }
-
-                        // 键盘上下键也能换页
-                        Keys.onUpPressed: win.currentPage = Math.max(0, win.currentPage - 1)
-                        Keys.onDownPressed: win.currentPage = Math.min(win.pages.length - 1, win.currentPage + 1)
-                    }
-
-                    // 竖分隔线：Separator 没有 orientation，靠 1px 宽 + 撑满高度成竖线
-                    Kirigami.Separator {
-                        Layout.preferredWidth: 1
-                        Layout.fillHeight: true
-                    }
-
-                    // 右侧内容
-                    StackLayout {
-                        id: pageStack
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                        Layout.margins: Kirigami.Units.largeSpacing
-                        currentIndex: win.currentPage
-
-                        WallpaperPage {}
-                        BarPage {}
-                        IslandPage {}
-                        TrayPage {}
-                        IdlePage {}
-                        AboutPage {}
-                    }
-                }
-
-                Kirigami.Separator {
-                    Layout.fillWidth: true
-                }
-
-                // ---------- 底栏：配置文件路径 ----------
-                RowLayout {
-                    Layout.fillWidth: true
-                    Layout.leftMargin: Kirigami.Units.largeSpacing
-                    Layout.rightMargin: Kirigami.Units.largeSpacing
-                    Layout.topMargin: Kirigami.Units.smallSpacing
-                    Layout.bottomMargin: Kirigami.Units.smallSpacing
-                    spacing: Kirigami.Units.smallSpacing
-
-                    Kirigami.Icon {
-                        source: "document-open-folder"
-                        implicitWidth: Kirigami.Units.iconSizes.small
-                        implicitHeight: implicitWidth
-                        color: Kirigami.Theme.disabledTextColor
-                    }
-
-                    Label {
-                        Layout.fillWidth: true
-                        text: Settings.path
-                        elide: Text.ElideMiddle
-                        font: Kirigami.Theme.smallFont
-                        color: Kirigami.Theme.disabledTextColor
-
-                        TapHandler {
-                            onTapped: Qt.openUrlExternally("file://" + Settings.path)
-                        }
-                    }
-                }
-            }
-        }
-
-        // ==================== IPC ====================
-        // qs ipc call settings toggle / open / close
-        IpcHandler {
-            target: "settings"
-            // 每块屏一份窗口，只让主屏那份注册 IPC，否则 target 会重复
-            enabled: win.isPrimaryScreen
-
-            function toggle(): void {
-                WidgetState.settingsOpen = !WidgetState.settingsOpen;
-            }
-
-            // qs ipc call settings page 0   -> 切到指定页（0 壁纸 1 状态栏 2 空闲 3 关于）
         function page(index: int): void {
-            win.currentPage = Math.max(0, Math.min(win.pages.length - 1, index));
-        }
-        function open(): void {
-                WidgetState.settingsOpen = true;
-            }
-
-            function close(): void {
-                WidgetState.settingsOpen = false;
-            }
+            win.currentPage = Math.max(0, Math.min(win.pageCount - 1, index));
         }
     }
 }
