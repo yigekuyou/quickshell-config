@@ -77,29 +77,10 @@ Kirigami.AbstractApplicationWindow {
 
     color: Kirigami.Theme.backgroundColor
 
-    // 不叫 close()：QQuickWindow(QWindow) 自带 close()，重名会被当成覆盖
-    function dismiss(): void {
-        WidgetState.settingsOpen = false;
-    }
-
-    // 点系统标题栏的关闭按钮 / Alt+F4：只隐藏，不销毁，下次打开还在原页
-    onClosing: (close) => {
-        close.accepted = false;
-        win.dismiss();
-    }
 
     Shortcut {
         sequence: "Escape"
         onActivated: win.dismiss()
-    }
-
-    // 全局快捷键 quickshell:settings（Hyprland 侧绑 SUPER+S）
-    Connections {
-        target: Shortcuts
-
-        function onSettingsRequested(): void {
-            WidgetState.settingsOpen = !WidgetState.settingsOpen;
-        }
     }
 
     ColumnLayout {
@@ -119,16 +100,6 @@ Kirigami.AbstractApplicationWindow {
                 text: qsTr("设置")
                 level: 2
                 Layout.fillWidth: true
-            }
-
-            ToolButton {
-                icon.name: "window-close"
-                display: AbstractButton.IconOnly
-                flat: true
-                onClicked: win.dismiss()
-                ToolTip.visible: hovered
-                ToolTip.text: qsTr("关闭 (Esc)")
-                ToolTip.delay: Kirigami.Units.toolTipDelay
             }
 
             // 拖动标题栏 = 移动窗口，交给窗口本身的 startSystemMove
