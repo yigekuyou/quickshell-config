@@ -30,7 +30,19 @@ Kirigami.CardsListView {
         readonly property string artUrl: (activeplayer.trackArtUrl) ? activeplayer.trackArtUrl : ""
         readonly property string title: (activeplayer.trackTitle) ? activeplayer.trackTitle : "No Media"
         readonly property string artist: (activeplayer.trackArtist) ? activeplayer.trackArtist : ""
+	Connections {
+		target: Lyrics
 
+		function onActiveIndexChanged(): void {
+			if (currentIndex !== Lyrics.activeIndex)
+				currentIndex = Lyrics.activeIndex
+		}
+	}
+
+	Component.onCompleted: {
+		if (currentIndex !== Lyrics.activeIndex)
+			currentIndex = Lyrics.activeIndex
+	}
         // 进度百分比 (0.0 ~ 1.0)
         property double progress: (activeplayer.length > 0 && activeplayer.position > 0) ? Math.min(activeplayer.position / activeplayer.length, 1.0) : 0
         padding: Kirigami.Units.largeSpacing
