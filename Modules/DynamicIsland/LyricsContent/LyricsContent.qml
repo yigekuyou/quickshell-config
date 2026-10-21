@@ -21,10 +21,6 @@ Kirigami.CardsListView {
     snapMode: ListView.SnapOneItem
     highlightRangeMode: ListView.StrictlyEnforceRange
     interactive: false
-    // 自动翻到正在播放的播放器：不能只用 currentIndex 绑定 ——
-    // StrictlyEnforceRange 的定位逻辑会在内部命令式改写 currentIndex，
-    // 一次赋值就把声明式绑定顶掉，之后 activeIndex 再变视图也不跟了。
-    // 改成 Connections 主动同步：服务端索引一变、组件一建好就设一次。
     delegate: Kirigami.Card {
         id: actived
         background: Rectangle {
@@ -39,7 +35,6 @@ Kirigami.CardsListView {
         readonly property string trackArtist: player.trackArtist ? player.trackArtist : ""
         readonly property string playerName: player.identity ? (player.identity || player.busName || "") : ""
         readonly property string artUrl: player.trackArtUrl ? (player.trackArtUrl || "") : ""
-	currentIndex: Lyrics.activeIndex
         // 专辑封面
         contentItem: RowLayout {
             spacing: Kirigami.Units.mediumSpacing
