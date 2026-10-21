@@ -30,6 +30,33 @@ Item {
     // 生成中（用来禁用发送 / 重新生成）
     property bool busy: false
 
+    // 模型与思考强度（仅 UI 侧状态；接 ACP 时同步到 provider）
+    property string currentModel: "gpt-4o"
+    property string thinkingEffort: "medium"   // "low" | "medium" | "high"
+
+    readonly property var availableModels: [
+        {id: "gpt-4o",       name: "GPT-4o"},
+        {id: "gpt-4o-mini",  name: "GPT-4o mini"},
+        {id: "claude-3.5",   name: "Claude 3.5 Sonnet"},
+        {id: "local-llama",  name: "本地 Llama 3.1 (Ollama)"}
+    ]
+    readonly property var effortOptions: [
+        {id: "low",    label: qsTr("低"),    icon: "battery-030-charging"},
+        {id: "medium", label: qsTr("中等"),  icon: "battery-060-charging"},
+        {id: "high",   label: qsTr("高"),    icon: "battery-090-charging"}
+    ]
+
+    function setModel(modelId) {
+        if (currentModel !== modelId) {
+            currentModel = modelId
+        }
+    }
+    function setThinkingEffort(effortId) {
+        if (thinkingEffort !== effortId) {
+            thinkingEffort = effortId
+        }
+    }
+
     ListModel {
         id: messageModel
     }

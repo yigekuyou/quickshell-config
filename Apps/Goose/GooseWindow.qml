@@ -78,6 +78,62 @@ Kirigami.AbstractApplicationWindow {
                 interactive: false
             }
 
+            // 模型选择下拉框
+            ComboBox {
+                id: modelCombo
+                model: chatStore.availableModels
+                currentIndex: chatStore.availableModels.findIndex(m => m.id === chatStore.currentModel)
+                displayText: chatStore.availableModels.find(m => m.id === chatStore.currentModel)?.name ?? chatStore.currentModel
+                delegate: ItemDelegate {
+                    required property int index
+                    required property var modelData
+                    width: modelCombo.popup.width
+                    text: modelData.name
+                    font: modelCombo.font
+                    highlighted: modelCombo.highlightedIndex === index
+                    onClicked: {
+                        modelCombo.currentIndex = index
+                        modelCombo.popup.close()
+                    }
+                }
+                indicator: Kirigami.Icon {
+                    source: "go-down"
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.margins: Kirigami.Units.smallSpacing
+                }
+                onCurrentIndexChanged: {
+                    if (currentIndex >= 0)
+                        chatStore.setModel(modelCombo.model[currentIndex].id)
+                }
+                ToolTip.text: qsTr("选择模型")
+                ToolTip.visible: hovered
+                Layout.preferredWidth: Kirigami.Units.gridUnit * 18
+            }
+
+            // 思考强度：Chip 组
+            RowLayout {
+                spacing: Kirigami.Units.smallSpacing
+                Repeater {
+                    model: chatStore.effortOptions
+                    delegate: Kirigami.Chip {
+                        required property var modelData
+                        text: modelData.label
+                        icon.name: modelData.icon
+                        closable: false
+                        checkable: true
+                        checked: chatStore.thinkingEffort === modelData.id
+                        onClicked: chatStore.setThinkingEffort(modelData.id)
+                        Binding on checked {
+                            value: chatStore.thinkingEffort === modelData.id
+                            restoreMode: Binding.RestoreBindingOrValue
+                        }
+                        ToolTip.text: qsTr("思考强度：%1").arg(modelData.label)
+                        ToolTip.visible: hovered
+                    }
+                }
+            }
+
             Item {
                 Layout.fillWidth: true
             }
