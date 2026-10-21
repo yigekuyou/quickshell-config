@@ -51,10 +51,6 @@ SettingsPage {
         section: "left"
     }
 
-    FormCard.FormHeader {
-        title: qsTr("显示")
-    }
-
     SettingsGroup {
 
         title: qsTr("内容")
@@ -136,40 +132,21 @@ SettingsPage {
 
         title: qsTr("默认值")
 
-        FormCard.AbstractFormDelegate {
-            Layout.fillWidth: true
-            background: null
+        // 说明条改用统一组件（InlineMessage），不再是“无背景表单行”
+        SettingsNote {
+            text: qsTr("修改会立即生效并写入 %1").arg(Settings.path)
+        }
 
-            contentItem: ColumnLayout {
-                spacing: Kirigami.Units.smallSpacing
-
-                Label {
-                    Layout.fillWidth: true
-                    text: qsTr("修改会立即生效并写入 %1").arg(Settings.path)
-                    wrapMode: Text.WordWrap
-                    font.pixelSize: Kirigami.Theme.smallFont.pixelSize
-                    color: Kirigami.Theme.disabledTextColor
-                }
-
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: Kirigami.Units.smallSpacing
-
-                    Button {
-                        text: qsTr("恢复默认")
-                        onClicked: {
-                            Settings.bar.height = 1.4;
-                            Settings.bar.cornerRadius = 0.5;
-                            Settings.bar.ringScale = 1.3;
-                            Settings.bar.ringWidth = 1.6;
-                            Settings.bar.ringTrackOpacity = 0.16;
-                        }
-                    }
-
-                    Item {
-                        Layout.fillWidth: true
-                    }
-                }
+        FormCard.FormButtonDelegate {
+            text: qsTr("恢复默认几何")
+            description: qsTr("高度 / 圆角 / 圆环参数回到初始值")
+            icon.name: "edit-undo"
+            onClicked: {
+                Settings.bar.height = 1.4;
+                Settings.bar.cornerRadius = 0.5;
+                Settings.bar.ringScale = 1.3;
+                Settings.bar.ringWidth = 1.6;
+                Settings.bar.ringTrackOpacity = 0.16;
             }
         }
     }

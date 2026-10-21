@@ -14,10 +14,6 @@ SettingsPage {
     title: qsTr("灵动岛")
     icon: "preferences-desktop-effects"
 
-    FormCard.FormHeader {
-        title: qsTr("收起 / 展开")
-    }
-
     SettingsGroup {
 
         title: qsTr("尺寸")
@@ -98,10 +94,6 @@ SettingsPage {
             value: Settings.island.radius
             onMoved: value => Settings.island.radius = Math.round(value * 10) / 10
         }
-    }
-
-    FormCard.FormHeader {
-        title: qsTr("其它面板")
     }
 
     SettingsGroup {

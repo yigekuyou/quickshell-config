@@ -21,23 +21,12 @@ SettingsPage {
         Settings.bar.rightSpacing = spacing;
     }
 
-    FormCard.FormHeader {
+    // 页首说明：Kirigami 的行内信息条，和「壁纸」页的提示同一个组件
+    SettingsGroup {
         title: qsTr("右侧外观")
-    }
 
-    FormCard.FormCard {
-
-        FormCard.AbstractFormDelegate {
-            Layout.fillWidth: true
-            background: null
-
-            contentItem: Label {
-                Layout.fillWidth: true
-                wrapMode: Text.WordWrap
-                text: qsTr("密度、显示文字、图标圆环都在「状态栏」页；这页只做一键预设。")
-                font.pixelSize: Kirigami.Theme.smallFont.pixelSize
-                color: Kirigami.Theme.disabledTextColor
-            }
+        SettingsNote {
+            text: qsTr("密度、显示文字、图标圆环都在「状态栏」页；这页只做一键预设。")
         }
     }
 
@@ -45,44 +34,25 @@ SettingsPage {
 
         title: qsTr("预设")
 
-        FormCard.AbstractFormDelegate {
-            Layout.fillWidth: true
-            background: null
+        FormCard.FormButtonDelegate {
+            text: qsTr("紧凑")
+            description: qsTr("图标 0.78 / 留白 0.22 / 间距 0.08")
+            icon.name: "zoom-out"
+            onClicked: root.applyPreset(0.78, 0.22, 0.08)
+        }
 
-            contentItem: ColumnLayout {
-                spacing: Kirigami.Units.smallSpacing
+        FormCard.FormButtonDelegate {
+            text: qsTr("标准")
+            description: qsTr("图标 0.85 / 留白 0.28 / 间距 0.12")
+            icon.name: "zoom-original"
+            onClicked: root.applyPreset(0.85, 0.28, 0.12)
+        }
 
-                Label {
-                    Layout.fillWidth: true
-                    text: qsTr("一键写入右侧的图标 / 留白 / 间距")
-                    font.pixelSize: Kirigami.Theme.smallFont.pixelSize
-                    color: Kirigami.Theme.disabledTextColor
-                }
-
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: Kirigami.Units.smallSpacing
-
-                    Button {
-                        text: qsTr("紧凑")
-                        onClicked: root.applyPreset(0.78, 0.22, 0.08)
-                    }
-
-                    Button {
-                        text: qsTr("标准")
-                        onClicked: root.applyPreset(0.85, 0.28, 0.12)
-                    }
-
-                    Button {
-                        text: qsTr("舒适")
-                        onClicked: root.applyPreset(1.0, 0.5, 0.24)
-                    }
-
-                    Item {
-                        Layout.fillWidth: true
-                    }
-                }
-            }
+        FormCard.FormButtonDelegate {
+            text: qsTr("舒适")
+            description: qsTr("图标 1.00 / 留白 0.50 / 间距 0.24")
+            icon.name: "zoom-in"
+            onClicked: root.applyPreset(1.0, 0.5, 0.24)
         }
     }
 }

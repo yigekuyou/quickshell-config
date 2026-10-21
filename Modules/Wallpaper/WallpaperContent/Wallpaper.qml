@@ -44,8 +44,9 @@ Item {
             focusable: false
             exclusionMode: ExclusionMode.Ignore
             // 后端没出画之前是空白表面；PanelWindow 默认白底，在深色桌面里
-            // 就是“壁纸变成纯白”，所以显式压黑
-            color: "#000000"
+            // 就是“壁纸变成纯白”。底色跟壁纸设置走（设置 → 壁纸 → 壁纸底色），
+            // 由 Colorscheme 统一仲裁，不在各窗口里各写一个 #000000。
+            color: Colorscheme.wallpaper_background
             WlrLayershell.namespace: "Nox:wallpaper"
             WlrLayershell.layer: WlrLayer.Background
             implicitHeight: height
@@ -238,6 +239,10 @@ Item {
     property bool webPaused: false
     // Web 选项的快照：改了选项要重启子进程才会生效（跨进程只能靠启动参数）
     property string webProps: ""
+    // Web 子进程的底色。只在进程启动时传一次：它决定的是“页面画出来之前的
+    // 那一瞬间”是什么颜色，改颜色不值得重启一整个 WebEngine，所以它不进下面的
+    // “需要重启”比较条件，下次重启自然带上新值。
+    readonly property string webBackground: String(Colorscheme.wallpaper_background)
 
     // 键序无关的序列化：webSaved / webDefaults 每次重建顺序可能不同，
     // 直接比 JSON.stringify 会把“内容没变”判成变了，于是 Web 壁纸被反复重启
@@ -335,7 +340,9 @@ Item {
             String(WallpaperPath.fps),
             root.webMuted ? "true" : "false",
             root.webPaused ? "true" : "false",
-            root.webProps.length > 0 ? root.webProps : "{}"
+            root.webProps.length > 0 ? root.webProps : "{}",
+            // dash+6：底色。老版本没有这个参数时 Web.qml 会回落到黑色
+            root.webBackground
         ]
     }
 }

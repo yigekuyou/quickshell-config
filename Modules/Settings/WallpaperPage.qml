@@ -730,6 +730,18 @@ SettingsPage {
                         onSelected: value => Settings.wallpaper.displayMode = value
                     }
 
+                    // 壁纸底色：三种后端共用同一个值（scene 的 PanelWindow 底色、
+                    // qml6 Web 窗口的底色、mpv 视频出画前的底色），由
+                    // Config/Colorscheme.qml 的 wallpaper_background 统一仲裁，
+                    // 不再各写一个 #000000。
+                    SettingsColorRow {
+                        text: qsTr("壁纸底色")
+                        iconName: "preferences-desktop-color"
+                        description: qsTr("后端出画之前、以及画面比例不足时的衬底颜色。留空则跟随系统主题背景色。")
+                        raw: Settings.wallpaper.backgroundColor
+                        onEdited: value => Settings.wallpaper.backgroundColor = value
+                    }
+
                     SettingsSliderRow {
                         text: qsTr("恢复延迟")
                         iconName: "chronometer"
@@ -968,22 +980,15 @@ SettingsPage {
                     title: qsTr("Web 选项")
                     visible: root.current && root.current.type === "web"
 
-                    Label {
-                        Layout.fillWidth: true
-                        Layout.margins: Kirigami.Units.smallSpacing
-                        wrapMode: Text.WordWrap
-                        font.pixelSize: Kirigami.Theme.smallFont.pixelSize
-                        color: Kirigami.Theme.disabledTextColor
+                    // 说明统一走 SettingsNote（Kirigami InlineMessage），
+                    // 不再是手写字号/颜色的 Label
+                    SettingsNote {
                         text: qsTr("选项来自壁纸的 project.json，改动按壁纸分别保存在 settings/wallpaper/壁纸 id.json，切换壁纸不会互相覆盖。")
                     }
 
-                    Label {
-                        Layout.fillWidth: true
-                        Layout.margins: Kirigami.Units.smallSpacing
-                        wrapMode: Text.WordWrap
+                    SettingsNote {
                         visible: root.webPropertyKeys().length === 0
-                        font.pixelSize: Kirigami.Theme.smallFont.pixelSize
-                        color: Kirigami.Theme.disabledTextColor
+                        type: Kirigami.MessageType.Warning
                         text: qsTr("这张壁纸没有可配置的选项。")
                     }
 
@@ -1052,36 +1057,17 @@ SettingsPage {
                                     }
                                 }
 
-                                // 颜色（十六进制字符串）
+                                // 颜色：和播放页、壁纸底色用同一个控件
+                                // (SettingsColorRow)，十六进制和 WE 的
+                                // "1 1 1" / "255 0 0" 三种写法都能预览
                                 Component {
                                     id: colorComponent
 
-                                    SettingsFieldRow {
-                                        label: propItem.propText
+                                    SettingsColorRow {
+                                        text: propItem.propText
                                         description: propItem.propTip
-
-                                        RowLayout {
-                                            Layout.fillWidth: true
-                                            spacing: Kirigami.Units.smallSpacing
-
-                                            Rectangle {
-                                                Layout.preferredWidth: Kirigami.Units.gridUnit * 1.2
-                                                Layout.preferredHeight: Kirigami.Units.gridUnit * 1.2
-                                                Layout.alignment: Qt.AlignVCenter
-                                                radius: height / 4
-                                                color: String(propItem.propValue || "#000000")
-                                                border.width: 1
-                                                border.color: Kirigami.Theme.disabledTextColor
-                                            }
-
-                                            TextField {
-                                                Layout.fillWidth: true
-                                                Layout.minimumWidth: Kirigami.Units.gridUnit * 6
-                                                text: String(propItem.propValue || "")
-                                                placeholderText: qsTr("十六进制颜色，如 #1e90ff")
-                                                onEditingFinished: propItem.store(text)
-                                            }
-                                        }
+                                        raw: propItem.propValue !== undefined ? String(propItem.propValue) : ""
+                                        onEdited: value => propItem.store(value)
                                     }
                                 }
 

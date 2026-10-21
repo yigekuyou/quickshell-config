@@ -1,6 +1,7 @@
 pragma Singleton
 import Quickshell
 import QtQuick
+import qs.Services
 import org.kde.kirigami as Kirigami
 
 // Material 3 角色名 → 全部由 Kirigami 主题语义色派生。
@@ -20,6 +21,24 @@ Singleton {
     readonly property color on_surface: Kirigami.Theme.textColor
     readonly property color primary: Kirigami.Theme.highlightColor
     readonly property bool dark: root.surface.hslLightness < 0.5
+
+    // ==================== 壁纸色（优先于主题派生色） ====================
+    // 壁纸自己的底色来自 settings.json → wallpaper.backgroundColor。
+    //
+    // 以前这里没给壁纸留任何出口，后果是：壁纸渲染窗口（PanelWindow / Web.qml）
+    // 各自硬编码 #000000，锁屏和所有半透明面板又统一取 Kirigami 主题色，
+    // 于是用户在设置里改的壁纸颜色既到不了壁纸层、也到不了任何 surface ——
+    // 看起来就是“壁纸的颜色被 Colorscheme 覆盖了”。
+    //
+    // 现在的约定：壁纸色是一等来源，非空就优先；空串才回落到主题派生色。
+    // 需要壁纸衬底的组件（Wallpaper.qml / Web.qml / 锁屏）一律读下面两个属性，
+    // 不再自己写死颜色，也不直接读 Settings —— 保证只有一个真相来源。
+    readonly property string wallpaper_color: Settings.wallpaper && Settings.wallpaper.backgroundColor !== undefined
+        ? String(Settings.wallpaper.backgroundColor) : ""
+    // 壁纸衬底（后端出画前的底色 / 锁屏遮罩的底）
+    readonly property color wallpaper_background: root.wallpaper_color !== "" ? root.wallpaper_color : root.surface
+    // 压在壁纸底色上的文字 / 图标色：按底色明度翻转，浅底黑字、深底白字
+    readonly property color on_wallpaper_background: root.wallpaper_background.hslLightness > 0.5 ? "#000000" : "#ffffff"
 
     // ==================== 混色工具 ====================
     // t = 0 取 c1，t = 1 取 c2

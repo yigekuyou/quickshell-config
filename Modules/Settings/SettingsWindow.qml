@@ -75,7 +75,9 @@ Kirigami.AbstractApplicationWindow {
     minimumWidth: Kirigami.Units.gridUnit * 42
     minimumHeight: Kirigami.Units.gridUnit * 30
 
-    color: Kirigami.Theme.backgroundColor
+    // 窗口底色和页面里的卡片取同一个来源（Colorscheme），
+    // 换配色方案 / 换壁纸色时窗口背景不会和内容对不上
+    color: Colorscheme.background
 
 
     Shortcut {

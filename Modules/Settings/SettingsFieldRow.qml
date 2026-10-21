@@ -54,7 +54,7 @@ ColumnLayout {
                 Layout.fillWidth: true
                 visible: root.label !== ""
                 text: root.label
-                font: Kirigami.Theme.smallFont
+                font: Kirigami.Theme.defaultFont
                 color: Kirigami.Theme.textColor
                 wrapMode: Text.WordWrap
             }

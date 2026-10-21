@@ -12,12 +12,11 @@ import org.kde.layershell as LayerShell
 //   进程，再通过 LayerShellQt 把它挂成背景层，效果等同于壁纸。
 //
 // 用法（由 Modules/Wallpaper/WallpaperContent/Wallpaper.qml 启动）：
-//   qml6 Wallpaper/Web.qml -- <file-url> <fps> <muted> <paused> <properties-json>
+//   qml6 Wallpaper/Web.qml -- <file-url> <fps> <muted> <paused> <properties-json> <背景色>
 // 渲染后端沿用父进程的 QSG_RHI_BACKEND（主进程是 vulkan）。
 Window {
     id: root
     visible: true
-    color: "black"
 
     // 参数：qml6 会把 "--" 之后的参数原样放进 Qt.application.arguments
     readonly property int dash: Qt.application.arguments.indexOf("--")
@@ -29,6 +28,13 @@ Window {
         ? Qt.application.arguments[dash + 4] === "true" : false
     readonly property string propertiesJson: dash >= 0 && Qt.application.arguments.length > dash + 5
         ? Qt.application.arguments[dash + 5] : "{}"
+
+    // 底色：由父进程按 wallpaper.backgroundColor 传入（dash+6）。
+    // 页面还没画出来 / 壁纸加载失败时看到的就是这个颜色。
+    readonly property string background: dash >= 0 && Qt.application.arguments.length > dash + 6
+        ? Qt.application.arguments[dash + 6] : "black"
+
+    color: root.background
 
     LayerShell.Window.layer: LayerShell.Window.LayerBackground
     LayerShell.Window.anchors: LayerShell.Window.AnchorTop | LayerShell.Window.AnchorBottom
@@ -43,7 +49,7 @@ Window {
         url: root.wallpaperUrl
         audioMuted: root.muted
         activeFocusOnPress: false
-        backgroundColor: "black"
+        backgroundColor: root.background
 
         // 暂停时冻结渲染，不再烧 GPU
         lifecycleState: root.paused
