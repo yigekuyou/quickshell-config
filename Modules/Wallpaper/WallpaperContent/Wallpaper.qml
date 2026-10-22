@@ -362,13 +362,58 @@ Item {
         webRestart.restart();
     }
 
+    // ---- 传给 Web.qml 的参数：走文件，不走 argv ----
+    // 之前是把 url / 静音 / 暂停 / 属性 JSON / 底色当成 argv 逐个位置传过去
+    // （qm6 Web.qml -- a b c d e f），问题有三个：
+    //   1) 属性 JSON 是 128 个键的对象，塞进 argv 要防引号、防长度；
+    //   2) Web.qml 得按 dash+N 数位置，改一个参数就要两边一起改；
+    //   3) qml6 会把“最后一个参数”当第二个 QML 文件，必须靠 "--" 分隔。
+    // 改成父进程先写一个 JSON 规格文件，子进程只拿这一个路径，读文件即可。
+    readonly property string webSpecPath: {
+        const dir = String(Quickshell.env("XDG_RUNTIME_DIR") || "");
+        return (dir !== "" ? dir : "/tmp") + "/quickshell-webwall.json";
+    }
+
+    function webSpec() {
+        return JSON.stringify({
+            "url": root.webUrl,
+            "muted": root.webMuted,
+            "paused": root.webPaused,
+            "background": root.webBackground,
+            "properties": root.webProps.length > 0 ? root.webProps : "{}"
+        });
+    }
+
+    // 先把规格写盘，写成功再起进程 —— 起早了子进程会读到上一张壁纸的配置。
+    function startWebChild() {
+        specWriter.command = [
+            "sh", "-c", "printf '%s' \"$1\" > \"$2\"", "sh",
+            root.webSpec(), root.webSpecPath
+        ];
+        specWriter.running = true;
+    }
+
+    Process {
+        id: specWriter
+        running: false
+        // 注意：Process 没有 exitCode 属性，退出码只在 exited(code, status) 的参数里
+        onExited: (exitCode, exitStatus) => {
+            if (exitStatus !== 0 || exitCode !== 0) {
+                console.warn("[web-wallpaper] 规格文件写入失败:", exitCode, exitStatus);
+                return;
+            }
+            if (root.webActive)
+                webProc.running = true;
+        }
+    }
+
     Timer {
         id: webRestart
         // 改一个选项就重启一次子进程太贵；等一下让连续改动合并成一次
         interval: 600
         repeat: false
         onTriggered: if (root.webActive)
-            webProc.running = true
+            root.startWebChild()
     }
 
     Connections {
@@ -404,25 +449,17 @@ Item {
                 startPauseApply.restart();
         }
 
-        // fps 只在进程启动时传入；WebEngine 没有帧率上限接口，改帧率不影响 Web。
-        // 用 env 加一个变量而不是 Process.environment：后者是整张表，写错就会
-        // 把 WAYLAND_DISPLAY / PATH 一起弄丢，壁纸窗口直接连不上合成器。
         // QML_XHR_ALLOW_FILE_READ 是 Qt 的开关：QML 的 XMLHttpRequest 读本地
         // 文件默认被禁用（实测报 "Using GET on a local file is disabled"），
-        // Web.qml 靠它读暂停状态文件和 /proc/self/stat。
+        // Web.qml 靠它读参数文件（以及 /proc/self/stat）。
+        // 参数只有一个：规格文件路径。其余全部在那个 JSON 里。
         command: [
             "/usr/bin/env",
             "QML_XHR_ALLOW_FILE_READ=1",
             "qml6",
             Directories.configDir + "/Wallpaper/Web.qml",
             "--",
-            root.webUrl,
-            String(WallpaperPath.fps),
-            root.webMuted ? "true" : "false",
-            root.webPaused ? "true" : "false",
-            root.webProps.length > 0 ? root.webProps : "{}",
-            // dash+6：底色。老版本没有这个参数时 Web.qml 会回落到黑色
-            root.webBackground
+            root.webSpecPath
         ]
     }
 }

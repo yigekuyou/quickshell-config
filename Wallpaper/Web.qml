@@ -12,27 +12,39 @@ import org.kde.layershell as LayerShell
 //   进程，再通过 LayerShellQt 把它挂成背景层，效果等同于壁纸。
 //
 // 用法（由 Modules/Wallpaper/WallpaperContent/Wallpaper.qml 启动）：
-//   qml6 Wallpaper/Web.qml -- <file-url> <fps> <muted> <paused> <properties-json> <背景色>
+//   qml6 Wallpaper/Web.qml -- <规格 JSON 路径>
+//   规格文件内容：{ url, muted, paused, background, properties }
+//   参数走文件而不是一排 argv：属性 JSON 有上百个键（argv 要防引号、防长度），
+//   而且 qml6 会把“最后一个参数”当成第二个 QML 文件。
 // 渲染后端沿用父进程的 QSG_RHI_BACKEND（主进程是 vulkan）。
 Window {
     id: root
     visible: true
 
-    // 参数：qml6 会把 "--" 之后的参数原样放进 Qt.application.arguments
+    // qml6 会把 "--" 之后的参数原样放进 Qt.application.arguments
     readonly property int dash: Qt.application.arguments.indexOf("--")
-    readonly property string wallpaperUrl: dash >= 0 && Qt.application.arguments.length > dash + 1
+    readonly property string specPath: dash >= 0 && Qt.application.arguments.length > dash + 1
         ? Qt.application.arguments[dash + 1] : ""
-    readonly property bool muted: dash >= 0 && Qt.application.arguments.length > dash + 3
-        ? Qt.application.arguments[dash + 3] === "true" : true
-    readonly property bool paused: dash >= 0 && Qt.application.arguments.length > dash + 4
-        ? Qt.application.arguments[dash + 4] === "true" : false
-    readonly property string propertiesJson: dash >= 0 && Qt.application.arguments.length > dash + 5
-        ? Qt.application.arguments[dash + 5] : "{}"
 
-    // 底色：由父进程按 wallpaper.backgroundColor 传入（dash+6）。
-    // 页面还没画出来 / 壁纸加载失败时看到的就是这个颜色。
-    readonly property string background: dash >= 0 && Qt.application.arguments.length > dash + 6
-        ? Qt.application.arguments[dash + 6] : "black"
+    // 规格只读一次：任何参数变化都由父进程重启本进程（跨进程没有别的通道）
+    readonly property var spec: {
+        if (root.specPath === "")
+            return ({});
+        const text = root.readLocalFile(root.specPath);
+        try {
+            return JSON.parse(text) || ({});
+        } catch (e) {
+            console.warn("[web-wallpaper] 规格文件解析失败:", e);
+            return ({});
+        }
+    }
+
+    readonly property string wallpaperUrl: String(root.spec.url || "")
+    readonly property bool muted: root.spec.muted === undefined ? true : !!root.spec.muted
+    readonly property bool paused: root.spec.paused === true
+    readonly property string propertiesJson: String(root.spec.properties || "{}")
+    // 底色：页面还没画出来 / 加载失败时看到的就是这个颜色
+    readonly property string background: String(root.spec.background || "black")
 
     color: root.background
 
