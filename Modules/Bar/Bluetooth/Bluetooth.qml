@@ -17,7 +17,6 @@ BarButton {
     readonly property bool adapterOn: Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.state === BluetoothAdapterState.Enabled
 
     icon: "preferences-system-bluetooth"
-    iconSize: Kirigami.Units.gridUnit
     text: {
         if (!Bluetooth.defaultAdapter)
             return "未检测到适配器";

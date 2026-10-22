@@ -2,7 +2,6 @@ import QtQuick
 import QtQuick.Controls
 import qs.Config
 import qs.Modules.Bar.common
-import org.kde.kirigami as Kirigami
 
 // 顶栏最左边的设置入口（就是 dots-hyprland 那个齿轮位）。
 // 图标走系统图标主题（Breeze: actions/16/settings-configure.svg），
@@ -16,7 +15,6 @@ BarButton {
     section: "left"
 
     icon: "settings-configure"
-    iconSize: Math.round(Kirigami.Units.gridUnit * 0.9)
     square: true
     checked: WidgetState.settingsOpen
     onClicked: WidgetState.settingsOpen = !WidgetState.settingsOpen

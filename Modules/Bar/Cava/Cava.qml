@@ -9,7 +9,7 @@ Kirigami.ShadowedRectangle {
     id: root
 
     color: Qt.alpha(Kirigami.Theme.backgroundColor, 0.5)
-    radius: Kirigami.Units.gridUnit * 0.5
+    radius: Sizes.cornerRadius
 
     border.width: 1
     border.color: Qt.alpha(Kirigami.Theme.textColor, 0.1)

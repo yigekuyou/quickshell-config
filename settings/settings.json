@@ -56,7 +56,7 @@
         "pauseBatPercent": 20,
         "pauseDebugLogging": false,
         "pauseFilterByScreen": false,
-        "pauseMode": 0,
+        "pauseMode": 2,
         "pauseOnBattery": true,
         "paused": false,
         "playlistNotify": false,
@@ -72,6 +72,6 @@
         "verboseLogging": false,
         "videoBackend": 1,
         "volume": 1,
-        "wallpaperId": "1551961057"
+        "wallpaperId": "884307090"
     }
 }

@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Layouts
 import qs.Config
 import qs.Services
 import org.kde.kirigami as Kirigami
@@ -9,6 +10,11 @@ import org.kde.kirigamiaddons.formcard as FormCard
 // 本身是一张 FormCard，页面里用 FormCard.FormHeader 当标题即可。
 FormCard.FormCard {
     id: root
+
+    Layout.fillWidth: true
+    // 和 SettingsGroup 一样放开 Kirigami 默认的 30 gridUnit（≈540px）宽度上限：
+    // 不然同一页里左/右侧密度的卡片比其它卡片窄一截，一大一小。
+    maximumWidth: Number.POSITIVE_INFINITY
 
     property string section: "left"
 

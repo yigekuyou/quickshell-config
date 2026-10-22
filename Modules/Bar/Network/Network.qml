@@ -31,7 +31,7 @@ BarButton {
             Kirigami.Icon {
                 visible: root.connectedCount === 0
                 source: "network-wired-disconnected-symbolic"
-                implicitWidth: Math.round(Kirigami.Units.gridUnit * 0.85)
+                implicitWidth: root.iconSize
                 implicitHeight: implicitWidth
                 color: Kirigami.Theme.negativeTextColor
                 Layout.alignment: Qt.AlignVCenter
@@ -40,7 +40,7 @@ BarButton {
             // 只在网络不健康时冒出来提示
             Kirigami.Icon {
                 visible: Networking.connectivity !== NetworkConnectivity.Full
-                implicitWidth: Math.round(Kirigami.Units.gridUnit * 0.8)
+                implicitWidth: root.iconSize
                 implicitHeight: implicitWidth
                 Layout.alignment: Qt.AlignVCenter
 
@@ -73,8 +73,8 @@ BarButton {
 
                     Kirigami.Icon {
                         source: DeviceType.Wifi === modelData.type ? "network-wireless" : "network-wired"
-                        implicitWidth: Kirigami.Units.gridUnit
-                        implicitHeight: Kirigami.Units.gridUnit
+                        implicitWidth: root.iconSize
+                        implicitHeight: implicitWidth
                         color: parent.statusColor
                     }
 
@@ -92,7 +92,7 @@ BarButton {
                                 return name + " (需登录)";
                             return name;
                         }
-                        font.pixelSize: Math.round(Kirigami.Units.gridUnit * 0.8)
+                        font.pixelSize: Math.round(root.iconSize * 0.95)
                         font.weight: Font.DemiBold
                         color: parent.statusColor
                     }

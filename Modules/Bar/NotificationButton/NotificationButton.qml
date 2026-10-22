@@ -21,7 +21,6 @@ BarButton {
 
     checked: WidgetState.notifOpen
     icon: root.dnd ? "notifications-disabled-symbolic" : (root.notifCount > 0 ? "notifications-active-symbolic" : "notifications-symbolic")
-    iconSize: Kirigami.Units.gridUnit * 0.9
     // 免打扰时不报未读数；为 0 时 badge 为空 → 整段隐藏
     badge: (root.notifCount > 0 && !root.dnd) ? String(root.notifCount) : ""
     contentColor: root.dnd ? Kirigami.Theme.disabledTextColor : (WidgetState.notifOpen ? Kirigami.Theme.highlightColor : Kirigami.Theme.textColor)

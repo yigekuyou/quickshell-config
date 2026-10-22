@@ -2,13 +2,17 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import org.kde.kirigami as Kirigami
+import org.kde.kirigamiaddons.formcard as FormCard
 
-// 一行“标签 + 控件”。
+// 设置行：「标签 + 描述 + 自定义控件」。
 //
-// Web 选项里 text / color / number / file 这几类控件都用它排：
-//   * 左边是标签列（自动换行，长了不会变成省略号），标签下面可以带一行说明；
-//   * 右边是控件，铺满剩下的宽度；
-//   * 上下左右留出和 Kirigami 表单行一致的边距，一行行之间不会粘在一起。
+// 以前这行是手工 ColumnLayout（自带 leftMargin/rightMargin 又叠 FormCard 的
+// 内边距），和同卡片里的 Switch/Slider/Combo 行（统一走 FormCard 的行内边距）
+// 留白和行高都对不上 —— 同一张卡片里两套间距， visibly 一大一小。
+// 现在和其他行一样基于 FormCard.AbstractFormDelegate，内边距/行高由
+// FormCard 统一控制，版式与 SettingsComboRow 对齐：
+//   * 第一行：标签（按文字宽度，最宽 16gu） + 控件（塞进来，铺满剩余宽度）
+//   * 第二行：说明（整行宽，小号字，可换行）
 //
 // 用法：把控件直接写进里面就行，它们会被放进内部的 RowLayout。
 //
@@ -17,7 +21,7 @@ import org.kde.kirigami as Kirigami
 //       description: qsTr("留空表示跟随主题")
 //       TextField { Layout.fillWidth: true }
 //   }
-ColumnLayout {
+FormCard.AbstractFormDelegate {
     id: root
 
     property string label: ""
@@ -26,47 +30,39 @@ ColumnLayout {
     default property alias content: fieldRow.data
 
     Layout.fillWidth: true
-    Layout.leftMargin: Kirigami.Units.largeSpacing
-    Layout.rightMargin: Kirigami.Units.largeSpacing
-    Layout.topMargin: Kirigami.Units.smallSpacing
-    Layout.bottomMargin: Kirigami.Units.smallSpacing
-    spacing: 0
 
+    contentItem: ColumnLayout {
+        spacing: Kirigami.Units.smallSpacing
 
-    RowLayout {
-        id: fieldRow
+        RowLayout {
+            id: fieldRow
 
-        Layout.fillWidth: true
-        spacing: Kirigami.Units.largeSpacing
-
-        // 标签列：固定一个舒服的宽度，字多了就换行；说明写在标签下面，
-        // 和右侧控件顶部对齐，长说明也不会把控件挤扁。
-        ColumnLayout {
-            id: labelCol
-
-            visible: root.label !== "" || root.description !== ""
-            Layout.preferredWidth: Kirigami.Units.gridUnit * 12
-            Layout.maximumWidth: Kirigami.Units.gridUnit * 16
-            Layout.alignment: Qt.AlignTop
-            spacing: 0
+            Layout.fillWidth: true
+            spacing: Kirigami.Units.smallSpacing
 
             Label {
-                Layout.fillWidth: true
                 visible: root.label !== ""
                 text: root.label
-                font: Kirigami.Theme.defaultFont
                 color: Kirigami.Theme.textColor
                 wrapMode: Text.WordWrap
+                maximumLineCount: 2
+                elide: Text.ElideRight
+                // 标签长就换行，但不许超过 16gu，把宽度让给右侧控件
+                Layout.maximumWidth: Kirigami.Units.gridUnit * 16
+                Layout.alignment: Qt.AlignVCenter
             }
 
-            Label {
-                Layout.fillWidth: true
-                visible: root.description !== ""
-                text: root.description
-                font: Kirigami.Theme.smallFont
-                color: Kirigami.Theme.disabledTextColor
-                wrapMode: Text.WordWrap
-            }
+            // 右侧控件（通过 default property 塞进来），铺满剩余宽度，
+            // 与 SettingsComboRow 里下拉框同一位置
+        }
+
+        Label {
+            Layout.fillWidth: true
+            visible: root.description !== ""
+            text: root.description
+            wrapMode: Text.WordWrap
+            font: Kirigami.Theme.smallFont
+            color: Kirigami.Theme.disabledTextColor
         }
     }
 }

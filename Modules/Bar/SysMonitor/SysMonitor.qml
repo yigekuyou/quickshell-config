@@ -21,8 +21,8 @@ Kirigami.AbstractCard {
 	    color: Kirigami.Theme.backgroundColor
 	    opacity: 0.5
 	    radius: Sizes.cornerRadius
-	    border.color: Kirigami.Theme.focusColor
-	    border.width: root.activeFocus ? 1 : 0
+	    border.color: Qt.alpha(Kirigami.Theme.textColor, 0.15)
+	    border.width: 1
     }
     Behavior on implicitWidth {
 	    NumberAnimation { duration: Kirigami.Units.longDuration; easing.type: Easing.OutQuart }

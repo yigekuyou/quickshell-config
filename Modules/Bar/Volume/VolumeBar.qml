@@ -15,7 +15,6 @@ BarButton {
     readonly property bool muted: Volume.sinkMuted || Volume.sinkVolume <= 0
 
     icon: Volume.isHeadphone ? "audio-headphones" : (root.muted ? "audio-volume-muted" : (Volume.sinkVolume < 0.33 ? "audio-volume-low" : (Volume.sinkVolume < 0.66 ? "audio-volume-medium" : "audio-volume-high")))
-    iconSize: Kirigami.Units.gridUnit
     text: Math.round(Volume.sinkVolume * 100) + "%"
     textBold: true
     progress: Sizes.barRing ? Volume.sinkVolume : -1
