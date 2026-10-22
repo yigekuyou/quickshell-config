@@ -80,14 +80,30 @@ Kirigami.AbstractApplicationWindow {
     color: Colorscheme.background
 
 
-    Shortcut {
-        sequence: "Escape"
-        onActivated: win.dismiss()
-    }
+    // Escape 关闭：这里不用 QtQuick.Controls 的 Shortcut。
+    // Qt 6.11 的 QQuickShortcut 在对象树被拆掉时会崩：
+    //   QQuickShortcut::~QQuickShortcut -> QShortcutMap::removeShortcut -> SEGV
+    // 而配置重载（qs ipc call config reload）和每个 "Exiting due to IPC request."
+    // 都要整棵拆一次对象树，于是退出/重载必崩（si_code SI_TKILL，见 coredumpctl）。
+    // 改挂在内容项上做按键处理：没有全局快捷键注册表要注销，拆树时什么都不用回收。
+    // 窗口显示时把焦点收进内容项 —— 窗口里没有 activeFocusItem 的话按键到不了 Keys
+    // （原来的 Shortcut 是窗口级注册，不挑焦点，所以这里补一步）
+    // Qt.callLater：不能在这里同步 forceActiveFocus —— 窗口刚 map 时同步抢焦点
+    // 会把主线程卡在 futex 上，整个 qs 的 IPC 跟着失联。延到下一轮事件循环再抢。
+    onVisibleChanged: if (visible) Qt.callLater(contentRoot.forceActiveFocus)
 
     ColumnLayout {
+        id: contentRoot
+
         anchors.fill: parent
         spacing: 0
+        focus: true
+
+        // 子项（导航 ListView、页面里的输入框）没吃掉 Escape 时，事件沿父链冒到这里
+        Keys.onEscapePressed: {
+            WidgetState.settingsOpen = false;
+            event.accepted = true;
+        }
 
         // ---------- 标题栏 ----------
         // 窗口自己有系统标题栏；这条只放标题、关闭按钮，并兼作拖动区。

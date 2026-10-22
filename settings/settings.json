@@ -42,7 +42,7 @@
     },
     "wallpaper": {
         "animatedPreview": true,
-        "backgroundColor": "#000000",
+        "backgroundColor": "",
         "cacheQuotaMB": 2048,
         "displayMode": 1,
         "fps": 60,
@@ -71,6 +71,6 @@
         "verboseLogging": false,
         "videoBackend": 1,
         "volume": 1,
-        "wallpaperId": "893418273"
+        "wallpaperId": "884307090"
     }
 }

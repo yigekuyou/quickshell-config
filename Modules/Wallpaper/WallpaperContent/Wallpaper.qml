@@ -244,6 +244,75 @@ Item {
     // “需要重启”比较条件，下次重启自然带上新值。
     readonly property string webBackground: String(Colorscheme.wallpaper_background)
 
+    // ---- 暂停 / 终止：为什么要动信号，以及怎么保证不出孤儿 ----
+    // 试过的替代方案（都实测过，结论写在这里免得以后重复踩）：
+    //   * WebEngineView.lifecycleState = Frozen：视图可见时是空操作，
+    //     页面里的 setInterval / rAF 照常跑（实测每 500ms 仍在打印）。
+    //     QtWebEngine 只在页面被隐藏时才真的冻结（那时 recommendedState
+    //     会变成 Frozen），而隐藏会丢掉最后一帧、只剩窗口底色 —— 对
+    //     "一有窗口聚焦就暂停"的配置来说等于大半时间在看纯色。
+    //   * 把暂停状态写文件让子进程轮询：子进程只能靠 QML Timer 轮询，
+    //     而 Timer 依赖渲染帧驱动，页面/idle 时可能不触发，反而制造新的
+    //     "永远醒不过来"。
+    // 所以暂停仍然用 SIGSTOP/SIGCONT —— 它保住最后一帧、CPU 直接归零。
+    // 真正要修的是它的三个副作用，下面逐个堵掉：
+    //   1. pid 复用：kill 前先确认 /proc/<pid>/cmdline 还是我们的 qml6。
+    //   2. 漏杀孤儿：pid 自己记，不依赖 Process.running（它在子进程已退出
+    //      但未回收的窗口期是 false）。
+    //   3. 父进程猝死导致子进程永久停在 T：shell.qml 启动时清扫残留进程；
+    //      Web.qml 自己也会在父进程消失后退出。
+    property int webChildPid: 0
+
+    // 发信号前校验身份：pid 会被复用（一小时能起近百个 WebEngine），
+    // 无脑 kill 有可能打到别的进程甚至 qs 自己。
+    function signalWebChild(sig) {
+        const pid = root.webChildPid;
+        if (pid <= 0)
+            return;
+        pauseProc.command = ["sh", "-c",
+            // comm 是内核给的可执行名（qml6），比 grep cmdline 可靠：
+            // sh -c 自己的 cmdline 里也含 "qml6"/"Wallpaper/Web.qml"，
+            // 用 cmdline 匹配会把 shell 自己也算成目标。
+            "test \"$(cat /proc/" + pid + "/comm 2>/dev/null)\" = qml6"
+            + " && grep -qa Wallpaper/Web.qml /proc/" + pid + "/cmdline 2>/dev/null"
+            + " && kill -" + sig + " " + pid];
+        pauseProc.running = true;
+    }
+
+    function killWebChild() {
+        startPauseApply.stop();
+        const pid = root.webChildPid;
+        root.webChildPid = 0;
+        if (pid <= 0)
+            return;
+        killProc.command = ["sh", "-c",
+            "test \"$(cat /proc/" + pid + "/comm 2>/dev/null)\" = qml6"
+            + " && grep -qa Wallpaper/Web.qml /proc/" + pid + "/cmdline 2>/dev/null"
+            + " && kill -KILL " + pid];
+        killProc.running = true;
+    }
+
+    // 两个 Process：暂停和清理可能同时发生（改选项的同时切窗口），
+    // 共用一个对象会互相覆盖 command。
+    Process {
+        id: pauseProc
+        running: false
+    }
+
+    Process {
+        id: killProc
+        running: false
+    }
+
+    // 新进程的"出生即暂停"宽限：先让它渲染出首屏，再 SIGSTOP 保住这一帧
+    Timer {
+        id: startPauseApply
+        interval: 1500
+        repeat: false
+        onTriggered: if (WallpaperPath.suspended)
+            root.signalWebChild("STOP")
+    }
+
     // 键序无关的序列化：webSaved / webDefaults 每次重建顺序可能不同，
     // 直接比 JSON.stringify 会把“内容没变”判成变了，于是 Web 壁纸被反复重启
     function canonicalProps(obj) {
@@ -269,25 +338,22 @@ Item {
         if (webProc.running && root.webUrl === url
                 && root.webMuted === WallpaperPath.muted
                 && root.webProps === props) {
-            // 只有暂停/恢复变了：SIGSTOP / SIGCONT 就够，不用重启。
-            // 以前把暂停也算进“需要重启”的条件里，于是切工作区（自动暂停）
-            // 会让 Web 壁纸整个重载一次。
+            // 只有暂停/恢复变了：发一个信号就够，不用重启子进程。
+            // 切工作区、开关窗口会频繁触发，重启整个 WebEngine 代价太大。
+            // （SIGSTOP 比 lifecycleState 更合适：它保住最后一帧、CPU 归零；
+            //   详见上方“暂停 / 终止”那段注释。）
             if (paused !== root.webPaused) {
                 root.webPaused = paused;
-                if (webProc.processId)
-                    Quickshell.execDetached(["kill", paused ? "-STOP" : "-CONT",
-                                             String(webProc.processId)]);
+                root.signalWebChild(paused ? "STOP" : "CONT");
             }
             return;
         }
 
         // url / 选项 / 静音变了：跨进程只能靠启动参数，必须重启。
-        // 先 CONT 再 KILL：被 SIGSTOP 冻住的进程收不到 TERM，只 CONT 的话
-        // 会留成孤儿，新进程再起来就是两个 WebEngine 同时在画背景
-        if (webProc.running && webProc.processId) {
-            Quickshell.execDetached(["kill", "-CONT", String(webProc.processId)]);
-            Quickshell.execDetached(["kill", "-KILL", String(webProc.processId)]);
-        }
+        // 清理旧进程不再依赖 webProc.running —— 它只在 Process 自己察觉
+        // 退出之前是 true，恰好在这段窗口期销毁就会漏杀，留下孤儿
+        // WebEngine 继续占着背景层。pid 是自己记的，杀之前再校验一次身份。
+        root.killWebChild();
         root.webUrl = url;
         root.webMuted = WallpaperPath.muted;
         root.webPaused = paused;
@@ -320,19 +386,33 @@ Item {
     // 显式按 pid 杀掉，避免孤儿 qml6 继续占着背景层
     Component.onDestruction: {
         webRestart.stop();
-        if (webProc.running && webProc.processId) {
-            // 暂停时进程是 SIGSTOP 状态，先 CONT 才能被信号杀死
-            Quickshell.execDetached(["kill", "-CONT", String(webProc.processId)]);
-            Quickshell.execDetached(["kill", "-KILL", String(webProc.processId)]);
-        }
+        root.killWebChild();
     }
 
     Process {
         id: webProc
         running: false
 
+        // 记下真实 pid，供 signalWebChild() / killWebChild() 校验后使用
+        onStarted: {
+            root.webChildPid = webProc.processId;
+            // 出生时就该暂停的话要停住（启动参数里的 paused 只设置
+            // lifecycleState，而它在可见视图上是空操作，光靠它新实例会继续跑）。
+            // 但要等它画出第一帧再停：SIGSTOP 保住的是"最后一帧"，一开始就停
+            // 就只有窗口底色。1.5s 的宽限对 WE 页面够画出首屏。
+            if (WallpaperPath.suspended)
+                startPauseApply.restart();
+        }
+
         // fps 只在进程启动时传入；WebEngine 没有帧率上限接口，改帧率不影响 Web。
+        // 用 env 加一个变量而不是 Process.environment：后者是整张表，写错就会
+        // 把 WAYLAND_DISPLAY / PATH 一起弄丢，壁纸窗口直接连不上合成器。
+        // QML_XHR_ALLOW_FILE_READ 是 Qt 的开关：QML 的 XMLHttpRequest 读本地
+        // 文件默认被禁用（实测报 "Using GET on a local file is disabled"），
+        // Web.qml 靠它读暂停状态文件和 /proc/self/stat。
         command: [
+            "/usr/bin/env",
+            "QML_XHR_ALLOW_FILE_READ=1",
             "qml6",
             Directories.configDir + "/Wallpaper/Web.qml",
             "--",

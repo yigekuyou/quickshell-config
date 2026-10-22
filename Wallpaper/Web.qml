@@ -36,12 +36,58 @@ Window {
 
     color: root.background
 
-    LayerShell.Window.layer: LayerShell.Window.LayerBackground
-    LayerShell.Window.anchors: LayerShell.Window.AnchorTop | LayerShell.Window.AnchorBottom
-        | LayerShell.Window.AnchorLeft | LayerShell.Window.AnchorRight
-    LayerShell.Window.exclusionZone: -1 // 不占位，窗口可以盖在上面
-    LayerShell.Window.keyboardInteractivity: LayerShell.Window.KeyboardInteractivityNone
-    LayerShell.Window.scope: "qs:webwall"
+    // ---- 暂停与退出：实测结论 + 为什么是这样 ----
+    // 暂停本身由父进程发 SIGSTOP/SIGCONT（它能保住最后一帧，CPU 归零）。
+    // 这里只保留两件子进程自己能做的事：
+    //
+    // 1) 为什么不用 lifecycleState 当暂停开关（Qt 官方接口，但在这里无效）：
+    //    实测 WebEngineView.lifecycleState = Frozen 在视图可见时是**空操作**，
+    //    页面里的 setInterval/rAF 照常跑（每 500ms 仍在打印）；QtWebEngine
+    //    只有当页面被隐藏时才真冻结（那时 recommendedState 变成 Frozen），
+    //    而隐藏会丢掉最后一帧、只剩窗口底色。所以下面只把它当"出生时的初值"，
+    //    运行期的暂停交给父进程的信号。
+    //
+    // 2) 父进程没了就自己退出：否则会变成孤儿占着背景层，跟下一个 qs 起的
+    //    实例抢图层（实测同时跑过 3 个 WebEngine）。/proc/self/stat 的格式是
+    //    "pid (comm) state ppid ..."，取最后一个 ')' 之后就是 state 和 ppid。
+    //    读 /proc 需要 QML_XHR_ALLOW_FILE_READ=1，父进程启动我们时已经设了。
+    property string parentPid: ""
+
+    function readLocalFile(path) {
+        if (path === "")
+            return "";
+        const xhr = new XMLHttpRequest();
+        try {
+            xhr.open("GET", "file://" + path, false);
+            xhr.send();
+            return String(xhr.responseText || "");
+        } catch (e) {
+            return "";
+        }
+    }
+
+    function readParentPid() {
+        const s = root.readLocalFile("/proc/self/stat");
+        const close = s.lastIndexOf(")");
+        if (close < 0)
+            return "";
+        return s.slice(close + 2).split(" ")[1] || "";
+    }
+
+    Component.onCompleted: root.parentPid = root.readParentPid()
+
+    Timer {
+        // 2s 一次读 /proc/self/stat，开销可以忽略；读失败就不动，
+        // 避免 /proc 偶发失败导致壁纸自己退出。
+        interval: 2000
+        repeat: true
+        running: root.parentPid !== ""
+        onTriggered: {
+            const now = root.readParentPid();
+            if (now !== "" && now !== root.parentPid)
+                Qt.exit(0);
+        }
+    }
 
     WebEngineView {
         id: web
@@ -51,7 +97,9 @@ Window {
         activeFocusOnPress: false
         backgroundColor: root.background
 
-        // 暂停时冻结渲染，不再烧 GPU
+        // 出生时的生命周期状态（Active/Frozen/Discarded）。运行期的暂停
+        // 由父进程的 SIGSTOP/SIGCONT 负责 —— 见上方注释：视图可见时
+        // 设成 Frozen 并不会真的停掉页面，它是空操作。
         lifecycleState: root.paused
             ? WebEngineView.LifecycleState.Frozen
             : WebEngineView.LifecycleState.Active
