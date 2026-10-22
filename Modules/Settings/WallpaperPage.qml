@@ -12,10 +12,11 @@ import com.github.captsilver.wallpaperEngineKde
 // ============================================================================
 // 壁纸页。版式照 Plasma 的 Wallpaper Engine 壁纸插件
 // (/usr/share/plasma/wallpapers/com.github.captsilver.wallpaperEngineKde)：
-//   顶部 TabBar（壁纸 / 播放 / Web） + StackLayout
+//   顶部 TabBar（壁纸 / 播放 / 选项） + StackLayout
 //   壁纸页：搜索框 + 缩略图网格（选中打绿勾，悬停播放 GIF）
 //   播放页：分组表单（帧率 / 速度 / 音量 + 静音 / 暂停 + 视频 / 场景选项）
-//   Web 页：壁纸自己的 project.json 选项，按壁纸分别存 settings/wallpaper/<id>.json
+//   选项页：壁纸自己的 project.json 选项（web / scene / video 共用同一套控件），
+//           按壁纸分别存 settings/wallpaper/<id>.json
 //
 // 渲染约束（见 Wallpaper/Load.qml）：
 //   scene  -> 单独的 qs 进程，QSG_RHI_BACKEND=opengl（场景渲染器只有 GL 后端）
@@ -76,11 +77,46 @@ SettingsPage {
 
 
 
-    // ==================== Web 壁纸选项定义 ====================
-    // 键 -> {type, text, tip, value, order}；值本身由 WallpaperPath 管
+    // ==================== 壁纸自己的选项（web / scene / video 共用） ====================
+    // 三种类型在 project.json 里都是 general.properties.<键> = {type, text, tip,
+    // value, order, min, max, step, fraction, precision, options, condition}，
+    // 结构完全一致（场景多出来的 condition 显示条件当前未处理，见下方说明），
+    // 所以选项页只有一块，标题按类型变，控件与渲染逻辑不分类型。
+    readonly property string optionsType: {
+        if (root.current && root.current.type)
+            return String(root.current.type).toLowerCase();
+        return String(WallpaperPath.wallpaperType || "").toLowerCase();
+    }
+
+    // 没拿到类型（project.json 还没读完）时不显示，免得先闪一下空警告
+    readonly property bool hasWallpaperOptions: root.optionsType === "web"
+        || root.optionsType === "scene" || root.optionsType === "video"
+
+    // 标题跟类型走：WE 客户端里这三类壁纸的属性面板也是分开叫的
+    readonly property string wallpaperOptionsTitle: root.optionsType === "scene"
+        ? qsTr("场景选项")
+        : (root.optionsType === "video" ? qsTr("视频选项") : qsTr("Web 选项"))
+
+    // ==================== 壁纸选项定义 ====================
+    // 键 -> {type, text, tip, value, order, min, max, step, fraction,
+    //        precision, options, mode, fileType}；值本身由 WallpaperPath 管
     //（project.json 默认值 + settings/wallpaper/<id>.json 的覆盖值）。
     // 直接用 WallpaperPath 已经解析好的 project.json：同一个文件不再读第二遍，
     // 换壁纸时 UI 与渲染端读到的永远是同一份内容。
+    //
+    // 字段含义照 WE 官方文档 docs/en/web/customization/properties.md 与
+    // docs/en/scene/userproperties/（场景属性的类型是 bool / color / slider /
+    // combo / textinput 五种子集，web 另有 file / directory）：
+    //   bool      value: true/false
+    //   color     value: "1 0.1 0.25"（空格分隔的 0–1 RGB）
+    //   slider    min / max / fraction / precision（+ 作者手写的 step）
+    //   combo     options: [{ label, value }]（老壁纸写 text 而不是 label）
+    //   textinput value: 字符串
+    //   file      可选 fileType: image / video
+    //   directory mode: ondemand / fetchall
+    //   condition 显示条件（JS 表达式，如 "clock.value == true"），web 与
+    //            scene 都用；当前整块原样展示、未按条件隐藏。
+    // 这里只做「把 project.json 的原始字段摊平」，不做值转换。
     readonly property var webPropertiesDef: {
         const out = {};
         const project = WallpaperPath.project || ({});
@@ -93,7 +129,19 @@ SettingsPage {
                     text: p.text !== undefined ? String(p.text) : key,
                     tip: p.tip !== undefined ? String(p.tip) : "",
                     value: p.value,
-                    order: p.order !== undefined ? Number(p.order) : 0
+                    order: p.order !== undefined ? Number(p.order) : 0,
+                    // 数值类（slider / int / number）的参数
+                    min: p.min !== undefined ? Number(p.min) : undefined,
+                    max: p.max !== undefined ? Number(p.max) : undefined,
+                    step: p.step !== undefined ? Number(p.step) : undefined,
+                    fraction: p.fraction === true,
+                    precision: p.precision !== undefined ? Number(p.precision) : undefined,
+                    // combo 的选项（原样带上，label / text 两种写法都保留）
+                    options: p.options,
+                    // directory 的取文件模式
+                    mode: p.mode !== undefined ? String(p.mode) : "",
+                    // file / directory 的文件类型（image / video）
+                    fileType: p.fileType !== undefined ? String(p.fileType) : ""
                 };
             }
         }
@@ -128,7 +176,7 @@ SettingsPage {
         background: null
 
         Repeater {
-            model: [qsTr("壁纸"), qsTr("播放"), qsTr("Web")]
+            model: [qsTr("壁纸"), qsTr("播放"), qsTr("选项")]
 
             delegate: TabButton {
                 id: tabButton
@@ -955,7 +1003,7 @@ SettingsPage {
                 policy: playFlick.contentHeight > playFlick.height + 1 ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff
             }
         }
-        // ==================== 三、Web 选项 ====================
+        // ==================== 三、壁纸自己的选项（web / scene / video 共用） ====================
         Flickable {
             id: webFlick
 
@@ -972,13 +1020,15 @@ SettingsPage {
                 width: webFlick.width
                 spacing: Kirigami.Units.largeSpacing
 
-                // ---------------- Web Option ----------------
+                // ---------------- 壁纸选项（三种类型共用一块） ----------------
                 // 选项定义来自壁纸自己的 project.json（general.properties），
                 // 用户改过的值按壁纸分别存 settings/wallpaper/<壁纸 id>.json，
                 // 没改过的继续用 project.json 的默认值。
+                // scene 与 web 的 project.json 结构相同（见文件头的类型表），
+                // 所以这里只换标题和显示条件，属性行一行都不变。
                 SettingsGroup {
-                    title: qsTr("Web 选项")
-                    visible: root.current && root.current.type === "web"
+                    title: root.wallpaperOptionsTitle
+                    visible: root.hasWallpaperOptions
 
                     // 说明统一走 SettingsNote（Kirigami InlineMessage），
                     // 不再是手写字号/颜色的 Label
@@ -1012,8 +1062,10 @@ SettingsPage {
                                 property string key: modelData
                                 property var propDef: (root.webPropertiesDef || {})[propItem.key]
                                 readonly property string propType: propDef && propDef.type ? String(propDef.type) : "string"
-                                readonly property string propText: propDef && propDef.text ? String(propDef.text) : propItem.key
-                                readonly property string propTip: propDef && propDef.tip ? String(propDef.tip) : ""
+                                // 标签和说明统一走 WeI18n：WE 的 text 可能是 ui_ 翻译键，
+                                // 也可能夹着 <p>/<br>；说明里永远带「键 xxx」方便对照 project.json
+                                readonly property string propText: WeI18n.label(propItem.key, propDef)
+                                readonly property string propTip: WeI18n.note(propItem.key, propDef)
                                 readonly property var propValue: WallpaperPath.webProperties[propItem.key]
 
                                 function store(v) {
@@ -1025,6 +1077,119 @@ SettingsPage {
                                     WallpaperPath.setWebProperty(propItem.key, v);
                                 }
 
+                                // ---------------- 数值类参数 ----------------
+                                // project.json 里 min/max/step 是可选的，缺省时给一组
+                                // 能让滑块正常工作的值（0 起、100 跨度、步长 1），
+                                // 而不是把 NaN 直接喂给 Slider（那会让整行失灵）。
+                                readonly property bool hasMin: propDef && propDef.min !== undefined
+                                    && propDef.min !== null && !isNaN(Number(propDef.min))
+                                readonly property bool hasMax: propDef && propDef.max !== undefined
+                                    && propDef.max !== null && !isNaN(Number(propDef.max))
+                                readonly property real numberMin: propItem.hasMin ? Number(propItem.propDef.min) : 0
+                                readonly property real numberMax: {
+                                    const mn = propItem.numberMin;
+                                    if (!propItem.hasMax)
+                                        return mn + 100;
+                                    const mx = Number(propItem.propDef.max);
+                                    // max 写反 / 等于 min 时撑开一格，Slider 才不会退化成死点
+                                    return mx > mn ? mx : mn + 1;
+                                }
+                                // 步长：写了 step 就用 step；否则 fraction=false 是整数步长 1，
+                                // fraction=true 按官方文档 precision 2 → 0.1、precision 3 → 0.01。
+                                readonly property real numberStep: {
+                                    const def = propItem.propDef || ({});
+                                    if (def.step !== undefined && Number(def.step) > 0)
+                                        return Number(def.step);
+                                    if (propItem.propType === "int")
+                                        return 1;
+                                    if (def.fraction === true) {
+                                        const prec = (def.precision !== undefined && Number(def.precision) >= 1)
+                                            ? Number(def.precision) : 2;
+                                        return Math.pow(10, 1 - prec);
+                                    }
+                                    return 1;
+                                }
+                                // 显示几位小数：由步长本身决定（0.1 → 1 位、0.01 → 2 位）
+                                readonly property int numberDecimals: {
+                                    const s = String(propItem.numberStep);
+                                    const dot = s.indexOf(".");
+                                    return dot < 0 ? 0 : Math.min(6, s.length - dot - 1);
+                                }
+                                // 夹紧到 min/max：手改过的 json 可能越界，
+                                // 直接喂给 Slider 会被它自己纠正，看着像“值丢了”
+                                function clampNumber(n) {
+                                    let v = Number(n);
+                                    if (propItem.hasMin)
+                                        v = Math.max(Number(propItem.propDef.min), v);
+                                    if (propItem.hasMax)
+                                        v = Math.min(Number(propItem.propDef.max), v);
+                                    return v;
+                                }
+                                readonly property real numberValue: {
+                                    const cur = propItem.propValue;
+                                    if (cur === undefined || cur === null || isNaN(Number(cur)))
+                                        return propItem.numberMin;
+                                    return propItem.clampNumber(Number(cur));
+                                }
+
+                                // ---------------- combo ----------------
+                                // project.json 里是 { label, value }（个别老壁纸写 text），
+                                // label 还可能是 ui_ 开头的 WE 翻译键，先过 WeI18n 翻一道。
+                                readonly property var comboOptions: {
+                                    const opts = (propItem.propDef && propItem.propDef.options) || [];
+                                    const out = [];
+                                    for (let i = 0; i < opts.length; i++) {
+                                        const o = opts[i] || ({});
+                                        const raw = o.label !== undefined ? o.label
+                                            : (o.text !== undefined ? o.text : o.value);
+                                        out.push({ text: propItem.optionLabel(raw), value: o.value });
+                                    }
+                                    return out;
+                                }
+                                // 用宽松比较兜住「json 里是数字、存的是字符串」这类情况
+                                readonly property int comboIndex: {
+                                    const opts = propItem.comboOptions;
+                                    const cur = propItem.propValue;
+                                    for (let i = 0; i < opts.length; i++) {
+                                        if (opts[i].value === cur)
+                                            return i;
+                                    }
+                                    for (let i = 0; i < opts.length; i++) {
+                                        if (String(opts[i].value) === String(cur))
+                                            return i;
+                                    }
+                                    return -1;
+                                }
+                                function optionLabel(raw) {
+                                    const s = String(raw === undefined || raw === null ? "" : raw);
+                                    const tr = WeI18n.translate(s);
+                                    if (tr !== "")
+                                        return tr;
+                                    const p = WeI18n.plain(s);
+                                    return p !== "" ? p : s;
+                                }
+
+                                // ---------------- file / directory 的补充说明 ----------------
+                                // 官方文档：file 的值是「文件位置」，壁纸要自己加 file:///；
+                                // directory 分 ondemand（按需随机取）和 fetchall（一次性全拿）。
+                                readonly property string fileHint: {
+                                    const ft = propItem.propDef && propItem.propDef.fileType
+                                        ? String(propItem.propDef.fileType) : "";
+                                    if (ft === "video")
+                                        return qsTr("视频文件（webm / ogg）。WE 的值是文件位置，可能是 file:/// 开头的 URL，原样保存、不做路径转换。");
+                                    if (ft === "image")
+                                        return qsTr("图片文件（jpg / png / gif / webp / svg 等）。WE 的值是文件位置，可能是 file:/// 开头的 URL，原样保存、不做路径转换。");
+                                    return qsTr("WE 的值是文件位置，可能是 file:/// 开头的 URL，原样保存、不做路径转换。");
+                                }
+                                readonly property string dirHint: {
+                                    const mode = propItem.propDef && propItem.propDef.mode
+                                        ? String(propItem.propDef.mode) : "";
+                                    if (mode === "ondemand")
+                                        return qsTr("目录路径。ondemand：壁纸需要新图片时用 wallpaperRequestRandomFileForProperty 随机取一张。");
+                                    if (mode === "fetchall")
+                                        return qsTr("目录路径。fetchall：壁纸一次性拿到目录里所有文件（userDirectoryFilesAddedOrChanged / Removed）。");
+                                    return qsTr("目录路径，原样保存（可能是 file:/// 开头的 URL）。");
+                                }
 
                                 Loader {
                                     id: propLoader
@@ -1032,16 +1197,48 @@ SettingsPage {
                                     // Loader 会把加载出来的项撑到自己的大小，
                                     // 所以行内的 RowLayout 只管排布，不用管尺寸
                                     sourceComponent: {
-                                        if (propItem.propType === "bool")
+                                        switch (propItem.propType) {
+                                        case "bool":
                                             return boolComponent;
-                                        if (propItem.propType === "color")
+                                        case "color":
                                             return colorComponent;
-                                        if (propItem.propType === "file")
-                                            return fileComponent;
-                                        if (propItem.propType === "number" || propItem.propType === "int"
-                                                || propItem.propType === "slider")
+                                        case "slider":
+                                            // 有 min/max 的数值：真滑块 + 当前值
+                                            return sliderComponent;
+                                        case "number":
+                                        case "int":
                                             return numberComponent;
-                                        return textComponent;
+                                        case "combo":
+                                            return comboComponent;
+                                        case "file":
+                                            return fileComponent;
+                                        case "directory":
+                                            return directoryComponent;
+                                        case "textinput":
+                                            return textComponent;
+                                        case "text":
+                                        case "group":
+                                            // 老壁纸的 "text"/"group" 不是输入项：
+                                            // 它是属性面板里的分节标题/作者说明，正文常带
+                                            // <h4>/<small>/<br>。给成只读提示条，绝不落盘。
+                                            return headingComponent;
+                                        default:
+                                            // 未知类型：回落文本框，不抛错
+                                            return textComponent;
+                                        }
+                                    }
+                                }
+
+                                // 分节标题 / 作者说明（只读）
+                                // WE 的 type:"text" 条目正文是 HTML 片段，这里只做展示
+                                Component {
+                                    id: headingComponent
+
+                                    SettingsNote {
+                                        text: WeI18n.plain(propItem.propDef
+                                                           && propItem.propDef.text !== undefined
+                                                           ? String(propItem.propDef.text)
+                                                           : propItem.key)
                                     }
                                 }
 
@@ -1071,7 +1268,65 @@ SettingsPage {
                                     }
                                 }
 
-                                // 文本
+                                // combo：官方文档说「每项一个 text + 一个隐藏 value」，
+                                // project.json 里实际叫 label（老壁纸写 text），值取 value。
+                                // 用 Kirigami Addons 的 FormComboBoxDelegate：
+                                // 标签左、下拉右，行高/边距和别的设置行一致。
+                                Component {
+                                    id: comboComponent
+
+                                    FormCard.FormComboBoxDelegate {
+                                        id: comboRow
+
+                                        text: propItem.propText
+                                        description: propItem.propTip
+                                        textRole: "text"
+                                        valueRole: "value"
+                                        model: propItem.comboOptions
+                                        // 绑定会被用户点选打断，改完值后再手动同步
+                                        currentIndex: propItem.comboIndex
+                                        onActivated: index => {
+                                            const opts = propItem.comboOptions;
+                                            if (index >= 0 && index < opts.length)
+                                                propItem.store(opts[index].value);
+                                        }
+
+                                        function syncIndex() {
+                                            if (comboRow.currentIndex !== propItem.comboIndex)
+                                                comboRow.currentIndex = propItem.comboIndex;
+                                        }
+                                        onModelChanged: comboRow.syncIndex()
+                                        Connections {
+                                            target: propItem
+                                            function onPropValueChanged() {
+                                                comboRow.syncIndex();
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // slider：真滑块，range 用 min/max，步长/小数位见 numberStep。
+                                // 当前值由 SettingsSliderRow 自己显示（标题右侧）。
+                                Component {
+                                    id: sliderComponent
+
+                                    SettingsSliderRow {
+                                        text: propItem.propText
+                                        description: propItem.propTip
+                                        from: propItem.numberMin
+                                        to: propItem.numberMax
+                                        stepSize: propItem.numberStep
+                                        decimals: propItem.numberDecimals
+                                        value: propItem.numberValue
+                                        // 0.1 步长的浮点累加会存成 0.7999999，先按小数位收一下
+                                        onMoved: v => {
+                                            const f = Math.pow(10, propItem.numberDecimals);
+                                            propItem.store(Math.round(v * f) / f);
+                                        }
+                                    }
+                                }
+
+                                // 文本（textinput，以及老壁纸的 text）
                                 Component {
                                     id: textComponent
 
@@ -1082,31 +1337,54 @@ SettingsPage {
                                         TextField {
                                             Layout.fillWidth: true
                                             Layout.minimumWidth: Kirigami.Units.gridUnit * 6
-                                            text: propItem.propValue !== undefined ? String(propItem.propValue) : ""
+                                            text: propItem.propValue !== undefined && propItem.propValue !== null
+                                                ? String(propItem.propValue) : ""
                                             onEditingFinished: propItem.store(text)
                                         }
                                     }
                                 }
 
-                                // 文件（壁纸目录内的相对路径）
+                                // 文件（官方文档：value 是「文件位置」，壁纸自己拼 file:///）。
+                                // 这里不猜格式、不转路径，原样保存。
                                 Component {
                                     id: fileComponent
 
                                     SettingsFieldRow {
                                         label: propItem.propText
-                                        description: propItem.propTip
+                                        description: propItem.propTip + "\n" + propItem.fileHint
 
                                         TextField {
                                             Layout.fillWidth: true
                                             Layout.minimumWidth: Kirigami.Units.gridUnit * 6
-                                            text: propItem.propValue !== undefined ? String(propItem.propValue) : ""
-                                            placeholderText: qsTr("壁纸目录内的文件路径")
+                                            text: propItem.propValue !== undefined && propItem.propValue !== null
+                                                ? String(propItem.propValue) : ""
+                                            placeholderText: qsTr("文件位置（可能是 file:/// 开头的 URL）")
                                             onEditingFinished: propItem.store(text)
                                         }
                                     }
                                 }
 
-                                // 数字（number / int / slider）
+                                // 目录（ondemand / fetchall 的区别写在说明里）
+                                Component {
+                                    id: directoryComponent
+
+                                    SettingsFieldRow {
+                                        label: propItem.propText
+                                        description: propItem.propTip + "\n" + propItem.dirHint
+
+                                        TextField {
+                                            Layout.fillWidth: true
+                                            Layout.minimumWidth: Kirigami.Units.gridUnit * 6
+                                            text: propItem.propValue !== undefined && propItem.propValue !== null
+                                                ? String(propItem.propValue) : ""
+                                            placeholderText: qsTr("目录路径")
+                                            onEditingFinished: propItem.store(text)
+                                        }
+                                    }
+                                }
+
+                                // 数字（number / int）：没有滑块的场合（比如作者只给了范围
+                                // 但类型写成 number），用文本框 + min/max 夹紧。
                                 Component {
                                     id: numberComponent
 
@@ -1116,19 +1394,28 @@ SettingsPage {
 
                                         TextField {
                                             id: numberField
+
                                             Layout.fillWidth: true
                                             Layout.minimumWidth: Kirigami.Units.gridUnit * 6
-                                            text: propItem.propValue !== undefined ? String(propItem.propValue) : ""
+                                            text: propItem.propValue !== undefined && propItem.propValue !== null
+                                                ? String(propItem.propValue) : ""
                                             placeholderText: propItem.propType === "int" ? qsTr("整数") : qsTr("数字")
                                             inputMethodHints: Qt.ImhFormattedNumbersOnly
                                             onEditingFinished: {
-                                                const n = parseFloat(text);
+                                                const n = parseFloat(numberField.text);
                                                 if (isNaN(n)) {
                                                     // 输入不是数字：还原成当前值
-                                                    text = propItem.propValue !== undefined ? String(propItem.propValue) : "";
+                                                    numberField.text = propItem.propValue !== undefined
+                                                        ? String(propItem.propValue) : "";
                                                     return;
                                                 }
-                                                propItem.store(propItem.propType === "int" ? Math.round(n) : n);
+                                                // 按 project.json 的 min/max 夹紧，再按类型取整
+                                                let v = propItem.clampNumber(n);
+                                                if (propItem.propType === "int" || propItem.numberStep >= 1)
+                                                    v = Math.round(v);
+                                                propItem.store(v);
+                                                // 回显夹紧后的值，别让框里留着越界数字
+                                                numberField.text = String(v);
                                             }
                                         }
                                     }

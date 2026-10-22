@@ -71,6 +71,11 @@ Item {
                     assets: WallpaperPath.assetsPath
                     speed: WallpaperPath.speed
                     muted: WallpaperPath.muted
+                    // 用户属性：设置页改的值（settings/wallpaper/<id>.json）直接以
+                    // JSON 交给渲染端。插件 backend/Scene.qml 也是这么传的
+                    // （userProperties: <json 字符串>），格式是扁平的 {键: 值}。
+                    // 之前没接这条线，所以场景属性改了不生效。
+                    userProperties: root.canonicalProps(WallpaperPath.webProperties)
                     fps: WallpaperPath.fps
                     presentMode: Settings.wallpaper.presentMode
                     msaaMode: Settings.wallpaper.msaaMode
