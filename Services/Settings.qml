@@ -267,6 +267,12 @@ Singleton {
                 property int msaaMode: 0               // 0 自动 / 1 关 / 2 2x / 4 4x
                 property int displayMode: 1            // 0 保持宽高比 / 1 裁剪填充 / 2 拉伸填充
                 property string backgroundColor: "#000000"
+                // 壁纸底色是否跟随系统配色方案（KDE 主题基色）。
+                // false = 用 backgroundColor；true = 忽略 backgroundColor，
+                // 直接跟随 Kirigami 主题基色（随 KDE 配色方案 / 明暗切换）。
+                // 渲染端（WallpaperContent/Wallpaper.qml）读这个开关做选择，
+                // Colorscheme.qml 本身不读它 —— 配色服务只管派生，分支留给壁纸侧。
+                property bool schemeBackground: false
                 property int resumeTime: 500           // ms
                 property bool randomizeWallpaper: false
                 property int switchTimer: 60           // 分钟

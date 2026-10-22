@@ -788,6 +788,16 @@ SettingsPage {
                         description: qsTr("后端出画之前、以及画面比例不足时的衬底颜色。留空则跟随系统主题背景色。")
                         raw: Settings.wallpaper.backgroundColor
                         onEdited: value => Settings.wallpaper.backgroundColor = value
+                        // 打开“底色跟随配色方案”后渲染端不再使用这个值，整行置灰
+                        enabled: !Settings.wallpaper.schemeBackground
+                    }
+
+                    SettingsSwitchRow {
+                        text: qsTr("底色跟随配色方案")
+                        iconName: "color-profile"
+                        description: qsTr("打开后壁纸底色跟随系统主题颜色（KDE 配色方案的明暗与基色），忽略上方的壁纸底色。")
+                        switchOn: Settings.wallpaper.schemeBackground
+                        onSwitchToggled: on => Settings.wallpaper.schemeBackground = on
                     }
 
                     SettingsSliderRow {

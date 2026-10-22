@@ -46,7 +46,9 @@ Item {
             // 后端没出画之前是空白表面；PanelWindow 默认白底，在深色桌面里
             // 就是“壁纸变成纯白”。底色跟壁纸设置走（设置 → 壁纸 → 壁纸底色），
             // 由 Colorscheme 统一仲裁，不在各窗口里各写一个 #000000。
-            color: Colorscheme.wallpaper_background
+            color: Settings.wallpaper.schemeBackground
+                ? Colorscheme.surface
+                : Colorscheme.wallpaper_background
             WlrLayershell.namespace: "Nox:wallpaper"
             WlrLayershell.layer: WlrLayer.Background
             implicitHeight: height
@@ -247,7 +249,9 @@ Item {
     // Web 子进程的底色。只在进程启动时传一次：它决定的是“页面画出来之前的
     // 那一瞬间”是什么颜色，改颜色不值得重启一整个 WebEngine，所以它不进下面的
     // “需要重启”比较条件，下次重启自然带上新值。
-    readonly property string webBackground: String(Colorscheme.wallpaper_background)
+    readonly property string webBackground: String(Settings.wallpaper.schemeBackground
+        ? Colorscheme.surface
+        : Colorscheme.wallpaper_background)
 
     // ---- 暂停 / 终止：为什么要动信号，以及怎么保证不出孤儿 ----
     // 试过的替代方案（都实测过，结论写在这里免得以后重复踩）：

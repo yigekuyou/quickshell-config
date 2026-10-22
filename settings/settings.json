@@ -9,9 +9,9 @@
         "leftIconSize": 0.64,
         "leftPadding": 0.16,
         "leftSpacing": 0.06,
-        "rightIconSize": 1.04,
-        "rightPadding": 0.34,
-        "rightSpacing": 0.12,
+        "rightIconSize": 0.78,
+        "rightPadding": 0.22,
+        "rightSpacing": 0.08,
         "ring": true,
         "ringScale": 0.9,
         "ringTrackOpacity": 0.14,
@@ -64,6 +64,7 @@
         "randomizeWallpaper": false,
         "renderScale": 100,
         "resumeTime": 500,
+        "schemeBackground": true,
         "screenSaverPolicy": 1,
         "speed": 1,
         "switchTimer": 60,
@@ -71,6 +72,6 @@
         "verboseLogging": false,
         "videoBackend": 1,
         "volume": 1,
-        "wallpaperId": "2385663994"
+        "wallpaperId": "1551961057"
     }
 }
