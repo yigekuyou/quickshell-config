@@ -36,6 +36,16 @@ Window {
 
     color: root.background
 
+    // ---- 挂成背景层：没有这段就只是一个普通浮动窗口 ----
+    // 必须是 LayerBackground + 四边 anchor + exclusionZone -1（不占位、别的窗口
+    // 可以盖在上面）+ 不吃键盘。QML 里这些是 LayerShell.Window 的附加属性。
+    LayerShell.Window.layer: LayerShell.Window.LayerBackground
+    LayerShell.Window.anchors: LayerShell.Window.AnchorTop | LayerShell.Window.AnchorBottom
+        | LayerShell.Window.AnchorLeft | LayerShell.Window.AnchorRight
+    LayerShell.Window.exclusionZone: -1
+    LayerShell.Window.keyboardInteractivity: LayerShell.Window.KeyboardInteractivityNone
+    LayerShell.Window.scope: "qs:webwall"
+
     // ---- 暂停与退出：实测结论 + 为什么是这样 ----
     // 暂停本身由父进程发 SIGSTOP/SIGCONT（它能保住最后一帧，CPU 归零）。
     // 这里只保留两件子进程自己能做的事：
