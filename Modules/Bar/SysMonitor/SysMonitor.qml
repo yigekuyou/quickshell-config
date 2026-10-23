@@ -28,102 +28,100 @@ Kirigami.AbstractCard {
 	    NumberAnimation { duration: Kirigami.Units.longDuration; easing.type: Easing.OutQuart }
     }
     // ================= 2. 数据源 =================
+    // 全部改为 Quickshell.Io 的 FileView 直读 /proc 与 sysfs 伪文件，不再 fork
+    // 任何外部命令（head / bash / free / cat / script / amdgpu_fan 全部退役——
+    // 其中 amdgpu_fan 已从系统删除，旧版 GPU 数据源随之彻底失效）。
+    // blockAllReads 让 reload() 同步完成、text() 立即返回新内容；这些都是
+    // 内核伪文件、微秒量级读取，不会卡界面（FileView 文档对 block 的警告
+    // 只针对大文件 / 慢存储场景）。
 
-    property int lastCpuTotal :0
+    property int lastCpuTotal: 0
     property int lastCpuIdle: 0
     property int memUsage: 0
     property int tempValue: 0
     property int cpuValue: 0
     property int diskValue: 0      // 新增硬盘数值(用于变色)
-    Process {
-	    id: cpuProc
-	    command: ["head", "-1", "/proc/stat"]
-	    stdout: SplitParser {
-		    onRead: data => {
-			    if (!data) return
-				    var p = data.trim().split(/\s+/)
-				    var idle = parseInt(p[4]) + parseInt(p[5])
-				    var total = p.slice(1, 8).reduce((a, b) => a + parseInt(b), 0)
-				    if (lastCpuTotal > 0) {
-					    root.cpuValue = Math.round(100 * (1 - (idle - lastCpuIdle) / (total - lastCpuTotal)))
-				    }
-				    lastCpuTotal = total
-				    lastCpuIdle = idle
-		    }
-	    }
-	    Component.onCompleted: running = true
-    }
-    // Memory process
-    Process {
-	    id: memProc
-	    command: ["bash", "-c", "free | grep Mem"]
-	    environment: ({
-		    "LANG": "C",
-	    })
-
-	    stdout: SplitParser {
-		    onRead: data => {
-			    if (!data) return
-				    var parts = data.trim().split(/\s+/)
-				    var total = parseInt(parts[1]) || 1
-				    var used = parseInt(parts[2]) || 0
-				    memUsage = Math.round(100 * used / total)
-		    }
-	    }
-	    Component.onCompleted: running = true
-    }
-    Process {
-	    id: tempProc
-	    // thermal_zone0 通常是 CPU 核心温度，单位是毫摄氏度 (m°C)
-	    command: ["cat", SysMonitorPath.cpuhwmon]
-	    stdout: SplitParser {
-		    onRead: data => {
-			    if (!data) return
-				    var rawTemp = parseInt(data.trim())
-				    if (!isNaN(rawTemp)) {
-					    root.tempValue = Math.round(rawTemp / 1000) // 转换为摄氏度
-				    }
-		    }
-	    }
-    }
     property int gpuLoad: 0
     property int gpuPower: 0
-    property int gpuFan: 0
-    //GPU
-    Process {
-	    id: gpuProc
-	    // 使用 stdbuf 确保输出不被内核缓存，实时流向 QML
-		command: ["script", "/dev/null", "-qc", "amdgpu_fan watch_csv 1"]
-    stderr: SplitParser {
-		    onRead: data => console.log("GPU Error:", data)
-	    }
-	    stdout: SplitParser {
-		    // 关键：将分隔符设置为换行符，这样每次 onRead 都是一行
-		    onRead: data => {
-			    if (!data || data.includes("Timestamp")) return
-				    //console.log("GPU Raw Data:", data)
-				    // 去掉前后空格并按逗号分割
-				    var parts = data.trim().split(",")
-				    if (parts.length >= 7) {
-					    // 索引 4 是 Load (%), 索引 5 是 Power (Watts)
-					    root.gpuLoad = parseInt(parts[4])
-					    // 转换浮点数为整数
-					    root.gpuPower = Math.round(parseFloat(parts[5]))
-				    }
-		    }
-	    }
-	    Component.onCompleted: running = true
+
+    // CPU：/proc/stat 第一行，与旧版 `head -1 /proc/stat` 等价
+    FileView {
+        id: cpuStat
+        path: "/proc/stat"
+        blockAllReads: true
     }
+
+    // 内存：/proc/meminfo（替代 `free`），按 MemAvailable 口径算已用百分比
+    FileView {
+        id: memInfo
+        path: "/proc/meminfo"
+        blockAllReads: true
+    }
+
+    // CPU 温度：hwmon 路径集中在 Config/SysMonitorPath.qml
+    FileView {
+        id: tempFile
+        path: SysMonitorPath.cpuhwmon
+        blockAllReads: true
+    }
+
+    // GPU：直读 amdgpu 驱动的 sysfs 节点（替代已删除的 amdgpu_fan watch_csv）
+    //   gpu_busy_percent - 核心占用 0-100
+    //   power1_input     - PPT 功耗，实测单位 mW（采样 24-39W 波动），除 1000 得 W
+    FileView {
+        id: gpuBusy
+        path: SysMonitorPath.gpuBusy
+        blockAllReads: true
+    }
+    FileView {
+        id: gpuPower
+        path: SysMonitorPath.gpuPower
+        blockAllReads: true
+    }
+
     Timer {
         interval: 2000
         running: true
         repeat: true
         triggeredOnStart: true
         onTriggered: {
-		cpuProc.running = true
-		memProc.running = true
-		tempProc.running=true
-	}
+            // ---- CPU：两次采样之间的 idle / total 增量比 ----
+            cpuStat.reload()
+            var cpuLine = cpuStat.text().split("\n")[0]
+            if (cpuLine.indexOf("cpu") === 0) {
+                var p = cpuLine.trim().split(/\s+/)
+                var idle = parseInt(p[4]) + parseInt(p[5])
+                var total = 0
+                for (var i = 1; i < p.length; i++) total += parseInt(p[i])
+                if (lastCpuTotal > 0 && total > lastCpuTotal) {
+                    root.cpuValue = Math.round(100 * (1 - (idle - lastCpuIdle) / (total - lastCpuTotal)))
+                }
+                lastCpuTotal = total
+                lastCpuIdle = idle
+            }
+
+            // ---- 内存 ----
+            memInfo.reload()
+            var memText = memInfo.text()
+            var memTotal = 0, memAvail = 0, mm
+            mm = /MemTotal:\s+(\d+)/.exec(memText); if (mm) memTotal = parseInt(mm[1])
+            mm = /MemAvailable:\s+(\d+)/.exec(memText); if (mm) memAvail = parseInt(mm[1])
+            if (memTotal > 0) root.memUsage = Math.round(100 * (memTotal - memAvail) / memTotal)
+
+            // ---- CPU 温度（hwmon 单位 m°C）----
+            tempFile.reload()
+            var rawTemp = parseInt(tempFile.text())
+            if (!isNaN(rawTemp)) root.tempValue = Math.round(rawTemp / 1000)
+
+            // ---- GPU ----
+            gpuBusy.reload()
+            var gpuBusyVal = parseInt(gpuBusy.text())
+            if (!isNaN(gpuBusyVal)) root.gpuLoad = gpuBusyVal
+
+            gpuPower.reload()
+            var gpuPowerVal = parseInt(gpuPower.text())
+            if (!isNaN(gpuPowerVal)) root.gpuPower = Math.round(gpuPowerVal / 1000)
+        }
     }
 
     // ================= 3. 颜色逻辑 =================
