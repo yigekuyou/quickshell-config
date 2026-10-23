@@ -121,7 +121,9 @@ Variants {
                 NotificationButton {
                     Layout.alignment: Qt.AlignVCenter
                 }
-
+                PowerButton {
+                    Layout.alignment: Qt.AlignVCenter
+                }
             }
         }
     }

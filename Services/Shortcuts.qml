@@ -32,6 +32,7 @@ Singleton {
 	signal lockRequested()
 	signal volumeMuteRequested()
 	signal settingsRequested()
+	signal powerMenuRequested()
 
 	// 统一入口：Hyprland 的 GlobalShortcut、别的合成器按键处理、代码调用都从这几个函数进
 	function triggerLauncherToggle() {
@@ -57,6 +58,10 @@ Singleton {
 
 	function triggerSettings() {
 		root.settingsRequested();
+	}
+
+	function triggerPowerMenu() {
+		root.powerMenuRequested();
 	}
 
 	// ==================== 合成器检测 ====================
@@ -115,6 +120,12 @@ Singleton {
 				name: "settings"
 				description: "打开 / 关闭设置"
 				onPressed: root.triggerSettings()
+			}
+
+			GlobalShortcut {
+				name: "power-menu"
+				description: "打开 / 关闭电源菜单（注销 / 重启 / 关机等）"
+				onPressed: root.triggerPowerMenu()
 			}
 		}
 	}
