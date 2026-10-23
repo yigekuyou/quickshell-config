@@ -46,6 +46,10 @@ Window {
     // 底色：页面还没画出来 / 加载失败时看到的就是这个颜色
     readonly property string background: String(root.spec.background || "black")
 
+    // 设置 → 壁纸 → 鼠标输入；默认开。关掉后由末尾的 MouseArea 拦截，
+    // Chromium 连被动事件都收不到。
+    readonly property bool mouseInput: root.spec.mouseInput === undefined ? true : !!root.spec.mouseInput
+
     color: root.background
 
     // ---- 挂成背景层：没有这段就只是一个普通浮动窗口 ----
@@ -116,7 +120,11 @@ Window {
         anchors.fill: parent
         url: root.wallpaperUrl
         audioMuted: root.muted
-        activeFocusOnPress: false
+        // 必须吃焦点：QtWebEngine 的 QQuickWebEngineView 在没有 activeFocus
+        // 时不把鼠标事件转发给 Chromium（事件被 item 吞掉，页面一无所知）。
+        // 背景层窗口本身拿不到键盘焦点（KeyboardInteractivityNone），所以
+        // 这里放开 focus 不会影响桌面其它窗口的键盘焦点。
+        activeFocusOnPress: true
         backgroundColor: root.background
 
         // 出生时的生命周期状态（Active/Frozen/Discarded）。运行期的暂停
@@ -207,5 +215,23 @@ Window {
         onRenderProcessTerminated: (status, code) => {
             console.error("[web-wallpaper] 渲染进程退出:", status, code);
         }
+        // 壁纸层不该弹出 Chromium 的默认右键菜单（Back/Forward/Reload/Save
+        // page/View page source）。request.accepted 可写，置 true 表示"已处理"，
+        // 页面自己的 contextmenu 监听器仍然照常收到事件。
+        onContextMenuRequested: request => {
+            request.accepted = true;
+        }
+    }
+
+    // ---- 鼠标输入：放行原生事件 ----
+    // 背景 layer 本身收得到 pointer（已实测：scene 壁纸与探针都收到）。开启时
+    // MouseArea 完全不参与命中测试，事件直接落进 WebEngineView，Chromium
+    // 自己转换成页面的 mousemove/click（坐标、元素命中全自动）。关闭时才拦截。
+    MouseArea {
+        anchors.fill: parent
+        enabled: !root.mouseInput
+        acceptedButtons: Qt.AllButtons
+        hoverEnabled: true
+        preventStealing: true
     }
 }

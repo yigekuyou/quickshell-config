@@ -389,7 +389,8 @@ Item {
             "muted": root.webMuted,
             "paused": root.webPaused,
             "background": root.webBackground,
-            "properties": root.webProps.length > 0 ? root.webProps : "{}"
+            "properties": root.webProps.length > 0 ? root.webProps : "{}",
+            "mouseInput": Settings.wallpaper.mouseInput
         });
     }
 
