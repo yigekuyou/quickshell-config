@@ -26,10 +26,14 @@ Variants {
 		Timer {
 			id: hideTimer
 			interval: 5000 // 鼠标离开五秒后收起
-			// 启动器打开时保持展开，否则鼠标一离开面板就缩成一条线
-			running: panelWindow.isExpanded && !launcher.isOpen
+			// 启动器打开时保持展开，否则鼠标一离开面板就缩成一条线；
+			// 鼠标停在预览浮窗上时也算“还指着面板”
+			running: panelWindow.isExpanded && !launcher.isOpen && !appPreview.hoverOnPopup
 			onTriggered: panelWindow.isExpanded = false
 		}
+		// 面板收起时，浮窗锚着的图标会被压进 1px 的细条里，一起收掉免得浮窗悬空
+		onIsExpandedChanged: if (!isExpanded)
+			appPreview.forceHide()
 		anchors {
 			bottom: true
 		}
@@ -64,6 +68,18 @@ Variants {
 				function onLauncherToggleRequested() {
 					launcher.toggle();
 				}
+			}
+		}
+		// 任务栏图标的悬停预览浮窗：ScreencopyView 直取应用窗口的实时画面
+		AppPreviewPopup {
+			id: appPreview
+		}
+		Connections {
+			target: launcher
+			// 启动器从面板里弹出来，预览浮窗留着会盖在启动器上面
+			function onIsOpenChanged() {
+				if (launcher.isOpen)
+					appPreview.forceHide();
 			}
 		}
 		MouseArea {
@@ -144,6 +160,7 @@ Variants {
 
 				Panelapp {
 					Layout.alignment: Qt.AlignVCenter
+					previewPopup: appPreview
 				}
 			}
 		}

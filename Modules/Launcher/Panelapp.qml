@@ -16,9 +16,12 @@ Kirigami.ShadowedRectangle {
     // 没有运行中的应用时整块收起来，面板只留启动器按钮
     visible: TaskbarApps.apps.length > 0
 
+    // 悬停预览浮窗（Modules/Panel/AppPreviewPopup.qml），由 Panel.qml 传入；
+    // 没传时下面所有调用都被 guard 掉，组件自己也能独立用
+    property var previewPopup: null
+
     readonly property real buttonSize: Kirigami.Units.gridUnit * 1.35
     readonly property real iconSize: Kirigami.Units.gridUnit * 1.1
-
     implicitWidth: row.implicitWidth + Kirigami.Units.smallSpacing * 2
     implicitHeight: Sizes.barHeight - Kirigami.Units.smallSpacing
 
@@ -41,6 +44,13 @@ Kirigami.ShadowedRectangle {
             delegate: Item {
                 id: button
                 required property var modelData
+
+                // 图标被销毁（应用关闭）时，悬停状态不会再来一次 hoveredChanged，
+                // 这里主动通知浮窗收起，免得它对着不存在的锚点留着
+                Component.onDestruction: {
+                    if (root.previewPopup)
+                        root.previewPopup.requestHide();
+                }
 
                 readonly property bool activeWindow: modelData.active
                 readonly property bool hovered: hoverHandler.hovered
@@ -104,6 +114,16 @@ Kirigami.ShadowedRectangle {
                 HoverHandler {
                     id: hoverHandler
                     cursorShape: Qt.PointingHandCursor
+
+                    // 悬停 → 延迟出预览浮窗；离开 → 延迟收起（给鼠标挪到浮窗上留时间）
+                    onHoveredChanged: {
+                        if (!root.previewPopup)
+                            return;
+                        if (hoverHandler.hovered)
+                            root.previewPopup.requestShow(button.modelData, button);
+                        else
+                            root.previewPopup.requestHide();
+                    }
                 }
 
                 TapHandler {

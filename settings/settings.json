@@ -46,12 +46,12 @@
         "cacheQuotaMB": 2048,
         "displayMode": 1,
         "fps": 60,
-        "hdrOutput": false,
+        "hdrOutput": true,
         "mouseInput": true,
         "mpvPowerSaving": false,
         "mpvStats": false,
         "msaaMode": 0,
-        "muted": true,
+        "muted": false,
         "noRandomWhilePaused": true,
         "pauseBatPercent": 20,
         "pauseDebugLogging": false,
@@ -71,7 +71,7 @@
         "systemAudioCapture": true,
         "verboseLogging": false,
         "videoBackend": 1,
-        "volume": 1,
-        "wallpaperId": "3818033498"
+        "volume": 0.13,
+        "wallpaperId": "1551961057"
     }
 }
