@@ -50,6 +50,13 @@ Window {
     // Chromium 连被动事件都收不到。
     readonly property bool mouseInput: root.spec.mouseInput === undefined ? true : !!root.spec.mouseInput
 
+    // ---- 音频响应 ----
+    // 设置 → 壁纸 → 捕获系统音频 打开时，父进程会起一只 cava
+    // （Services/AudioSpectrum.qml），把 64 段频谱写进 audioBarsPath；
+    // 这里每 33ms 读一次并推给页面的 wallpaperRegisterAudioListener。
+    readonly property bool audioEnabled: root.spec.audio === true
+    readonly property string audioBarsPath: String(root.spec.audioBarsPath || "")
+
     color: root.background
 
     // ---- 挂成背景层：没有这段就只是一个普通浮动窗口 ----
@@ -191,7 +198,18 @@ Window {
   } catch (e) {
     window.wallpaperPropertyListener = window.wallpaperPropertyListener || proxy;
   }
-  window.wallpaperRegisterAudioListener = window.wallpaperRegisterAudioListener || function () {};
+  // 音频响应：WE 的 API 是“页面注册回调、宿主每帧推一串音量”。
+  // 这里只做登记；真正的数据由 QML 侧的 Timer 读到后调用 __qsAudioPush 推入。
+  var audioListeners = [];
+  window.wallpaperRegisterAudioListener = function (fn) {
+    if (typeof fn === "function") audioListeners.push(fn);
+  };
+  window.__qsAudioPush = function (arr) {
+    for (var i = 0; i < audioListeners.length; i++) {
+      try { audioListeners[i](arr); }
+      catch (e) { console.warn("audioListener:", e); }
+    }
+  };
   window.wallpaperRequestRandomFileForProperty = window.wallpaperRequestRandomFileForProperty || function () {};
   [0, 250, 1000].forEach(function (ms) {
     setTimeout(function () { push(page || proxy); }, ms);
@@ -220,6 +238,38 @@ Window {
         // 页面自己的 contextmenu 监听器仍然照常收到事件。
         onContextMenuRequested: request => {
             request.accepted = true;
+        }
+    }
+
+    // ---- 音频响应：读主进程写好的频谱文件，推给页面 ----
+    // 形状对齐 WE 官方文档：audioArray 固定 128 个值，0..63 左声道、
+    // 64..127 右声道，各 64 段（低→高），0..1 浮点。cava 这边只有
+    // 单声道 64 段，右声道直接复制左声道。
+    // 内容没变（静音时主进程根本不写）就不推，省掉没意义的 JS 求值。
+    property string lastAudio: ""
+
+    Timer {
+        interval: 33 // ≈30fps，对齐 WE 原生推送频率
+        repeat: true
+        running: root.audioEnabled && root.audioBarsPath !== ""
+        onTriggered: {
+            const text = root.readLocalFile(root.audioBarsPath);
+            if (text === "" || text === root.lastAudio)
+                return;
+            root.lastAudio = text;
+            let bars = null;
+            try {
+                bars = JSON.parse(text);
+            } catch (e) {
+                return; // 正在写、读到半截：下一帧再说（原子写通常不会走到这）
+            }
+            if (!Array.isArray(bars) || bars.length === 0)
+                return;
+            const left = bars.slice(0, 64);
+            while (left.length < 64)
+                left.push(0);
+            const arr = left.concat(left);
+            web.runJavaScript("window.__qsAudioPush && window.__qsAudioPush(" + JSON.stringify(arr) + ")");
         }
     }
 

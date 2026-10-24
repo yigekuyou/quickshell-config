@@ -246,6 +246,9 @@ Item {
     property bool webPaused: false
     // Web 选项的快照：改了选项要重启子进程才会生效（跨进程只能靠启动参数）
     property string webProps: ""
+    // 音频响应快照：设置里「捕获系统音频」动了也要重启子进程
+    //（是否推数据由子进程自己的参数决定，同样没法热更新）
+    property bool webAudio: false
     // Web 子进程的底色。只在进程启动时传一次：它决定的是“页面画出来之前的
     // 那一瞬间”是什么颜色，改颜色不值得重启一整个 WebEngine，所以它不进下面的
     // “需要重启”比较条件，下次重启自然带上新值。
@@ -346,7 +349,8 @@ Item {
 
         if (webProc.running && root.webUrl === url
                 && root.webMuted === WallpaperPath.muted
-                && root.webProps === props) {
+                && root.webProps === props
+                && root.webAudio === Settings.wallpaper.systemAudioCapture) {
             // 只有暂停/恢复变了：发一个信号就够，不用重启子进程。
             // 切工作区、开关窗口会频繁触发，重启整个 WebEngine 代价太大。
             // （SIGSTOP 比 lifecycleState 更合适：它保住最后一帧、CPU 归零；
@@ -367,6 +371,7 @@ Item {
         root.webMuted = WallpaperPath.muted;
         root.webPaused = paused;
         root.webProps = props;
+        root.webAudio = Settings.wallpaper.systemAudioCapture;
         webProc.running = false;
         webRestart.restart();
     }
@@ -390,7 +395,11 @@ Item {
             "paused": root.webPaused,
             "background": root.webBackground,
             "properties": root.webProps.length > 0 ? root.webProps : "{}",
-            "mouseInput": Settings.wallpaper.mouseInput
+            "mouseInput": Settings.wallpaper.mouseInput,
+            // 音频响应：是否推频谱 + 频谱文件的路径（qml6 里读不到环境变量，
+            // 只能由主进程把 $XDG_RUNTIME_DIR 拼好传过来）
+            "audio": root.webAudio,
+            "audioBarsPath": AudioSpectrum.barsPath
         });
     }
 
@@ -435,6 +444,12 @@ Item {
         function onWebPropertiesChanged() { root.syncWeb(); }
     }
 
+    // 「捕获系统音频」是 web 子进程的启动参数之一，改了要重启它
+    Connections {
+        target: Settings.wallpaper
+        function onSystemAudioCaptureChanged() { root.syncWeb(); }
+    }
+
     Component.onCompleted: root.syncWeb()
 
     // 切换到 scene 时 wallLoader 会销毁本 Item；子进程不一定跟着退出，
@@ -466,6 +481,12 @@ Item {
         command: [
             "/usr/bin/env",
             "QML_XHR_ALLOW_FILE_READ=1",
+            // 壁纸页面放的音视频不能变成桌面上的一个 MPRIS 播放器：
+            // Chromium 的 MediaSessionService 会把每个出声的页面注册成
+            // org.mpris.MediaPlayer2.chromium.instance*，媒体组件（顶栏、
+            // Lyrics）会把它当成"正在播放"的选手列出来。
+            // HardwareMediaKeyHandling 一起关掉：壁纸不该抢媒体键。
+            "QTWEBENGINE_CHROMIUM_FLAGS=--disable-features=MediaSessionService,HardwareMediaKeyHandling",
             "qml6",
             Directories.configDir + "/Wallpaper/Web.qml",
             "--",
