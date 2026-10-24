@@ -46,5 +46,11 @@ ShellRoot {
 			+ 'kill -CONT $p 2>/dev/null; kill -KILL $p 2>/dev/null; '
 			+ 'done; true']
 	}
-	Component.onCompleted: staleSweep.running = true
+	// ------------------------------------------------------------------
+	// 通知服务的拉起与看护在 Services/NotificationManager.qml 里
+	// （Process.startDetached，不再用 scripts/notifd-watch.sh）。
+	// ------------------------------------------------------------------
+	Component.onCompleted: {
+		staleSweep.running = true;
+	}
 }

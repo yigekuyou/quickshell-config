@@ -95,15 +95,32 @@ SlideWindow {
                         Layout.fillWidth: true
                         spacing: 0
 
-                        Label {
+                        RowLayout {
                             Layout.fillWidth: true
-                            text: notifCard.notifData
-                                ? String(notifCard.notifData.summary).substring(0, 300)
-                                : ""
-                            elide: Text.ElideRight
-                            maximumLineCount: 1
-                            font.weight: Font.DemiBold
-                            color: notifCard.critical ? Kirigami.Theme.negativeTextColor : Kirigami.Theme.textColor
+                            spacing: Kirigami.Units.smallSpacing
+
+                            Label {
+                                Layout.fillWidth: true
+                                text: notifCard.notifData
+                                    ? String(notifCard.notifData.summary).substring(0, 300)
+                                    : ""
+                                elide: Text.ElideRight
+                                maximumLineCount: 1
+                                font.weight: Font.DemiBold
+                                color: notifCard.critical ? Kirigami.Theme.negativeTextColor : Kirigami.Theme.textColor
+                            }
+
+                            // 到达时间：历史超过 NotificationManager.historyRetentionMs
+                            // 就会连同这条一起注销掉
+                            Label {
+                                Layout.alignment: Qt.AlignVCenter
+                                visible: text !== ""
+                                text: notifCard.notifData
+                                    ? NotificationManager.timeLabel(notifCard.notifData.timestamp)
+                                    : ""
+                                font: Kirigami.Theme.smallFont
+                                color: Kirigami.Theme.disabledTextColor
+                            }
                         }
 
                         Label {
