@@ -55,12 +55,29 @@ Singleton {
 
     // ==================== XDG 用户目录 ====================
     // Qt StandardPaths 解析 user-dirs.dirs，本地化目录名（如中文的 ~/图片）自动适配
-    readonly property string desktop: StandardPaths.writableLocation(StandardPaths.DesktopLocation)
-    readonly property string documents: StandardPaths.writableLocation(StandardPaths.DocumentsLocation)
-    readonly property string downloads: StandardPaths.writableLocation(StandardPaths.DownloadLocation)
-    readonly property string music: StandardPaths.writableLocation(StandardPaths.MusicLocation)
-    readonly property string pictures: StandardPaths.writableLocation(StandardPaths.PicturesLocation)
-    readonly property string videos: StandardPaths.writableLocation(StandardPaths.MoviesLocation)
+    //
+    // 注意：StandardPaths.writableLocation() 返回的是 URL（file:///home/xxx），
+    // 不是本地路径。直接拼路径或丢给 mkdir / saveToFile 会出两种事故：
+    //   1) mkdir -p "file:///home/xxx" 被当成相对路径，在 CWD（$HOME）下
+    //      建出 file:/home/xxx 这种目录树；
+    //   2) saveToFile("file://" + "file:///...") 变成非法 URL，写盘失败。
+    function toLocalPath(location: string): string {
+        let p = String(location);
+        if (p.startsWith("file://"))
+            p = p.slice(7);
+        try {
+            return decodeURIComponent(p);
+        } catch (e) {
+            return p;
+        }
+    }
+
+    readonly property string desktop: toLocalPath(StandardPaths.writableLocation(StandardPaths.DesktopLocation))
+    readonly property string documents: toLocalPath(StandardPaths.writableLocation(StandardPaths.DocumentsLocation))
+    readonly property string downloads: toLocalPath(StandardPaths.writableLocation(StandardPaths.DownloadLocation))
+    readonly property string music: toLocalPath(StandardPaths.writableLocation(StandardPaths.MusicLocation))
+    readonly property string pictures: toLocalPath(StandardPaths.writableLocation(StandardPaths.PicturesLocation))
+    readonly property string videos: toLocalPath(StandardPaths.writableLocation(StandardPaths.MoviesLocation))
 
     // 截图保存目录（本 shell 约定：图片目录下的 Screenshots）
     readonly property string screenshotsDir: pictures + "/Screenshots"

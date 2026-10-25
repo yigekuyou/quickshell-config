@@ -3,6 +3,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Wayland
+import Quickshell.Widgets
 import org.kde.kirigami as Kirigami
 import qs.Config
 
@@ -57,7 +58,8 @@ PopupWindow {
     readonly property real cardWidth: Kirigami.Units.gridUnit * 20
     // 卡片外给阴影留的呼吸空间（浮窗窗口 = 卡片 + 四周留白）
     readonly property real shadowPad: Kirigami.Units.gridUnit * 0.7
-    readonly property real previewFrameWidth: cardWidth - Kirigami.Units.smallSpacing * 2
+    // 预览区贴到卡片左右/底边（只留顶部间距），宽度按卡片整宽算
+    readonly property real previewFrameWidth: cardWidth - 2
     readonly property real previewMaxHeight: Kirigami.Units.gridUnit * 14
     readonly property real previewHeight: {
         if (view.hasContent && view.sourceSize.width > 0)
@@ -154,7 +156,10 @@ PopupWindow {
         id: card
         anchors.centerIn: parent
         width: root.cardWidth
-        height: cardLayout.implicitHeight
+        // ColumnLayout 的 implicitHeight 不含 anchors margin，顶部间距要自己加；
+        // 之前漏掉这一项，布局高度比内容少 8px，ColumnLayout 只能压扁预览区（矮 9px），
+        // 预览底部就露出一条卡片底色的“下巴”
+        height: cardLayout.implicitHeight + Kirigami.Units.smallSpacing
 
         radius: Sizes.cornerRadius
         color: Kirigami.Theme.backgroundColor
@@ -167,12 +172,14 @@ PopupWindow {
         ColumnLayout {
             id: cardLayout
             anchors.fill: parent
-            anchors.margins: Kirigami.Units.smallSpacing
+            anchors.topMargin: Kirigami.Units.smallSpacing
             spacing: Kirigami.Units.smallSpacing
 
             // ---- 标题栏：图标 + 应用名 + 窗口数 ----
             RowLayout {
                 Layout.fillWidth: true
+                Layout.leftMargin: Kirigami.Units.smallSpacing
+                Layout.rightMargin: Kirigami.Units.smallSpacing
                 spacing: Kirigami.Units.smallSpacing
 
                 Kirigami.Icon {
@@ -228,13 +235,19 @@ PopupWindow {
             }
 
             // ---- 预览区 ----
-            Rectangle {
+            // 贴住卡片左右和底边（上面留 smallSpacing 与标题栏分开），
+            // 底部两角跟着卡片的圆角裁掉，否则会露出直角盖住卡片圆角。
+            // 用 ClippingRectangle 而不是 Rectangle+clip：Qt 的 clip 只裁矩形，
+            // 圆角要额外靠它把内容裁进圆角边框里。
+            ClippingRectangle {
                 id: previewFrame
                 Layout.fillWidth: true
                 Layout.preferredHeight: root.previewHeight
-                radius: Sizes.cornerRadius * 0.7
+                topLeftRadius: 0
+                topRightRadius: 0
+                bottomLeftRadius: Sizes.cornerRadius - 1
+                bottomRightRadius: Sizes.cornerRadius - 1
                 color: Qt.alpha(Kirigami.Theme.textColor, 0.06)
-                clip: true
 
                 ScreencopyView {
                     id: view
