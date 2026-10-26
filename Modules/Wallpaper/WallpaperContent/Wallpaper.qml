@@ -482,7 +482,8 @@ Item {
         environment: ({
 		"QML_XHR_ALLOW_FILE_READ": "1",
 		"QS_APP_ID": "org.quickshell.web",
-		"QT_WAYLAND_CLIENT_BUFFER_INTEGRATION": "linux-dmabuf-unstable-v1"
+		"QT_WAYLAND_CLIENT_BUFFER_INTEGRATION": "linux-dmabuf-unstable-v1",
+		"QTWEBENGINE_CHROMIUM_FLAGS":"--disable-features=MediaSessionService,HardwareMediaKeyHandling"
 	})
     }
 }
