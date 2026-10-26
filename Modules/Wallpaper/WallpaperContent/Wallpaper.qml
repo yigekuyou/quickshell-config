@@ -478,19 +478,11 @@ Item {
         // 文件默认被禁用（实测报 "Using GET on a local file is disabled"），
         // Web.qml 靠它读参数文件（以及 /proc/self/stat）。
         // 参数只有一个：规格文件路径。其余全部在那个 JSON 里。
-        command: [
-            "/usr/bin/env",
-            "QML_XHR_ALLOW_FILE_READ=1",
-            // 壁纸页面放的音视频不能变成桌面上的一个 MPRIS 播放器：
-            // Chromium 的 MediaSessionService 会把每个出声的页面注册成
-            // org.mpris.MediaPlayer2.chromium.instance*，媒体组件（顶栏、
-            // Lyrics）会把它当成"正在播放"的选手列出来。
-            // HardwareMediaKeyHandling 一起关掉：壁纸不该抢媒体键。
-            "QTWEBENGINE_CHROMIUM_FLAGS=--disable-features=MediaSessionService,HardwareMediaKeyHandling",
-            "qml6",
-            Directories.configDir + "/Wallpaper/Web.qml",
-            "--",
-            root.webSpecPath
-        ]
+        command: ["qml6", Directories.configDir + "/Wallpaper/Web.qml", "--", root.webSpecPath]
+        environment: ({
+		"QML_XHR_ALLOW_FILE_READ": "1",
+		"QS_APP_ID": "org.quickshell.web",
+		"QT_WAYLAND_CLIENT_BUFFER_INTEGRATION": "linux-dmabuf-unstable-v1"
+	})
     }
 }
