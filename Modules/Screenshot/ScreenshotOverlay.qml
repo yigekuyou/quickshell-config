@@ -191,7 +191,7 @@ PanelWindow {
         overlay.ocrLines = [];
         ocrProcess.command = [
             "/usr/bin/tesseract", path, "stdout",
-            "-l", "chi_sim+eng", "--psm", "6"
+            "-l", "chi_sim", "--psm", "6"
         ];
         ocrProcess.running = true;
     }
