@@ -34,6 +34,10 @@ PanelWindow {
     property real pressX: 0
     property real pressY: 0
     property string toast: ""
+    property bool ocrVisible: false
+    property string ocrText: ""
+    property bool ocrRunning: false
+    property var ocrLines: []
     readonly property color dimColor: Qt.rgba(0, 0, 0, 0.58)
 
     screen: modelData
@@ -57,6 +61,11 @@ PanelWindow {
             captured = false;
             busy = false;
             toast = "";
+            ocrVisible = false;
+            ocrText = "";
+            ocrRunning = false;
+            ocrLines = [];
+            ocrProcess.running = false;
             frameWidth = 0;
             frameHeight = 0;
             sel = Qt.rect(0, 0, width, height);
@@ -160,8 +169,56 @@ PanelWindow {
             overlay.confirm("save");
         else if (action === "full")
             overlay.selectAll();
+        else if (action === "ocr")
+            overlay.confirm("ocr");
         else
             overlay.cancel();
+    }
+
+    function closeOcr() {
+        overlay.ocrVisible = false;
+        overlay.ocrRunning = false;
+        overlay.ocrText = "";
+        overlay.ocrLines = [];
+    }
+
+    function runOcr(path) {
+        if (overlay.ocrRunning)
+            return;
+        overlay.ocrVisible = true;
+        overlay.ocrRunning = true;
+        overlay.ocrText = qsTr("正在识别…");
+        overlay.ocrLines = [];
+        ocrProcess.command = [
+            "/usr/bin/tesseract", path, "stdout",
+            "-l", "chi_sim+eng", "--psm", "6"
+        ];
+        ocrProcess.running = true;
+    }
+
+    function finishOcr(exitCode) {
+        overlay.ocrRunning = false;
+        if (exitCode !== 0) {
+            overlay.ocrText = qsTr("OCR 识别失败，请确认已安装 tesseract 和中文语言包。");
+            return;
+        }
+        const text = overlay.ocrLines.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+        overlay.ocrText = text !== "" ? text : qsTr("没有识别到文字。");
+    }
+
+    // OCR 使用独立进程，结果仍显示在当前截图覆盖层中。
+    Process {
+        id: ocrProcess
+        running: false
+        stdout: SplitParser {
+            splitMarker: "\n"
+            onRead: line => overlay.ocrLines.push(line)
+        }
+        stderr: SplitParser {
+            splitMarker: "\n"
+            onRead: line => console.warn("[screenshot/ocr] " + line)
+        }
+        onExited: (exitCode, exitStatus) => overlay.finishOcr(exitCode)
     }
 
     // ==================== 导出：全程在 Qt 内部完成，不调用任何外部程序 ====================
@@ -170,7 +227,7 @@ PanelWindow {
     //      小 Item 再整块抓图（见下面的 cropper）
     //   3. ItemGrabResult.saveToFile() 落盘（Qt 6.2 起可直接传 URL）
     // 整屏复制（SHIFT+Print）不需要第 2 步：整屏抓图本身就是成品。
-    property string pendingAction: "" // 已按剪贴板能力降级后的动作: "copy" / "save"
+    property string pendingAction: "" // 已按剪贴板能力降级后的动作: "copy" / "save" / "ocr"
     property string pendingNote: ""
     property var pendingTarget: null // { dir, name, path }
 
@@ -222,7 +279,9 @@ PanelWindow {
         // 整屏 + 保存：直接写成品 PNG 到目标位置
         // 整屏 + 复制：写临时 PNG（剪贴板按 image/png 发布）
         // 区域：中间图只当解码源，写 BMP —— 见 Directories.shotRawFile 的说明
-        const product = overlay.pendingAction === "copy" ? overlay.shotPath : overlay.pendingTarget.path;
+        // OCR 和复制都使用运行时临时文件；保存才写入用户的 Screenshots 目录。
+        const product = (overlay.pendingAction === "copy" || overlay.pendingAction === "ocr")
+                ? overlay.shotPath : overlay.pendingTarget.path;
         overlay.exportSource = overlay.exportFull ? product : overlay.shotRawPath;
 
         // 1:1 抓冻结画面，不传 targetSize（item 多大就抓多大）。
@@ -267,6 +326,9 @@ PanelWindow {
     function finishExport(dest) {
         if (overlay.pendingAction === "copy") {
             overlay.publish(dest);
+        } else if (overlay.pendingAction === "ocr") {
+            overlay.busy = false;
+            overlay.runOcr(dest);
         } else {
             overlay.done(overlay.pendingNote !== "" ? overlay.pendingNote : qsTr("已保存到 图片/Screenshots/" + overlay.pendingTarget.name));
         }
@@ -431,7 +493,8 @@ PanelWindow {
                 if (cropper.grabRequested)
                     return;
                 cropper.grabRequested = true;
-                const dest = overlay.pendingAction === "copy" ? overlay.cropPath : overlay.pendingTarget.path;
+                const dest = (overlay.pendingAction === "copy" || overlay.pendingAction === "ocr")
+                        ? overlay.cropPath : overlay.pendingTarget.path;
                 const r = cropper.region;
 
                 // targetSize 用选区本身的像素尺寸：它是从图像文件里量出来的，
@@ -478,7 +541,7 @@ PanelWindow {
         // ==================== 选区压暗：四个矩形，中间留空 ====================
         Item {
             anchors.fill: parent
-            visible: overlay.captured && !overlay.instant && !overlay.busy
+            visible: overlay.captured && !overlay.instant && !overlay.busy && !overlay.ocrVisible
 
             Rectangle {
                 x: 0
@@ -514,7 +577,7 @@ PanelWindow {
         MouseArea {
             id: dragArea
             anchors.fill: parent
-            visible: overlay.captured && !overlay.instant && !overlay.busy
+            visible: overlay.captured && !overlay.instant && !overlay.busy && !overlay.ocrVisible
             cursorShape: Qt.CrossCursor
             acceptedButtons: Qt.LeftButton
 
@@ -543,14 +606,14 @@ PanelWindow {
             color: "transparent"
             border.width: 2
             border.color: Kirigami.Theme.highlightColor
-            visible: overlay.captured && !overlay.instant && !overlay.busy
+            visible: overlay.captured && !overlay.instant && !overlay.busy && !overlay.ocrVisible
             antialiasing: true
         }
 
         Rectangle {
             id: sizePill
             readonly property bool roomAbove: overlay.sel.y > height + Kirigami.Units.smallSpacing * 2
-            visible: overlay.captured && !overlay.instant && !overlay.busy
+            visible: overlay.captured && !overlay.instant && !overlay.busy && !overlay.ocrVisible
             x: Math.max(Kirigami.Units.smallSpacing, Math.min(parent.width - width - Kirigami.Units.smallSpacing, overlay.sel.x))
             y: roomAbove ? overlay.sel.y - height - Kirigami.Units.smallSpacing
                          : overlay.sel.y + Kirigami.Units.smallSpacing
@@ -571,7 +634,7 @@ PanelWindow {
         // ==================== 工具栏 ====================
         Kirigami.ShadowedRectangle {
             id: toolbar
-            visible: overlay.captured && !overlay.instant && !overlay.busy
+            visible: overlay.captured && !overlay.instant && !overlay.busy && !overlay.ocrVisible
             width: toolbarRow.implicitWidth + Kirigami.Units.largeSpacing * 2
             height: Kirigami.Units.gridUnit * 2.9
             radius: Kirigami.Units.gridUnit * 0.9
@@ -601,6 +664,7 @@ PanelWindow {
 
                 Repeater {
                     model: [
+                        { "icon": "edit-find", "label": qsTr("识别"), "action": "ocr", "danger": false },
                         { "icon": "edit-copy-symbolic", "label": qsTr("复制"), "action": "copy", "danger": false },
                         { "icon": "document-save-symbolic", "label": qsTr("保存"), "action": "save", "danger": false },
                         { "icon": "view-fullscreen-symbolic", "label": qsTr("全屏"), "action": "full", "danger": false },
@@ -659,6 +723,84 @@ PanelWindow {
                     color: Kirigami.Theme.disabledTextColor
                     font: Kirigami.Theme.smallFont
                     Layout.rightMargin: Kirigami.Units.smallSpacing
+                }
+            }
+        }
+
+        // ==================== OCR 结果浮层 ====================
+        Kirigami.ShadowedRectangle {
+            id: ocrPanel
+            visible: overlay.ocrVisible
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.verticalCenter: parent.verticalCenter
+            width: Math.min(parent.width - Kirigami.Units.gridUnit * 4,
+                            Kirigami.Units.gridUnit * 52)
+            height: Math.min(parent.height - Kirigami.Units.gridUnit * 6,
+                             Kirigami.Units.gridUnit * 34)
+            color: Qt.alpha(Kirigami.Theme.backgroundColor, 0.97)
+            border.width: 1
+            border.color: Qt.alpha(Kirigami.Theme.focusColor, 0.5)
+            radius: Kirigami.Units.gridUnit * 0.7
+            shadow.color: Qt.rgba(0, 0, 0, 0.55)
+            shadow.size: 28
+            shadow.yOffset: 8
+
+            ColumnLayout {
+                anchors.fill: parent
+                anchors.margins: Kirigami.Units.largeSpacing
+                spacing: Kirigami.Units.smallSpacing
+
+                RowLayout {
+                    Layout.fillWidth: true
+
+                    Label {
+                        text: overlay.ocrRunning ? qsTr("正在识别…") : qsTr("识别结果")
+                        color: Kirigami.Theme.textColor
+                        font.pixelSize: Kirigami.Units.gridUnit
+                        font.bold: true
+                        Layout.fillWidth: true
+                    }
+
+                    ToolButton {
+                        icon.name: "edit-copy"
+                        text: qsTr("复制")
+                        display: AbstractButton.IconOnly
+                        enabled: !overlay.ocrRunning && overlay.ocrText !== ""
+                        ToolTip.text: qsTr("复制识别结果")
+                        ToolTip.visible: hovered
+                        onClicked: {
+                            ClipboardService.copyToClipboard(ocrResultArea.text);
+                            overlay.toast = qsTr("文字已复制到剪贴板");
+                        }
+                    }
+
+                    ToolButton {
+                        icon.name: "window-close"
+                        text: qsTr("关闭")
+                        display: AbstractButton.IconOnly
+                        ToolTip.text: qsTr("关闭识别结果")
+                        ToolTip.visible: hovered
+                        onClicked: overlay.closeOcr()
+                    }
+                }
+
+                ScrollView {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    clip: true
+                    ScrollBar.vertical.policy: ScrollBar.AsNeeded
+
+                    TextArea {
+                        id: ocrResultArea
+                        text: overlay.ocrText
+                        readOnly: false
+                        selectByMouse: true
+                        wrapMode: TextArea.Wrap
+                        color: Kirigami.Theme.textColor
+                        placeholderText: qsTr("识别结果将显示在这里")
+                        background: null
+                        padding: Kirigami.Units.smallSpacing
+                    }
                 }
             }
         }
