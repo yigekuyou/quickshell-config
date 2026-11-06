@@ -38,6 +38,8 @@ PanelWindow {
     property string ocrText: ""
     property bool ocrRunning: false
     property var ocrLines: []
+    property var ocrWords: [] // { text, confidence, x, y, width, height }，坐标为截图层逻辑坐标
+    property int ocrMinConfidence: 30
     readonly property color dimColor: Qt.rgba(0, 0, 0, 0.58)
 
     screen: modelData
@@ -65,6 +67,7 @@ PanelWindow {
             ocrText = "";
             ocrRunning = false;
             ocrLines = [];
+            ocrWords = [];
             ocrProcess.running = false;
             frameWidth = 0;
             frameHeight = 0;
@@ -180,6 +183,82 @@ PanelWindow {
         overlay.ocrRunning = false;
         overlay.ocrText = "";
         overlay.ocrLines = [];
+        overlay.ocrWords = [];
+    }
+
+    // TSV 的 level=5 是词级结果；left/top/width/height 是 OCR 图片像素坐标。
+    // 这里同时换算为截图层逻辑坐标，便于后续绘制高亮框或点击文字。
+    function parseOcrTsv() {
+        const words = [];
+        const textLines = [];
+        let currentKey = "";
+        let currentLine = [];
+
+        function flushLine() {
+            if (!currentLine.length)
+                return;
+            // TSV 已按阅读顺序输出；中文词之间不插空格，英文/数字词之间保留空格。
+            let line = currentLine[0].text;
+            for (let i = 1; i < currentLine.length; ++i) {
+                const previous = currentLine[i - 1].text;
+                const current = currentLine[i].text;
+                const needsSpace = /[A-Za-z0-9%]$/.test(previous)
+                        && /^[A-Za-z0-9%]/.test(current);
+                line += (needsSpace ? " " : "") + current;
+            }
+            textLines.push(line);
+            currentLine = [];
+        }
+
+        // 同一个 line_num 会在不同 block/paragraph 中重复，因此使用完整层级作为行键。
+        for (const row of overlay.ocrLines) {
+            const fields = row.split("\t");
+            if (fields.length < 12 || fields[0] !== "5")
+                continue;
+            const value = fields[11].trim();
+            const confidence = Number(fields[10]);
+            if (!value || !isFinite(confidence) || confidence < overlay.ocrMinConfidence)
+                continue;
+
+            const px = Number(fields[6]);
+            const py = Number(fields[7]);
+            const pw = Number(fields[8]);
+            const ph = Number(fields[9]);
+            if (!isFinite(px) || !isFinite(py) || !isFinite(pw) || !isFinite(ph)
+                    || pw <= 0 || ph <= 0)
+                continue;
+
+            // exportFull 时 OCR 图片覆盖整层；选区截图时 OCR 图片原点是 sel 左上角。
+            const cropWidth = Math.max(1, cropper.region.width);
+            const cropHeight = Math.max(1, cropper.region.height);
+            const imageScaleX = overlay.exportFull
+                    ? (overlay.frameWidth > 0 ? overlay.width / overlay.frameWidth : 1)
+                    : overlay.sel.width / cropWidth;
+            const imageScaleY = overlay.exportFull
+                    ? (overlay.frameHeight > 0 ? overlay.height / overlay.frameHeight : 1)
+                    : overlay.sel.height / cropHeight;
+            const originX = overlay.exportFull ? 0 : overlay.sel.x;
+            const originY = overlay.exportFull ? 0 : overlay.sel.y;
+            const word = {
+                text: value,
+                confidence: confidence,
+                x: originX + px * imageScaleX,
+                y: originY + py * imageScaleY,
+                width: pw * imageScaleX,
+                height: ph * imageScaleY
+            };
+            words.push(word);
+
+            const key = fields[2] + "/" + fields[3] + "/" + fields[4];
+            if (currentKey !== key) {
+                flushLine();
+                currentKey = key;
+            }
+            currentLine.push(word);
+        }
+        flushLine();
+        overlay.ocrWords = words;
+        return textLines.join("\n").replace(/\n{3,}/g, "\n\n").trim();
     }
 
     function runOcr(path) {
@@ -189,9 +268,12 @@ PanelWindow {
         overlay.ocrRunning = true;
         overlay.ocrText = qsTr("正在识别…");
         overlay.ocrLines = [];
+        overlay.ocrWords = [];
+        // 选区通常是单块文本，整屏可能包含多个窗口/文本块。
+        const psm = overlay.exportFull ? "3" : "6";
         ocrProcess.command = [
             "/usr/bin/tesseract", path, "stdout",
-            "-l", "chi_sim", "--psm", "6"
+            "-l", "chi_sim+eng", "--psm", psm, "tsv"
         ];
         ocrProcess.running = true;
     }
@@ -202,7 +284,7 @@ PanelWindow {
             overlay.ocrText = qsTr("OCR 识别失败，请确认已安装 tesseract 和中文语言包。");
             return;
         }
-        const text = overlay.ocrLines.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+        const text = overlay.parseOcrTsv();
         overlay.ocrText = text !== "" ? text : qsTr("没有识别到文字。");
     }
 
