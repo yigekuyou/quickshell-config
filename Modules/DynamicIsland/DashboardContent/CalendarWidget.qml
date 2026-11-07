@@ -1,24 +1,21 @@
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Controls
 import qs.Config
+import org.kde.kirigami as Kirigami
 import org.kde.plasma.workspace.calendar as PlasmaCalendar
 
-// 日历 —— 数据后端换成 KDE Plasma 的日历组件
+// 日历 —— 数据后端是 KDE Plasma 的日历组件，外观与
+// ClockContent / MediaContent 统一（Kirigami 组件 + Theme 配色 + Units 尺寸）。
 // ------------------------------------------------------------------
-// 网格/月份/年份/星期起始日、法定节假日、农历，全部来自
-// `org.kde.plasma.workspace.calendar`（与 Plasma 数字时钟托盘里的日历同源）：
 //   * PlasmaCalendar.Calendar        —— 42 格月历数据模型 + 月份导航
 //   * PlasmaCalendar.EventPluginsManager
 //       - "holidaysevents"     KHolidays 法定节假日（区域取自
 //                              ~/.config/plasma_calendar_holiday_regions）
 //       - "alternatecalendar"  农历日名（Chinese 历法，
 //                              ~/.config/plasma_calendar_alternatecalendar）
-// 渲染仍然用本项目自己的 Colorscheme / Sizes 设计令牌，保持动态岛观感统一。
-Rectangle {
+Item {
     id: root
-
-    color: Colorscheme.surface_container_high
-    radius: 16 // 与其他组件对齐
 
     // 真实的“今天”，跨天后自动刷新
     property date today: new Date()
@@ -104,91 +101,65 @@ Rectangle {
         }
     }
 
-    // ---------------- 界面 ----------------
+    // ---------------- 界面（Kirigami 视觉语言） ----------------
 
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: 16
-        spacing: 10
+        anchors.margins: Kirigami.Units.largeSpacing * 2
+        spacing: Kirigami.Units.largeSpacing
 
         // 1. 顶部：月份 + 年份 + 翻月/回到今天
         RowLayout {
             Layout.fillWidth: true
-            Layout.leftMargin: 4
-            spacing: 6
+            spacing: Kirigami.Units.smallSpacing
 
-            Text {
+            Kirigami.Heading {
                 text: cal.monthName
-                color: Colorscheme.on_surface
+                level: 2
+                type: Kirigami.Heading.Type.Primary
                 font.family: Sizes.fontFamily
-                font.pixelSize: 18
-                font.bold: true
+                elide: Text.ElideRight
+                Layout.fillWidth: true
             }
-            Text {
+            Kirigami.Heading {
                 text: cal.year + "年"
-                color: Colorscheme.on_surface_variant // 年份稍暗，形成层次感
+                level: 2
+                opacity: 0.7 // 年份稍暗，形成层次感
                 font.family: Sizes.fontFamily
-                font.pixelSize: 18
-                font.bold: true
             }
-
-            Item { Layout.fillWidth: true } // 占位，把文字推到左边
 
             // 不在本月时显示「今」，一键回到今天
-            Item {
+            Button {
                 visible: !root.showingCurrentMonth
-                Layout.preferredWidth: 24
-                Layout.preferredHeight: 22
-
-                Rectangle {
-                    anchors.fill: parent
-                    radius: 11
-                    color: todayHover.containsMouse ? Colorscheme.surface_container_highest : "transparent"
-
-                    Text {
-                        anchors.centerIn: parent
-                        text: "今"
-                        color: Colorscheme.on_surface_variant
-                        font.family: Sizes.fontFamily
-                        font.pixelSize: 11
-                    }
-                    HoverHandler { id: todayHover }
-                    TapHandler {
-                        onTapped: {
-                            cal.resetToToday()
-                            root.selectedDate = root.today
-                        }
-                    }
+                flat: true
+                text: "今"
+                font: Kirigami.Theme.smallFont
+                onClicked: {
+                    cal.resetToToday()
+                    root.selectedDate = root.today
                 }
+                ToolTip.visible: hovered
+                ToolTip.text: "回到今天"
             }
 
             // 上一月 / 下一月
             Repeater {
                 model: [
-                    { glyph: "‹", action: "prev" },
-                    { glyph: "›", action: "next" }
+                    { icon: "go-previous-symbolic", tip: "上一月", isNext: false },
+                    { icon: "go-next-symbolic", tip: "下一月", isNext: true }
                 ]
-                Item {
+                Button {
                     required property var modelData
-                    Layout.preferredWidth: 24
-                    Layout.preferredHeight: 22
-
-                    Rectangle {
-                        anchors.fill: parent
-                        radius: 11
-                        color: navHover.hovered ? Colorscheme.surface_container_highest : "transparent"
-                    }
-                    Text {
-                        anchors.centerIn: parent
-                        text: parent.modelData.glyph
-                        color: navHover.hovered ? Colorscheme.on_surface : Colorscheme.on_surface_variant
-                        font.family: Sizes.fontFamily
-                        font.pixelSize: 18
-                    }
-                    HoverHandler { id: navHover }
-                    TapHandler {
-                        onTapped: parent.modelData.action === "prev" ? cal.previousMonth() : cal.nextMonth()
-                    }
+                    flat: true
+                    display: AbstractButton.IconOnly
+                    icon.name: modelData.icon
+                    icon.width: Kirigami.Units.iconSizes.small
+                    icon.height: Kirigami.Units.iconSizes.small
+                    implicitWidth: Kirigami.Units.gridUnit * 1.5
+                    implicitHeight: Kirigami.Units.gridUnit * 1.5
+                    onClicked: modelData.isNext ? cal.nextMonth() : cal.previousMonth()
+                    ToolTip.visible: hovered
+                    ToolTip.text: modelData.tip
                 }
             }
         }
@@ -202,19 +173,20 @@ Rectangle {
                 Item {
                     required property int index
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 20
+                    Layout.preferredHeight: Kirigami.Units.gridUnit * 1.2
 
                     // Qt 的星期编号：1=周一 … 7=周日
                     readonly property int weekdayNumber: ((cal.firstDayOfWeek - 1 + index) % 7) + 1
                     readonly property bool isWeekend: weekdayNumber === 6 || weekdayNumber === 7
 
-                    Text {
+                    Label {
                         anchors.centerIn: parent
                         text: Qt.locale().dayName(parent.weekdayNumber, Locale.NarrowFormat)
-                        color: parent.isWeekend ? Colorscheme.outline : Colorscheme.on_surface_variant
-                        font.family: Sizes.fontFamily
-                        font.pixelSize: 12
-                        font.bold: true
+                        color: Kirigami.Theme.textColor
+                        opacity: parent.isWeekend ? 0.45 : 0.7
+                        font.family: Kirigami.Theme.smallFont.family
+                        font.pixelSize: Kirigami.Theme.smallFont.pixelSize
+                        font.weight: Font.Bold
                     }
                 }
             }
@@ -226,7 +198,7 @@ Rectangle {
             Layout.fillHeight: true
             columns: 7
             columnSpacing: 0
-            rowSpacing: 2
+            rowSpacing: Kirigami.Units.smallSpacing / 2
 
             Repeater {
                 model: cal.daysModel
@@ -236,7 +208,7 @@ Rectangle {
 
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    Layout.preferredHeight: 32
+                    Layout.preferredHeight: Kirigami.Units.gridUnit * 2.5
 
                     readonly property int dNum: model.dayNumber
                     readonly property int mNum: model.monthNumber
@@ -258,51 +230,51 @@ Rectangle {
 
                     // 今天 / 选中 的圆底
                     Rectangle {
-                        width: 26
-                        height: 26
-                        radius: 13
+                        width: Kirigami.Units.gridUnit * 1.5
+                        height: Kirigami.Units.gridUnit * 1.5
+                        radius: width / 2
                         anchors.centerIn: parent
-                        anchors.verticalCenterOffset: cell.lunarText !== "" && cell.inMonth ? -3 : 0
-                        color: cell.isToday ? Colorscheme.primary
-                               : cell.isSelected ? Colorscheme.surface_container_highest
-                               : "transparent"
+                        anchors.verticalCenterOffset: cell.lunarText !== "" && cell.inMonth ? -Kirigami.Units.smallSpacing : 0
+                        visible: cell.isToday || cell.isSelected
+                        color: cell.isToday ? Kirigami.Theme.highlightColor
+                               : Qt.alpha(Kirigami.Theme.highlightColor, 0.25)
                     }
 
                     // 日期数字
-                    Text {
+                    Label {
                         anchors.horizontalCenter: parent.horizontalCenter
                         anchors.verticalCenter: parent.verticalCenter
-                        anchors.verticalCenterOffset: cell.lunarText !== "" && cell.inMonth ? -8 : 0
+                        anchors.verticalCenterOffset: cell.lunarText !== "" && cell.inMonth ? -Kirigami.Units.smallSpacing * 2 : 0
                         text: cell.dNum
-                        font.family: Sizes.fontFamily
-                        font.pixelSize: 13
-                        font.bold: cell.isToday || cell.isHoliday
+                        font.family: Kirigami.Theme.defaultFont.family
+                        font.pixelSize: Kirigami.Theme.defaultFont.pixelSize
+                        font.weight: Font.DemiBold
                         color: {
-                            if (cell.isToday) return Colorscheme.on_primary
-                            if (!cell.inMonth) return Colorscheme.outline_variant
-                            if (cell.isHoliday) return Colorscheme.error
-                            if (cell.isSelected) return Colorscheme.on_surface
-                            if (cell.isWeekend) return Colorscheme.on_surface_variant
-                            return Colorscheme.on_surface
+                            if (cell.isToday) return Kirigami.Theme.highlightedTextColor
+                            if (!cell.inMonth) return Qt.alpha(Kirigami.Theme.textColor, 0.3)
+                            if (cell.isHoliday) return Kirigami.Theme.negativeTextColor
+                            if (cell.isSelected) return Kirigami.Theme.highlightColor
+                            if (cell.isWeekend) return Kirigami.Theme.disabledTextColor
+                            return Kirigami.Theme.textColor
                         }
                     }
 
                     // 农历
-                    Text {
+                    Label {
                         anchors.horizontalCenter: parent.horizontalCenter
                         anchors.verticalCenter: parent.verticalCenter
-                        anchors.verticalCenterOffset: 8
-                        visible: cell.inMonth && cell.lunarText !== "" && cell.height >= 30
+                        anchors.verticalCenterOffset: Kirigami.Units.gridUnit * 0.5
+                        visible: cell.inMonth && cell.lunarText !== "" && cell.height >= Kirigami.Units.gridUnit * 1.5
                         text: cell.lunarText
                         elide: Text.ElideRight
                         width: Math.min(implicitWidth, cell.width - 2)
                         horizontalAlignment: Text.AlignHCenter
-                        font.family: Sizes.fontFamily
-                        font.pixelSize: 9
-                        color: cell.isToday ? Colorscheme.on_primary
-                               : cell.isHoliday ? Colorscheme.error
-                               : Colorscheme.outline
-                        opacity: 0.9
+                        font.family: Kirigami.Theme.smallFont.family
+                        font.pixelSize: Kirigami.Theme.smallFont.pixelSize
+                        color: cell.isToday ? Kirigami.Theme.highlightedTextColor
+                               : cell.isHoliday ? Kirigami.Theme.negativeTextColor
+                               : Kirigami.Theme.textColor
+                        opacity: 0.7
                     }
 
                     MouseArea {
@@ -315,9 +287,8 @@ Rectangle {
         }
 
         // 4. 底部：选中日期的节假日 / 事件（没有就自动收起，不占高度）
-        Text {
+        Label {
             Layout.fillWidth: true
-            Layout.leftMargin: 4
             visible: text !== ""
             text: {
                 if (!root.selectedEvents || root.selectedEvents.length === 0)
@@ -325,9 +296,10 @@ Rectangle {
                 return root.selectedEvents.map(e => e.title).join(" · ")
             }
             elide: Text.ElideRight
-            color: Colorscheme.error
-            font.family: Sizes.fontFamily
-            font.pixelSize: 11
+            color: Kirigami.Theme.negativeTextColor
+            font.family: Kirigami.Theme.smallFont.family
+            font.pixelSize: Kirigami.Theme.smallFont.pixelSize
+            opacity: 0.8
         }
     }
 }

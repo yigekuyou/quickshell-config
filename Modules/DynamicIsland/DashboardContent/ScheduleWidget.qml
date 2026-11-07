@@ -3,57 +3,58 @@ import QtQuick.Layouts
 import QtQuick.Controls
 import Quickshell
 import Quickshell.Io
-import qs.Config
 import qs.Services
+import org.kde.kirigami as Kirigami
 
-Rectangle {
+// 课表 —— 颜色与尺寸全部来自 Kirigami.Theme / Kirigami.Units，
+// 视觉语言与 ClockContent / MediaContent 统一。
+Item {
     id: root
-    color: Colorscheme.surface_container_high
-    radius: 16
 
     property var scheduleItems: []
     property var timeHeaders: []
     property var headers: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 
-    property int timeW: 45      
-    property int cellW: 55      
-    property int cellH: 55      
-    property int headerH: 25    
-    property int gridSpacing: 8 
+    // 所有固定尺寸由 Kirigami.Units 派生，跟随系统字号缩放
+    readonly property int timeW: Kirigami.Units.gridUnit * 2.5       // 左侧时间列宽
+    readonly property int cellW: Kirigami.Units.gridUnit * 3         // 单元格宽
+    readonly property int cellH: Kirigami.Units.gridUnit * 3         // 单元格高
+    readonly property int headerH: Kirigami.Units.gridUnit * 1.4     // 表头高
+    readonly property int gridSpacing: Kirigami.Units.largeSpacing   // 网格间距
 
     // ==========================================
-    // 纯粹的 ID 映射引擎 (4个固定深色 + 4个壁纸动态色)
+    // 纯粹的 ID 映射引擎 (主题色派生的 8 色调色板)
     // ==========================================
+    // 前 4 个：Kirigami 主题的中性/强调容器色；后 4 个：相同色相压低透明度
+    readonly property var cellColors: [
+        Kirigami.Theme.alternateBackgroundColor,
+        Qt.alpha(Kirigami.Theme.highlightColor, 0.30),
+        Qt.alpha(Kirigami.Theme.negativeTextColor, 0.30),
+        Qt.alpha(Kirigami.Theme.positiveTextColor, 0.30),
+        Qt.alpha(Kirigami.Theme.neutralTextColor, 0.30),
+        Qt.alpha(Kirigami.Theme.textColor, 0.16),
+        Qt.alpha(Kirigami.Theme.highlightColor, 0.18),
+        Qt.alpha(Kirigami.Theme.textColor, 0.10)
+    ]
+
+    // 文字色：前 4 个用主题前景色，后 4 个用对应色相的亮色，保证可读
+    readonly property var cellTextColors: [
+        Kirigami.Theme.textColor,
+        Kirigami.Theme.highlightColor,
+        Kirigami.Theme.negativeTextColor,
+        Kirigami.Theme.positiveTextColor,
+        Kirigami.Theme.neutralTextColor,
+        Kirigami.Theme.textColor,
+        Kirigami.Theme.highlightColor,
+        Kirigami.Theme.textColor
+    ]
+
     function getColorById(id) {
-        let colors = [
-            // 前 4 个：主题固定的暗色容器
-            Colorscheme.primary_container, 
-            Colorscheme.secondary_container, 
-            Colorscheme.tertiary_container, 
-            Colorscheme.surface_variant, 
-            // 后 4 个：壁纸的高亮主色，强行压暗 3.5 倍作为底色
-            Qt.darker(Colorscheme.primary, 3.5), 
-            Qt.darker(Colorscheme.secondary, 3.5), 
-            Qt.darker(Colorscheme.tertiary, 3.5), 
-            Qt.darker(Colorscheme.error, 3.5)
-        ];
-        return colors[id % colors.length]; // 无限循环轮询
+        return root.cellColors[id % root.cellColors.length]  // 无限循环轮询
     }
 
     function getTextColorById(id) {
-        let colors = [
-            // 前 4 个：对应容器的柔和文字色
-            Colorscheme.on_primary_container, 
-            Colorscheme.on_secondary_container, 
-            Colorscheme.on_tertiary_container, 
-            Colorscheme.on_surface_variant, 
-            // 后 4 个：对应底色的原版亮色，极致清晰
-            Colorscheme.primary, 
-            Colorscheme.secondary, 
-            Colorscheme.tertiary, 
-            Colorscheme.error
-        ];
-        return colors[id % colors.length]; // 无限循环轮询
+        return root.cellTextColors[id % root.cellTextColors.length]
     }
 
     // ==========================================
@@ -77,7 +78,7 @@ Rectangle {
                     root.scheduleItems = parsed.scheduleItems || [];
                 }
             } catch(e) { console.log("课表 JSON 解析错误:", e); }
-            root.jsonBuffer = ""; 
+            root.jsonBuffer = "";
         }
     }
 
@@ -91,42 +92,53 @@ Rectangle {
 
     Item {
         anchors.fill: parent
-        anchors.margins: 12
+        anchors.margins: Kirigami.Units.largeSpacing * 1.5
 
         // 【象限 1：左上角 (点击手动刷新)】
-        Rectangle {
-            x: 0; y: 0; width: timeW; height: headerH
-            color: "transparent"
-            Text {
+        Item {
+            x: 0; y: 0
+            width: root.timeW; height: root.headerH
+            Label {
                 anchors.centerIn: parent
                 text: "Time"
-                color: Colorscheme.on_surface_variant
-                font.pixelSize: 11; font.bold: true; font.family: Sizes.fontFamily
+                color: Kirigami.Theme.textColor
+                opacity: 0.7
+                font.family: Kirigami.Theme.smallFont.family
+                font.pixelSize: Kirigami.Theme.smallFont.pixelSize
+                font.weight: Font.Bold
             }
             MouseArea {
                 anchors.fill: parent
                 cursorShape: Qt.PointingHandCursor
                 onClicked: {
-                    scheduleLoader.running = false;
-                    scheduleLoader.running = true;
+                    root.scheduleLoader.running = false;
+                    root.scheduleLoader.running = true;
                 }
             }
         }
 
         // 【象限 2：顶部表头】
         Item {
-            x: timeW + gridSpacing
+            x: root.timeW + root.gridSpacing
             y: 0
-            width: parent.width - x; height: headerH
+            width: parent.width - x; height: root.headerH
             clip: true
             Row {
-                x: -scheduleScroll.contentItem.contentX 
-                spacing: gridSpacing
+                x: -scheduleScroll.contentItem.contentX
+                spacing: root.gridSpacing
                 Repeater {
                     model: root.headers
-                    Rectangle {
-                        width: cellW; height: headerH; color: "transparent"
-                        Text { anchors.centerIn: parent; text: modelData; color: Colorscheme.on_surface_variant; font.pixelSize: 11; font.bold: true; font.family: Sizes.fontFamily }
+                    Item {
+                        width: root.cellW; height: root.headerH
+                        Label {
+                            anchors.centerIn: parent
+                            text: modelData
+                            color: Kirigami.Theme.textColor
+                            opacity: 0.7
+                            font.family: Kirigami.Theme.smallFont.family
+                            font.pixelSize: Kirigami.Theme.smallFont.pixelSize
+                            font.weight: Font.Bold
+                        }
                     }
                 }
             }
@@ -135,22 +147,25 @@ Rectangle {
         // 【象限 3：左侧时间列】
         Item {
             x: 0
-            y: headerH + gridSpacing
-            width: timeW; height: parent.height - y
+            y: root.headerH + root.gridSpacing
+            width: root.timeW; height: parent.height - y
             clip: true
             Column {
-                y: -scheduleScroll.contentItem.contentY 
-                spacing: gridSpacing
+                y: -scheduleScroll.contentItem.contentY
+                spacing: root.gridSpacing
                 Repeater {
                     model: root.timeHeaders
-                    Rectangle {
-                        width: timeW; height: cellH; color: "transparent"
-                        Text { 
+                    Item {
+                        width: root.timeW; height: root.cellH
+                        Label {
                             anchors.centerIn: parent
-                            text: modelData.replace(" - ", "\n") 
-                            color: Colorscheme.outline
-                            font.pixelSize: 9; font.family: Sizes.fontFamily
-                            horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter
+                            text: modelData.replace(" - ", "\n")
+                            color: Kirigami.Theme.textColor
+                            opacity: 0.5
+                            font.family: Kirigami.Theme.smallFont.family
+                            font.pixelSize: Kirigami.Theme.smallFont.pixelSize
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
                         }
                     }
                 }
@@ -160,8 +175,8 @@ Rectangle {
         // 【象限 4：主体课程网格】
         ScrollView {
             id: scheduleScroll
-            x: timeW + gridSpacing
-            y: headerH + gridSpacing
+            x: root.timeW + root.gridSpacing
+            y: root.headerH + root.gridSpacing
             width: parent.width - x
             height: parent.height - y
             clip: true
@@ -171,29 +186,36 @@ Rectangle {
             GridLayout {
                 width: implicitWidth
                 height: implicitHeight
-                columns: 7 
-                rowSpacing: gridSpacing; columnSpacing: gridSpacing
+                columns: 7
+                rowSpacing: root.gridSpacing; columnSpacing: root.gridSpacing
 
                 Repeater {
                     model: root.scheduleItems
                     Rectangle {
                         Layout.row: modelData.row; Layout.column: modelData.col; Layout.rowSpan: modelData.rowSpan
-                        Layout.preferredWidth: cellW; Layout.preferredHeight: cellH
+                        Layout.preferredWidth: root.cellW; Layout.preferredHeight: root.cellH
                         Layout.fillWidth: true; Layout.fillHeight: true
-                        radius: 8
-                        
+                        radius: Kirigami.Units.gridUnit * 0.4
+
                         // 彻底抛弃名字计算，直接通过 Python 传入的 ID 调用颜色
                         color: modelData.isEmpty ? "transparent" : root.getColorById(modelData.colorId)
                         border.width: modelData.isEmpty ? 1 : 0
-                        border.color: Colorscheme.outline_variant
+                        // 与 DynamicIsland 外框同款的细腻描边
+                        border.color: Qt.alpha(Kirigami.Theme.textColor, 0.15)
 
-                        Text {
-                            anchors.fill: parent; anchors.margins: 4
+                        Label {
+                            anchors.fill: parent; anchors.margins: Kirigami.Units.smallSpacing / 2
                             text: modelData.text.replace(" (", "\n(").replace("（", "\n（")
-                            color: root.getTextColorById(modelData.colorId)
-                            font.pixelSize: 10; font.bold: !modelData.isEmpty; font.family: Sizes.fontFamily
-                            horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter
-                            wrapMode: Text.WordWrap; elide: Text.ElideRight
+                            color: modelData.isEmpty
+                                   ? Qt.alpha(Kirigami.Theme.textColor, 0.7)
+                                   : root.getTextColorById(modelData.colorId)
+                            font.family: Kirigami.Theme.smallFont.family
+                            font.pixelSize: Kirigami.Theme.smallFont.pixelSize
+                            font.weight: modelData.isEmpty ? Font.Normal : Font.Bold
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                            wrapMode: Text.WordWrap
+                            elide: Text.ElideRight
                         }
                     }
                 }
@@ -202,9 +224,9 @@ Rectangle {
 
         // 【右键拖拽逻辑】
         MouseArea {
-            x: timeW + gridSpacing; y: headerH + gridSpacing
+            x: root.timeW + root.gridSpacing; y: root.headerH + root.gridSpacing
             width: parent.width - x; height: parent.height - y
-            acceptedButtons: Qt.RightButton 
+            acceptedButtons: Qt.RightButton
             cursorShape: pressed ? Qt.ClosedHandCursor : Qt.ArrowCursor
 
             property real startX: 0; property real startY: 0
@@ -221,10 +243,10 @@ Rectangle {
                     let flickable = scheduleScroll.contentItem;
                     let targetX = startContentX - (mouse.x - startX);
                     let targetY = startContentY - (mouse.y - startY);
-                    
+
                     let maxX = Math.max(0, flickable.contentWidth - scheduleScroll.width);
                     let maxY = Math.max(0, flickable.contentHeight - scheduleScroll.height);
-                    
+
                     flickable.contentX = Math.max(0, Math.min(targetX, maxX));
                     flickable.contentY = Math.max(0, Math.min(targetY, maxY));
                 }

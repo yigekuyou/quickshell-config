@@ -1,14 +1,14 @@
 import QtQuick
 import QtQuick.Layouts
-import Qt5Compat.GraphicalEffects 
 import Quickshell
 import Quickshell.Io
-import qs.Config
+import org.kde.kirigami as Kirigami
 
-Rectangle {
+// 系统信息 —— 头像 + 主机信息。
+// 视觉语言与 ClockContent / MediaContent 统一：
+// Kirigami.Heading/Label 排版、Kirigami.Theme 配色、Kirigami.Units 尺寸。
+Item {
     id: root
-    color: Colorscheme.surface_container_high
-    radius: 16
 
     // ================== 极致轻量的数据获取逻辑 ==================
     // 1. 环境变量直读 (绝对零开销)
@@ -27,18 +27,18 @@ Rectangle {
         stdout: SplitParser {
             onRead: (data) => {
                 try {
-                    var json = JSON.parse(data);
+                    const json = JSON.parse(data);
                     if (json.host && json.host.trim() !== "") root.sysHost = json.host.trim();
-                    
+
                     // 清理厂商名称中冗余的后缀 (例如 "HP Inc." 变成 "HP")
-                    var vendor = json.vendor ? json.vendor.trim().replace(" Inc.", "").replace(" Corporation", "") : "Unknown";
-                    
+                    const vendor = json.vendor ? json.vendor.trim().replace(" Inc.", "").replace(" Corporation", "") : "Unknown";
+
                     // 解析 Linux Chassis 代码
-                    var type = parseInt(json.chassis);
-                    var typeStr = "Computer";
+                    const type = parseInt(json.chassis);
+                    let typeStr = "Computer";
                     if ([3, 4, 6, 7].includes(type)) typeStr = "Desktop";
                     else if ([8, 9, 10, 11, 31, 32].includes(type)) typeStr = "Notebook";
-                    
+
                     // 组合成 "Notebook HP" 的格式
                     root.sysChassis = typeStr + (vendor !== "Unknown" ? (" " + vendor) : "");
                 } catch(e) { console.log("Fetch JSON error: " + e); }
@@ -46,90 +46,78 @@ Rectangle {
         }
     }
 
-    Item {
+    ColumnLayout {
         anchors.fill: parent
+        spacing: Kirigami.Units.largeSpacing
 
         // ==========================================
-        // 1. 头像区域 (靠上锚定，极限放大，绝美正圆)
+        // 1. 头像区域 (顶部，正圆，MediaContent 封面同款容器)
         // ==========================================
-        Item {
-            width: 120 
-            height: 120
-            
-            anchors.top: parent.top
-            anchors.topMargin: 20
-            anchors.horizontalCenter: parent.horizontalCenter
+        Kirigami.ShadowedRectangle {
+            Layout.alignment: Qt.AlignHCenter
+            Layout.topMargin: Kirigami.Units.largeSpacing
+            Layout.preferredWidth: Kirigami.Units.gridUnit * 6
+            Layout.preferredHeight: Kirigami.Units.gridUnit * 6
+            radius: Kirigami.Units.gridUnit * 3
+            color: Kirigami.Theme.backgroundColor
+            // 与 DynamicIsland 外框同款的细腻描边
+            border.width: 1
+            border.color: Qt.alpha(Kirigami.Theme.textColor, 0.15)
 
-            Image {
+            Kirigami.ShadowedImage {
                 id: avatarImg
                 anchors.fill: parent
                 source: "file:///var/lib/AccountsService/icons/" + Quickshell.env("USER")
-                sourceSize: Qt.size(240, 240) 
                 fillMode: Image.PreserveAspectCrop
-                visible: false 
-                cache: true
+                asynchronous: true
+                visible: status === Image.Ready
             }
 
-            Rectangle {
-                id: mask
-                anchors.fill: parent
-                radius: 60 
-                visible: false 
-                color: "black"
-            }
-
-            OpacityMask {
-                anchors.fill: parent
-                source: avatarImg
-                maskSource: mask
-            }
-
-            // 主题色光环
-            Rectangle {
-                anchors.fill: parent
-                radius: 60
-                color: "transparent"
-                border.color: Colorscheme.primary
-                border.width: 2
-                opacity: 0.8
+            // 没有头像时显示的图标
+            Kirigami.Icon {
+                anchors.centerIn: parent
+                width: Kirigami.Units.iconSizes.medium
+                height: Kirigami.Units.iconSizes.medium
+                source: "user-identity"
+                visible: avatarImg.status !== Image.Ready
             }
         }
 
+        // 占位：把信息推到底部
+        Item {
+            Layout.fillHeight: true
+        }
+
         // ==========================================
-        // 2. 底部动态 Fetch 信息 (极致规整的三行排布)
+        // 2. 底部 Fetch 信息 (规整的三行排布)
         // ==========================================
         ColumnLayout {
-            anchors.bottom: parent.bottom
-            anchors.bottomMargin: 10
-            anchors.left: parent.left
-            anchors.right: parent.right
-            spacing: 2 
+            Layout.fillWidth: true
+            Layout.bottomMargin: Kirigami.Units.smallSpacing
+            spacing: Kirigami.Units.smallSpacing
 
-            Text { 
+            Kirigami.Heading {
+                Layout.fillWidth: true
                 text: root.sysUser + " @ " + root.sysHost
-                color: Colorscheme.on_surface_variant 
-                font.pixelSize: 14 
-                font.family: Sizes.fontFamily 
-                font.bold: true
-                Layout.alignment: Qt.AlignHCenter
+                level: 4
+                elide: Text.ElideRight
+                horizontalAlignment: Qt.AlignHCenter
             }
-
-            Text { 
+            Kirigami.Heading {
+                Layout.fillWidth: true
                 text: "Chassis : " + root.sysChassis
-                color: Colorscheme.on_surface_variant 
-                font.pixelSize: 14
-                font.family: Sizes.fontFamily 
-                font.bold: true
-                Layout.alignment: Qt.AlignHCenter
+                level: 5
+                opacity: 0.7
+                elide: Text.ElideRight
+                horizontalAlignment: Qt.AlignHCenter
             }
-
-            Text { 
+            Kirigami.Heading {
+                Layout.fillWidth: true
                 text: "WM : " + root.sysWm
-                color: Colorscheme.on_surface_variant 
-                font.pixelSize: 14
-                font.family: Sizes.fontFamily 
-                font.bold: true
-                Layout.alignment: Qt.AlignHCenter
+                level: 5
+                opacity: 0.7
+                elide: Text.ElideRight
+                horizontalAlignment: Qt.AlignHCenter
             }
         }
     }
