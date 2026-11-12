@@ -42,6 +42,11 @@ Kirigami.AbstractApplicationWindow {
             "component": "BarPage.qml"
         },
         {
+            "icon": "weather-clear",
+            "label": qsTr("天气"),
+            "component": "WeatherPage.qml"
+        },
+        {
             "icon": "preferences-desktop-effects",
             "label": qsTr("灵动岛"),
             "component": "IslandPage.qml"

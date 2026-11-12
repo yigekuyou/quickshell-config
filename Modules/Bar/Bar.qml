@@ -16,6 +16,7 @@ import qs.Modules.Bar.Volume
 import qs.Modules.Bar.PowerButton
 import qs.Modules.Bar.PowerProfile
 import qs.Modules.Bar.SysMonitor
+import qs.Modules.Bar.Weather
 import qs.Modules.Bar.NotificationButton
 import qs.Modules.Bar.DayNightSwitch
 import qs.Modules.DynamicIsland
@@ -109,6 +110,9 @@ Variants {
 		    anchors.rightMargin: Kirigami.Units.largeSpacing
 		    spacing: Sizes.secGap("right")
                 SysMonitor {
+                    Layout.alignment: Qt.AlignVCenter
+                }
+                WeatherButton {
                     Layout.alignment: Qt.AlignVCenter
                 }
                 Tray {}

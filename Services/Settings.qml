@@ -34,6 +34,7 @@ Singleton {
     readonly property alias island: islandCfg
     readonly property alias idle: idleCfg
     readonly property alias wallpaper: wallpaperCfg
+    readonly property alias weather: weatherCfg
 
     // 文件是否已经成功读过。首次启动文件不存在时会先落一份默认值。
     property bool ready: false
@@ -288,6 +289,17 @@ Singleton {
                 property int presentMode: 1
                 property bool hdrOutput: false
                 property int cacheQuotaMB: 2048
+            }
+
+            // 天气（见 Services/Weather.qml + Modules/Bar/Weather/WeatherButton.qml）
+            property JsonObject weather: JsonObject {
+                id: weatherCfg
+                // 手动指定城市：留空走 Location 服务的坐标（GeoClue2）自动取
+                // 中文（如「北京」/「沈阳市」）或英文（如 Tokyo）城市名；
+                // 境外城市写英文原名更准（GeoNames 中文地名部分只存繁体）
+                property string city: ""
+                // 天气刷新间隔（分钟），服务里夹在 5 ~ 1440 之间
+                property int intervalMin: 30
             }
         }
     }
