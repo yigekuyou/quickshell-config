@@ -59,6 +59,9 @@ Singleton {
             finish(false, "", "请求超时");
         });
 
+        // create 出来的 Timer 不会自己跑，必须显式 start()
+        watchdog.start();
+
         xhr.onreadystatechange = () => {
             // abort() 可能连带触发一次状态变更，读取 readyState 会抛异常
             let rs;

@@ -73,5 +73,9 @@
         "videoBackend": 1,
         "volume": 0.13,
         "wallpaperId": "1551961057"
+    },
+    "weather": {
+        "city": "",
+        "intervalMin": 30
     }
 }

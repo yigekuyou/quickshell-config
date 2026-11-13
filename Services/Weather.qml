@@ -432,9 +432,13 @@ Singleton {
 
     // ==================== 生命周期 ====================
     // 刷新间隔：分钟 → 毫秒，夹在 5 分钟 ~ 24 小时之间
+    // running: true 不能少 —— QML Timer 默认不跑；少了它既没有定时刷新，
+    // 首次请求失败时也没有自动重试（坐标不变就不会有别的信号触发 refresh）
     Timer {
+        id: pollTimer
         interval: Math.max(5, Math.min(1440, Settings.weather.intervalMin)) * 60000
         repeat: true
+        running: true
         // 第一次请求由 Component.onCompleted 发起，Timer 只负责后续轮询；
         // 即便第一次失败也照跑，当作重试
         onTriggered: root.refresh()
