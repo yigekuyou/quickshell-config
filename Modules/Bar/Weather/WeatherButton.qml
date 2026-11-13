@@ -74,6 +74,7 @@ BarButton {
                         ? Math.round(Weather.current.pressure) + "hPa" : "无"),
                     "today=" + (Weather.current && !isNaN(Weather.current.normalHi)
                         ? (Math.round(Weather.current.normalLo) + "~" + Math.round(Weather.current.normalHi) + "°") : "无"),
+                    "icon=" + (Weather.icon || "无"),
                     "alert=" + (Weather.alert ? Weather.alert.level + ":" + Weather.alert.text : "无"),
                     "refreshCount=" + Weather._refreshCount].join(" | ");
         }

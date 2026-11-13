@@ -272,7 +272,11 @@ Singleton {
         const real = data.real;
         const w = real.weather || {}, wind = real.wind || {}, ss = real.sunriseSunset || {};
         // 实况图标是 nmc 的 1 位/2 位编号，夜间用 xx/99x 系列（这里统一查表）
-        const img = root._ok(w.img) ? w.img : "9999";
+        // 注意：nmc 的实况 img/info 在深夜会缺（img=9999、info="-"），但同一份
+        // 数据里 predict.detail[0] 的夜间段是有效的。拿当前时段的预报段兜底，
+        // 免得半夜bar里显示一个「weather-none-available」
+        let img = root._ok(w.img) ? w.img : null;
+        let condition = root._ok(w.info) ? w.info : null;
         // 夜间判定按日出日落算，比「发布时间 > 18:00」准：
         // 冬天 16 点天就黑了，夏天 19 点还亮着（plasma nmccn ion 的做法）
         const sr = root._hmToDate(ss.sunrise), sn = root._hmToDate(ss.sunset);
@@ -283,6 +287,18 @@ Singleton {
         } else if (real.publish_time) {
             night = real.publish_time.slice(11, 16) > "18:00";
         }
+        // 实况 img/info 缺时，用今天对应时段（昼 / 夜）的预报段补上
+        if (!img || !condition) {
+            const details = (data.predict && data.predict.detail) || [];
+            if (details.length > 0) {
+                const segW = (details[0][night ? "night" : "day"] || {}).weather || {};
+                if (!img && root._ok(segW.img))
+                    img = segW.img;
+                if (!condition && root._ok(segW.info))
+                    condition = segW.info;
+            }
+        }
+
         const windSpeed = root._ok(wind.speed) ? wind.speed : NaN;  // m/s
         // 风速 > 1.6 m/s 时图标带风（nmccn ion 的阈值，人开始觉得「有风」）
         const windy = !isNaN(windSpeed) && windSpeed > 1.6;
@@ -327,7 +343,7 @@ Singleton {
             "temp": root._num(w.temperature, NaN),        // ℃
             "feels": root._num(w.feelst, NaN),            // 体感温度 ℃
             "humidity": root._num(w.humidity, NaN),       // 相对湿度 %
-            "condition": root._ok(w.info) ? w.info : "暂无",
+            "condition": condition || "暂无",
             "icon": root._nmcIcon(img, night, windy),
             "night": night,
             "windSpeed": windSpeed,                       // m/s
@@ -425,7 +441,7 @@ Singleton {
                 "0": windy ? "weather-clear-wind-night" : "weather-clear-night",
                 "1": windy ? "weather-few-clouds-wind-night" : "weather-few-clouds-night",
                 "2": "weather-clouds-night",
-                "3": "weather-showers-night",
+                "3": "weather-showers-scattered-night",
                 "4": "weather-storm-night",
                 "5": "weather-storm-night",
                 "6": "weather-snow-rain",
