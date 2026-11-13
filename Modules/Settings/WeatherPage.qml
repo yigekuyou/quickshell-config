@@ -7,7 +7,7 @@
 // 定位现在只依赖 GeoClue2（系统定位），城市名由离线数据库
 // （geotoolcn / GeoToolCN）解析，离线不可用时回退在线 web 反向地理编码。
 // 已彻底移除 IP 定位（ip-api / icanhazip）。
-// 数据由 Services/Weather.qml 通过 Open-Meteo 接口提供（零子进程、免 key、
+// 数据由 Services/Weather.qml 通过中央气象台 nmc.cn 接口提供（零子进程、免 key、
 // 全球覆盖）；这个页面只改参，电器的 `Settings.weather` 独写，和「状态栏」
 // 页互不覆盖。
 

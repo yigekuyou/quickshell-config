@@ -63,13 +63,13 @@ BarButton {
                     "publish=" + (Weather.current ? Weather.current.publishTime : "无"),
                     "msg=" + Weather.message,
                     "loc=" + Location.status,
-                    "city=" + Location.city,
+                    "wxCity=" + (Weather.current ? Weather.current.city : "无"),
+                    "locCity=" + Location.city,
                     "citySrc=" + Location.source,
                     "coord=" + (c ? (c.lat + "," + c.lon) : "无"),
                     "trusted=" + (c ? c.trusted : false),
                     "ageH=" + (c && c.ageHours !== undefined ? c.ageHours : "?"),
                     "intervalMin=" + Settings.weather.intervalMin,
-                    "proto=" + (Weather._useHttps ? "https" : "http降级"),
                     "refreshCount=" + Weather._refreshCount].join(" | ");
         }
 

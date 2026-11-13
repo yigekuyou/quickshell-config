@@ -17,7 +17,7 @@ import org.kde.kirigami as Kirigami
 //     区间条按本周最低 ~ 最高归一化，蓝（冷）→ 橙（暖）渐变上色
 //
 // 卡片只画圆角 + 一层很淡的底色 + 分隔线，不画描边阴影，保持扁平透气。
-// 数据全部来自 qs.Services.Weather（Open-Meteo，由 Location 坐标驱动），本文件只管展示。
+// 数据全部来自 qs.Services.Weather（nmc.cn 中央气象台，由 Location 定位驱动），本文件只管展示。
 // ============================================================================
 SlideWindow {
     id: root
@@ -71,7 +71,9 @@ SlideWindow {
         if (!Weather.current)
             return [];
         const c = Weather.current;
-        const t = Math.round(c.feels);
+        // nmc 缺字段时给 NaN，面板要显示成「--」而不是「NaN°」
+        const safe = (v, unit) => isNaN(v) ? "--" : (Math.round(v) + unit);
+        const t = safe(c.feels, "°");
         return [
             {
                 // 体感按温度换冷 / 常 / 暖三个温度计图标
@@ -84,14 +86,17 @@ SlideWindow {
                 "icon": "raindrop-symbolic",
                 "iconColor": root._cold,
                 "caption": qsTr("湿度"),
-                "value": Math.round(c.humidity) + "%"
+                "value": safe(c.humidity, "%")
             },
             {
                 "icon": "weather-clear-wind-symbolic",
                 "iconColor": Qt.rgba(0, 0, 0, 0),
                 "caption": qsTr("风"),
-                "value": c.windDir ? qsTr("%1风 %2 m/s").arg(c.windDir).arg(Math.round(c.windSpeed))
-                                   : (Math.round(c.windSpeed) + " m/s")
+                // 预报没有 m/s 只有「3~4级」文本；实况有 speed 优先显示
+                "value": !isNaN(c.windSpeed) && c.windDir
+                    ? qsTr("%1 %2 m/s").arg(c.windDir).arg(Math.round(c.windSpeed))
+                    : (c.windPower ? (c.windDir + " " + c.windPower)
+                                   : (!isNaN(c.windSpeed) ? (Math.round(c.windSpeed) + " m/s") : "--"))
             },
             {
                 "icon": "daytime-sunrise-symbolic",
@@ -462,7 +467,7 @@ SlideWindow {
         // ---- 脚注：来源 + 坐标 ----
         Label {
             Layout.fillWidth: true
-            text: qsTr("数据：Open-Meteo") + (Location.coordinateText ? (" · 坐标 " + Location.coordinateText) : "")
+            text: qsTr("数据：中央气象台 nmc.cn") + (Location.coordinateText ? (" · 坐标 " + Location.coordinateText) : "")
             font.pixelSize: Kirigami.Units.gridUnit * 0.7
             color: Kirigami.Theme.disabledTextColor
             horizontalAlignment: Text.AlignHCenter
