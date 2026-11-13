@@ -70,7 +70,11 @@ Singleton {
     property string _usedKey: ""
 
     // ==================== 刷新 ====================
+    // refresh 调用计数：观测自动重试是否真在跑（status()/日志里看）
+    property int _refreshCount: 0
+
     function refresh(): void {
+        root._refreshCount += 1;
         const manual = (Settings.weather.city || "").trim();
         if (manual) {
             root._geocode(manual);
@@ -441,6 +445,18 @@ Singleton {
         running: true
         // 第一次请求由 Component.onCompleted 发起，Timer 只负责后续轮询；
         // 即便第一次失败也照跑，当作重试
+        onTriggered: root.refresh()
+    }
+
+    // open-meteo 的链路偶尔会整体卡住（TLS 握手挂死几到几十分钟），
+    // 一次失败就干等下一个轮询周期（最短也 5 分钟）太钝。失败后 3 分钟
+    // 快速重试一次；还失败会自动接力（status 再次 error → 本 Timer 重启）
+    Timer {
+        id: retryTimer
+
+        interval: 180000
+        repeat: false
+        running: root.status === "error"
         onTriggered: root.refresh()
     }
 

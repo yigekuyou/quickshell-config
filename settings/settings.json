@@ -76,6 +76,6 @@
     },
     "weather": {
         "city": "",
-        "intervalMin": 30
+        "intervalMin": 61
     }
 }

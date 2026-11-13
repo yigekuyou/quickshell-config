@@ -31,6 +31,9 @@ Singleton {
         const ms = timeoutMs > 0 ? timeoutMs : root.defaultTimeoutMs
         const xhr = new XMLHttpRequest()
         let settled = false
+        // 看门狗先于 abort() 置位：abort 会让 DONE 回调读到 status 0，
+        // 不打标记的话超时会被误报成「网络错误」
+        let timedOut = false
 
         // 看门狗：到点还没 DONE 就 abort + 回失败。直接动态建 Timer，
         // 不用单个全局 Timer 抢占 —— 天气与定位可能同时各有一个请求在飞。
@@ -50,6 +53,7 @@ Singleton {
         };
 
         watchdog.triggered.connect(() => {
+            timedOut = true;
             // abort() 之后再访问 readyState 会抛 InvalidState，
             // 所以这里先中断再统一走 finish()
             try {
@@ -74,8 +78,10 @@ Singleton {
                 return;
 
             const ok = xhr.status >= 200 && xhr.status < 300;
-            // status 0 = 传输层就没通（拒绝连接 / DNS 失败），不是 HTTP 错误码
-            const err = xhr.status > 0 ? ("HTTP " + xhr.status) : "网络错误";
+            // status 0 = 传输层就没通（拒绝连接 / DNS 失败），不是 HTTP 错误码；
+            // 真正的超时由看门狗直接报，不会走到这里
+            const err = timedOut ? "请求超时"
+                : (xhr.status > 0 ? ("HTTP " + xhr.status) : "网络错误");
             finish(ok, ok ? String(xhr.responseText) : "", ok ? "" : err);
         };
 
