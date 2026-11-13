@@ -20,7 +20,10 @@ import qs.Services
 //             例：pzXOG|哈尔滨|黑龙江省|/AHL/haerbin.html|126.58|45.93
 //             注意参数名是 q（jquery.autocomplete 的默认），不是 keyword。
 //   天气数据  GET https://www.nmc.cn/rest/weather?stationid=<code>
-//             → data.real（实况，温度/湿度/体感/风/日出日落/预警）
+//             请求要带 Referer（指向该城市预报页）+ 浏览器 UA，否则可能
+//             拿不到正常数据（复刻 plasma6-ions-china 的 nmccn ion 行为）。
+//             → data.real（实况，温度/湿度/体感/风/日出日落/预警 warn）
+//               data.passedchart（今天已过的小时序列：实测高低温 / 气压）
 //               data.predict.detail[7]（每天 day/night 两段）
 //
 // 为什么还要保留坐标：手动城市为空时跟定位走，GeoClue2 给坐标，搜索
@@ -57,12 +60,30 @@ Singleton {
     readonly property string tempText: root.current && !isNaN(root.current.temp)
         ? (Math.round(root.current.temp) + "°") : "--°"
     readonly property bool refreshing: root.status === "searching" || root.status === "fetching"
+    // 预警信号（来自 real.warn）：{ level, text, url }，没有为 null。
+    // 面板顶部的彩色预警条靠它驱动。
+    readonly property var alert: root.current ? root.current.alert : null
 
     // ==================== 配置 ====================
     readonly property string _searchApi: "https://www.nmc.cn/essearch/api/autocomplete"
     readonly property string _weatherApi: "https://www.nmc.cn/rest/weather"
     // 最近一次取数用的站点编码：同一个站不重复拉
     property string _usedKey: ""
+
+    // nmc 要求带 Referer 才给正常数据（plasma6-ions-china 的 nmccn ion
+    // 复刻了网页前端的请求方式），_ / timestamp 是它前端打的防缓存戳。
+    // User-Agent 也照抄网页前端，免得被当成爬虫挡掉。
+    readonly property string _apiBase: "https://www.nmc.cn"
+    readonly property string _userAgent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+        + "(KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36"
+
+    function _nmcHeaders(referer: string): var {
+        return {
+            "Referer": referer,
+            "User-Agent": root._userAgent,
+            "Accept": "application/json;charset=utf-8"
+        };
+    }
 
     // ==================== 刷新 ====================
     // refresh 调用计数：观测自动重试是否真在跑（status()/日志里看）
@@ -102,7 +123,9 @@ Singleton {
         root.status = "searching";
         root.message = "";
         const want = root._bareName(query);
-        const url = root._searchApi + "?q=" + encodeURIComponent(want) + "&limit=5";
+        const ms = Date.now();
+        const url = root._searchApi + "?q=" + encodeURIComponent(want) + "&limit=5"
+            + "&timestamp=" + ms + "&_=" + ms;
         Http.get(url, (ok, text, error) => {
             if (!ok)
                 return root._fail("城市搜索失败：" + error);
@@ -115,8 +138,8 @@ Singleton {
             if (!rows || !rows.length)
                 return root._fail("找不到城市：" + query);
             const hit = root._bestRow(rows, query);
-            root._fetch(hit.code, hit.name, hit.province);
-        });
+            root._fetch(hit.code, hit.name, hit.province, hit.path);
+        }, 0, root._nmcHeaders(root._apiBase + "/publish/forecast.html"));
     }
 
     // 自动定位有坐标但 nmc 只认城市名。essearch 的 q 参数只支持
@@ -194,9 +217,11 @@ Singleton {
     }
 
     // ==================== 取数 ====================
-    function _fetch(code: string, name: string, province: string): void {
+    function _fetch(code: string, name: string, province: string, path: string): void {
         root.status = "fetching";
-        const url = root._weatherApi + "?stationid=" + encodeURIComponent(code);
+        const url = root._weatherApi + "?stationid=" + encodeURIComponent(code)
+            + "&_=" + Date.now();
+        const referer = root._apiBase + "/publish/forecast" + (path || "");
         Http.get(url, (ok, text, error) => {
             if (!ok)
                 return root._fail("天气数据获取失败：" + error);
@@ -213,7 +238,7 @@ Singleton {
             root._usedKey = code;
             root.status = "ok";
             root.message = "";
-        });
+        }, 0, root._nmcHeaders(referer));
     }
 
     function _fail(msg: string): void {
@@ -231,12 +256,69 @@ Singleton {
         return root._ok(v) ? (parseFloat(v) || fallback) : fallback;
     }
 
+    // "2026-11-13 06:30" → Date（本地时区，用来判断现在是不是夜间）
+    function _hmToDate(t: var): var {
+        const s = String(t === null || t === undefined ? "" : t);
+        const p = s.split(" ");
+        if (p.length < 2)
+            return null;
+        const d = (p[0] || "").split("-"), hm = (p[1] || "").split(":");
+        if (d.length < 3 || hm.length < 2)
+            return null;
+        return new Date(+d[0], +d[1] - 1, +d[2], +hm[0], +hm[1]);
+    }
+
     function _parseCurrent(data: var, name: string, province: string): var {
         const real = data.real;
         const w = real.weather || {}, wind = real.wind || {}, ss = real.sunriseSunset || {};
         // 实况图标是 nmc 的 1 位/2 位编号，夜间用 xx/99x 系列（这里统一查表）
         const img = root._ok(w.img) ? w.img : "9999";
-        const night = real.publish_time && real.publish_time.slice(11, 16) > "18:00";
+        // 夜间判定按日出日落算，比「发布时间 > 18:00」准：
+        // 冬天 16 点天就黑了，夏天 19 点还亮着（plasma nmccn ion 的做法）
+        const sr = root._hmToDate(ss.sunrise), sn = root._hmToDate(ss.sunset);
+        let night = false;
+        if (sr && sn) {
+            const now = new Date();
+            night = now >= sn || now < sr;
+        } else if (real.publish_time) {
+            night = real.publish_time.slice(11, 16) > "18:00";
+        }
+        const windSpeed = root._ok(wind.speed) ? wind.speed : NaN;  // m/s
+        // 风速 > 1.6 m/s 时图标带风（nmccn ion 的阈值，人开始觉得「有风」）
+        const windy = !isNaN(windSpeed) && windSpeed > 1.6;
+
+        // passedchart：今天已过去的小时序列（温度 / 气压），
+        // 由此得到「今日实测最高 / 最低」和整点气压
+        const passed = data.passedchart || [];
+        let normalHi = NaN, normalLo = NaN, pressure = NaN;
+        if (passed.length > 0) {
+            let max = -Infinity, min = Infinity;
+            for (let i = 0; i < passed.length; ++i) {
+                const t = parseFloat(passed[i].temperature);
+                if (!isNaN(t)) {
+                    if (t > max)
+                        max = t;
+                    if (t < min)
+                        min = t;
+                }
+            }
+            if (max > -Infinity)
+                normalHi = max;
+            if (min < Infinity)
+                normalLo = min;
+            pressure = parseFloat(passed[0].pressure);
+        }
+
+        // 预警信号（real.warn）：alert 标题 / signallevel 颜色等级 / url 详情页
+        const warn = real.warn || {};
+        let alert = null;
+        if (root._ok(warn.alert) && root._ok(warn.signallevel) && root._ok(warn.url))
+            alert = {
+                "level": warn.signallevel,           // 蓝色 / 黄色 / 橙色 / 红色
+                "text": warn.alert,                  // 「哈尔滨市气象台发布暴雨蓝色预警」
+                "url": root._apiBase + warn.url      // 预警详情页
+            };
+
         return {
             "city": name || Location.city || Location.coordinateText,
             "province": province || "",
@@ -246,13 +328,17 @@ Singleton {
             "feels": root._num(w.feelst, NaN),            // 体感温度 ℃
             "humidity": root._num(w.humidity, NaN),       // 相对湿度 %
             "condition": root._ok(w.info) ? w.info : "暂无",
-            "icon": root._nmcIcon(img, false),
+            "icon": root._nmcIcon(img, night, windy),
             "night": night,
-            "windSpeed": root._ok(wind.speed) ? wind.speed : NaN,  // m/s
+            "windSpeed": windSpeed,                       // m/s
             "windPower": root._ok(wind.power) ? wind.power : "",   // 「微风 / 3~4级」
             "windDir": root._ok(wind.direct) ? wind.direct : "",
             "sunrise": root._clock(ss.sunrise),
-            "sunset": root._clock(ss.sunset)
+            "sunset": root._clock(ss.sunset),
+            "pressure": pressure,                         // hPa（passedchart 首条）
+            "normalHi": normalHi,                         // 今日实测最高 ℃
+            "normalLo": normalLo,                         // 今日实测最低 ℃
+            "alert": alert                                // 预警信号，没有为 null
         };
     }
 
@@ -332,12 +418,12 @@ Singleton {
     //   16 大雪 / 17 暴雪 / 18 雾 / 19 冻雨 / 20 沙尘暴 / 22 强沙尘暴 / 29 浮尘
     //   30 严重污染 / 9999 无数据
     // 夜间版本 nmc 用 31~53 的对应段（0→31），这里直接按 night 标记查另一张表
-    function _nmcIcon(img: var, night: bool): string {
+    function _nmcIcon(img: var, night: bool, windy: bool): string {
         const code = String(img || "9999");
         if (night) {
             const v = ({
-                "0": "weather-clear-night",
-                "1": "weather-few-clouds-night",
+                "0": windy ? "weather-clear-wind-night" : "weather-clear-night",
+                "1": windy ? "weather-few-clouds-wind-night" : "weather-few-clouds-night",
                 "2": "weather-clouds-night",
                 "3": "weather-showers-night",
                 "4": "weather-storm-night",
@@ -361,8 +447,8 @@ Singleton {
             return v || "weather-none-available";
         }
         const v = ({
-            "0": "weather-clear",
-            "1": "weather-few-clouds",
+            "0": windy ? "weather-clear-wind" : "weather-clear",
+            "1": windy ? "weather-few-clouds-wind" : "weather-few-clouds",
             "2": "weather-overcast",
             "3": "weather-showers-scattered",
             "4": "weather-storm",

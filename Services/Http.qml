@@ -20,6 +20,8 @@ import QtQuick
 //   Http.get("https://...", (ok, text, error) => { ... }, 15000)
 //   ok 为 true 时 text 是响应正文；ok 为 false 时 error 是原因
 //   （"请求超时" / "HTTP 404" / "网络错误"），text 可能为空。
+//   第四参 headers（可选）是 { 头名: 值 } 的对象，例如 nmc 接口要求带
+//   Referer 才返回正常数据：Http.get(url, cb, 0, {"Referer": "..."})。
 // ============================================================================
 Singleton {
     id: root
@@ -27,7 +29,7 @@ Singleton {
     // 多数接口 15 秒足够；个别慢接口由调用方另行放宽
     readonly property int defaultTimeoutMs: 15000
 
-    function get(url: string, callback: var, timeoutMs: int): void {
+    function get(url: string, callback: var, timeoutMs: int, headers: var): void {
         const ms = timeoutMs > 0 ? timeoutMs : root.defaultTimeoutMs
         const xhr = new XMLHttpRequest()
         let settled = false
@@ -87,6 +89,17 @@ Singleton {
 
         try {
             xhr.open("GET", url);
+            // 自定义请求头（可选，第四参）：nmc 等接口要看 Referer 才给正常数据。
+            // Referer / User-Agent 在浏览器 XHR 里是禁用的，QML 的 XHR 没有这层
+            // 安全模型，可以设置；即便个别头被拒绝也只影响那一个头，不致命。
+            if (headers) {
+                for (const name in headers) {
+                    try {
+                        xhr.setRequestHeader(name, headers[name]);
+                    } catch (e) {
+                    }
+                }
+            }
             xhr.send();
         } catch (e) {
             finish(false, "", "网络错误");

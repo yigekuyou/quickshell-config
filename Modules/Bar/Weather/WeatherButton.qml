@@ -70,6 +70,11 @@ BarButton {
                     "trusted=" + (c ? c.trusted : false),
                     "ageH=" + (c && c.ageHours !== undefined ? c.ageHours : "?"),
                     "intervalMin=" + Settings.weather.intervalMin,
+                    "pressure=" + (Weather.current && !isNaN(Weather.current.pressure)
+                        ? Math.round(Weather.current.pressure) + "hPa" : "无"),
+                    "today=" + (Weather.current && !isNaN(Weather.current.normalHi)
+                        ? (Math.round(Weather.current.normalLo) + "~" + Math.round(Weather.current.normalHi) + "°") : "无"),
+                    "alert=" + (Weather.alert ? Weather.alert.level + ":" + Weather.alert.text : "无"),
                     "refreshCount=" + Weather._refreshCount].join(" | ");
         }
 

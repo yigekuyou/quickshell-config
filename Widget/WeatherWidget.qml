@@ -74,7 +74,7 @@ SlideWindow {
         // nmc 缺字段时给 NaN，面板要显示成「--」而不是「NaN°」
         const safe = (v, unit) => isNaN(v) ? "--" : (Math.round(v) + unit);
         const t = safe(c.feels, "°");
-        return [
+        const rows = [
             {
                 // 体感按温度换冷 / 常 / 暖三个温度计图标
                 "icon": t < 0 ? "temperature-cold-symbolic" : t < 18 ? "temperature-normal-symbolic" : "temperature-warm-symbolic",
@@ -105,9 +105,36 @@ SlideWindow {
                 "value": c.sunrise && c.sunset ? (c.sunrise + " / " + c.sunset) : "--"
             }
         ];
+        // 气压（passedchart 首条，hPa）：夜里 / 清晨可能还没有
+        if (!isNaN(c.pressure))
+            rows.push({
+                "icon": "speedometer-symbolic",
+                "iconColor": Qt.rgba(0, 0, 0, 0),
+                "caption": qsTr("气压"),
+                "value": Math.round(c.pressure) + " hPa"
+            });
+        // 今日实测高低温（passedchart 今天已过小时序列的极值）
+        if (!isNaN(c.normalHi) && !isNaN(c.normalLo))
+            rows.push({
+                "icon": "temperature-normal-symbolic",
+                "iconColor": Qt.rgba(0, 0, 0, 0),
+                "caption": qsTr("今日实测"),
+                "value": Math.round(c.normalLo) + "° / " + Math.round(c.normalHi) + "°"
+            });
+        return rows;
     }
 
     // 逐日温度条的归一化范围：取本周最低 / 最高
+    // 预警等级 → 颜色（中国气象局信号色：蓝 < 黄 < 橙 < 红）
+    function _alertColor(level: string): color {
+        return ({
+            "蓝色": "#1e88e5",
+            "黄色": "#f9a825",
+            "橙色": "#fb8c00",
+            "红色": "#e53935"
+        })[level] || Kirigami.Theme.textColor;
+    }
+
     readonly property real _weekLo: {
         let m = Infinity;
         for (const d of Weather.days)
@@ -209,6 +236,62 @@ SlideWindow {
                     icon.height: Kirigami.Units.iconSizes.small
                     enabled: !Weather.refreshing
                     onClicked: Weather.refresh()
+                }
+            }
+        }
+
+        // ---- 预警信号条（real.warn，蓝/黄/橙/红 四级）----
+        Rectangle {
+            id: alertBanner
+            Layout.fillWidth: true
+            visible: !!Weather.alert
+            radius: root._cardRadius
+            // 底色按预警等级取同色淡底，左边一条实色竖条点明等级
+            color: Qt.alpha(root._alertColor(Weather.alert ? Weather.alert.level : ""), 0.16)
+            implicitHeight: alertRow.implicitHeight + Kirigami.Units.smallSpacing * 2
+
+            Rectangle {
+                anchors.left: parent.left
+                anchors.top: parent.top
+                anchors.bottom: parent.bottom
+                width: root._cardRadius * 2
+                color: root._alertColor(Weather.alert ? Weather.alert.level : "")
+                radius: root._cardRadius
+            }
+
+            RowLayout {
+                id: alertRow
+                anchors.fill: parent
+                anchors.leftMargin: root._cardRadius + Kirigami.Units.smallSpacing
+                anchors.rightMargin: Kirigami.Units.smallSpacing
+                spacing: Kirigami.Units.smallSpacing
+
+                Kirigami.Icon {
+                    source: "dialog-warning-symbolic"
+                    implicitWidth: Kirigami.Units.iconSizes.small
+                    implicitHeight: Kirigami.Units.iconSizes.small
+                    color: root._alertColor(Weather.alert ? Weather.alert.level : "")
+                    Layout.alignment: Qt.AlignVCenter
+                }
+
+                Label {
+                    Layout.fillWidth: true
+                    text: (Weather.alert ? Weather.alert.text : "")
+                    color: Kirigami.Theme.textColor
+                    elide: Text.ElideRight
+                    font.weight: Font.Medium
+                    Layout.alignment: Qt.AlignVCenter
+                }
+            }
+
+            // 整条可点开预警详情页（nmc 的 url 字段）。放在内容之上：
+            // 声明在后面的同级元素吃事件在前
+            MouseArea {
+                anchors.fill: parent
+                cursorShape: Qt.PointingHandCursor
+                onClicked: {
+                    if (Weather.alert && Weather.alert.url)
+                        Qt.openUrlExternally(Weather.alert.url);
                 }
             }
         }
