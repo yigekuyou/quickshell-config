@@ -69,12 +69,22 @@ Singleton {
     // 最近一次取数用的坐标键（取整到 0.01°，约 1km）：同一个点不重复拉
     property string _usedKey: ""
 
+    // 有的网络环境会阶段性掐掉 api.open-meteo.com 的 443（TLS 握手挂死，
+    // ping 和 80 端口却正常）。超时/网络错误时降级到明文 http 重试一次，
+    // 降级满 _httpsRecoverMs 后自动重试 https（443 通常会恢复）
+    property bool _useHttps: true
+    property real _httpsRecoverAt: 0
+    readonly property int _httpsRecoverMs: 3600000
+
     // ==================== 刷新 ====================
     // refresh 调用计数：观测自动重试是否真在跑（status()/日志里看）
     property int _refreshCount: 0
 
     function refresh(): void {
         root._refreshCount += 1;
+        // 降级保护期过了 → 重新优先走 https
+        if (!root._useHttps && Date.now() > root._httpsRecoverAt)
+            root._useHttps = true;
         const manual = (Settings.weather.city || "").trim();
         if (manual) {
             root._geocode(manual);
@@ -158,15 +168,26 @@ Singleton {
         root.status = "fetching";
         // 坐标取整到 0.01°（约 1km）：同一个格子反复推也不重复请求
         const r2 = (v) => Math.round(v * 100) / 100;
-        const url = root._forecastApi
+        const base = root._useHttps ? root._forecastApi
+            : root._forecastApi.replace("https://", "http://");
+        const url = base
             + "?latitude=" + r2(lat) + "&longitude=" + r2(lon)
             + "&current=temperature_2m,relative_humidity_2m,apparent_temperature,"
               + "is_day,weather_code,wind_speed_10m,wind_direction_10m"
             + "&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset"
             + "&timezone=auto&wind_speed_unit=ms&forecast_days=7";
         Http.get(url, (ok, text, error) => {
-            if (!ok)
+            if (!ok) {
+                // 传输层失败（超时 / DNS / 拒绝连接）→ 降级 http 重试一次；
+                // HTTP 4xx 5xx 是服务端的，换协议没意义
+                if (root._useHttps
+                    && (error === "请求超时" || error === "网络错误")) {
+                    root._useHttps = false;
+                    root._httpsRecoverAt = Date.now() + root._httpsRecoverMs;
+                    return root._fetch(lat, lon, place);
+                }
                 return root._fail("天气数据获取失败：" + error);
+            }
             let data;
             try {
                 data = JSON.parse(text);

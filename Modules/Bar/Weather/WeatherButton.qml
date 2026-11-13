@@ -69,6 +69,7 @@ BarButton {
                     "trusted=" + (c ? c.trusted : false),
                     "ageH=" + (c && c.ageHours !== undefined ? c.ageHours : "?"),
                     "intervalMin=" + Settings.weather.intervalMin,
+                    "proto=" + (Weather._useHttps ? "https" : "http降级"),
                     "refreshCount=" + Weather._refreshCount].join(" | ");
         }
 
