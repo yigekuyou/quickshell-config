@@ -19,8 +19,10 @@ PopupWindow {
     // --- 开放给外部的属性 ---
     property string title: ""
     property string icon: ""
-    // 内容实际高度，方便调用方把窗口高度贴着内容走（通知中心用）
-    readonly property real contentHeight: flick.contentHeight
+    // 内容实际高度，方便调用方把窗口高度贴着内容走（通知中心用）。
+    // 语义保持「整块内容（标题栏 + 正文）」不变，调用方的 windowHeight 计算不用改。
+    readonly property real contentHeight: headerToolsLayout.implicitHeight
+        + mainColumn.spacing + flick.contentHeight
     property int windowHeight: 420
     property int extraTopMargin: 0
     property alias headerTools: headerToolsLayout.data
@@ -65,92 +67,102 @@ PopupWindow {
         shadow.size: 15
         shadow.yOffset: 4
 
-        Flickable {
-            id: flick
+        // 标题栏固定在 Flickable 之外：只有正文会滚动，
+        // 内容再长（天气 7 天预报滚到底）标题栏也不会被带走。
+        ColumnLayout {
+            id: mainColumn
 
             anchors.fill: parent
             anchors.margins: Kirigami.Units.smallSpacing
-            clip: true
-            // 宽度固定为视口宽度，避免内容宽度反向影响布局（ScrollablePage 在
-            // 弹出窗口“显示后重新布局”时会因此进入无限重排，主线程 100% 卡死）
-            contentWidth: width
-            contentHeight: mainColumn.implicitHeight + Kirigami.Units.smallSpacing
-            boundsBehavior: Flickable.StopAtBounds
+            spacing: Kirigami.Units.mediumSpacing
 
-            ColumnLayout {
-                id: mainColumn
+            RowLayout {
+                id: headerToolsLayout
 
-                width: flick.width
-                spacing: Kirigami.Units.mediumSpacing
+                Layout.fillWidth: true
+                // 钉住表头高度：调用方 headerTools 里常带 Kirigami.Separator
+                // { Layout.fillHeight: true }，fillHeight 会沿嵌套布局传播，
+                // 表头会吃掉 ColumnLayout 的全部剩余高度。用 maximumHeight
+                // 把表头锁回自己的隐式高度，剩余空间全部留给 Flickable。
+                Layout.maximumHeight: implicitHeight
+                spacing: Kirigami.Units.smallSpacing
 
-                RowLayout {
-                    id: headerToolsLayout
-
-                    Layout.fillWidth: true
-
-                    Kirigami.Icon {
-                        source: popudroot.icon
-                        implicitWidth: Kirigami.Units.gridUnit * 1.2
-                        implicitHeight: Kirigami.Units.gridUnit * 1.2
-                        color: Kirigami.Theme.activeTextColor
-                    }
-
-                    Kirigami.Heading {
-                        text: popudroot.title
-                        level: 4
-                        color: Kirigami.Theme.textColor
-                        Layout.fillWidth: true
-                    }
-
+                Kirigami.Icon {
+                    source: popudroot.icon
+                    implicitWidth: Kirigami.Units.gridUnit * 1.2
+                    implicitHeight: Kirigami.Units.gridUnit * 1.2
+                    color: Kirigami.Theme.activeTextColor
                 }
 
-                ColumnLayout {
-                    id: contentLayout
-
+                Kirigami.Heading {
+                    text: popudroot.title
+                    level: 4
+                    color: Kirigami.Theme.textColor
                     Layout.fillWidth: true
-                    spacing: Kirigami.Units.mediumSpacing
+                    elide: Text.ElideRight
                 }
 
             }
 
-            // 细滚动条：仅当内容比视口高时出现；手柄宽度固定，不抢占内容宽度
-            ScrollBar.vertical: ScrollBar {
-                id: verticalScrollBar
+            Flickable {
+                id: flick
 
-                policy: flick.contentHeight > flick.height + 1 ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff
-                interactive: true
-                implicitWidth: Kirigami.Units.smallSpacing + 6
-                padding: 3
-                z: 100
-                onPressedChanged: {
-                    if (!pressed && size < 1) {
-                        flick.returnToBounds();
-                    }
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                clip: true
+                // 宽度固定为视口宽度，避免内容宽度反向影响布局（ScrollablePage 在
+                // 弹出窗口“显示后重新布局”时会因此进入无限重排，主线程 100% 卡死）
+                contentWidth: width
+                contentHeight: contentLayout.implicitHeight + Kirigami.Units.smallSpacing
+                boundsBehavior: Flickable.StopAtBounds
+
+                ColumnLayout {
+                    id: contentLayout
+
+                    width: flick.width
+                    spacing: Kirigami.Units.mediumSpacing
                 }
 
-                contentItem: Rectangle {
-                    implicitWidth: 5
-                    // 手柄长度按可见比例走（size = 可见高度 / 总高度），太短时保底两个网格
-                    implicitHeight: Math.min(verticalScrollBar.available, Math.max(Kirigami.Units.gridUnit * 2, verticalScrollBar.size * verticalScrollBar.available))
-                    radius: implicitWidth / 2
-                    color: Qt.alpha(Kirigami.Theme.textColor, verticalScrollBar.pressed ? 0.6 : verticalScrollBar.hovered ? 0.42 : 0.25)
+                // 细滚动条：仅当内容比视口高时出现；手柄宽度固定，不抢占内容宽度
+                ScrollBar.vertical: ScrollBar {
+                    id: verticalScrollBar
 
-                    Behavior on color {
-                        ColorAnimation {
-                            duration: Kirigami.Units.shortDuration
+                    policy: flick.contentHeight > flick.height + 1 ? ScrollBar.AsNeeded : ScrollBar.AlwaysOff
+                    interactive: true
+                    implicitWidth: Kirigami.Units.smallSpacing + 6
+                    padding: 3
+                    z: 100
+                    onPressedChanged: {
+                        if (!pressed && size < 1) {
+                            flick.returnToBounds();
+                        }
+                    }
+
+                    contentItem: Rectangle {
+                        implicitWidth: 5
+                        // 手柄长度按可见比例走（size = 可见高度 / 总高度），太短时保底两个网格
+                        implicitHeight: Math.min(verticalScrollBar.available, Math.max(Kirigami.Units.gridUnit * 2, verticalScrollBar.size * verticalScrollBar.available))
+                        radius: implicitWidth / 2
+                        color: Qt.alpha(Kirigami.Theme.textColor, verticalScrollBar.pressed ? 0.6 : verticalScrollBar.hovered ? 0.42 : 0.25)
+
+                        Behavior on color {
+                            ColorAnimation {
+                                duration: Kirigami.Units.shortDuration
+                            }
+
                         }
 
                     }
 
-                }
+                    background: Rectangle {
+                        radius: 4
+                        color: Qt.alpha(Kirigami.Theme.backgroundColor, verticalScrollBar.pressed ? 0.35 : 0)
 
-                background: Rectangle {
-                    radius: 4
-                    color: Qt.alpha(Kirigami.Theme.backgroundColor, verticalScrollBar.pressed ? 0.35 : 0)
+                        Behavior on color {
+                            ColorAnimation {
+                                duration: Kirigami.Units.shortDuration
+                            }
 
-                    Behavior on color {
-                        ColorAnimation {
-                            duration: Kirigami.Units.shortDuration
                         }
 
                     }

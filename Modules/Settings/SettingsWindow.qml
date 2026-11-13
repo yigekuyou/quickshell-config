@@ -196,6 +196,7 @@ Kirigami.AbstractApplicationWindow {
 
                 WallpaperPage {}
                 BarPage {}
+                WeatherPage {}
                 IslandPage {}
                 TrayPage {}
                 IdlePage {}
