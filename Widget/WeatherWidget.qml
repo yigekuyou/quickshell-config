@@ -14,8 +14,9 @@ import org.kde.kirigami as Kirigami
 //   1. 实况头图：整块淡色天空渐变 + 超大温度 + 天气现象 + 「最高 / 最低」
 //   2. 空气质量：AQI 数字 + 等级文字 + 六段色带 + 指针
 //   3. 详情：两列磁贴（图标 / 标题 / 大字数值 / 副行），不是竖排列表
-//   4. 7 天预报：日期 / 图标 / 天气文字 / 低温 / 温度区间条 / 高温
-//      区间条按本周最低 ~ 最高归一化，蓝（冷）→ 橙（暖）渐变上色，今天整行淡底高亮
+//   4. 7 天预报：几何天气的横向趋势图 —— 逐日一列（星期 / 日期 / 白天图标 /
+//      高低温折线段 / 夜间图标），两条折线跨列相接，按本周最低 ~ 最高归一化，
+//      高温线下压一层上浓下淡的暖色阴影，今天列的星期加粗高亮
 //
 // 卡片只画圆角 + 一层很淡的底色，不画描边阴影；头图是唯一的彩色块，
 // 色调跟着实况图标走（晴=蓝、阴=灰蓝、雨=青灰、雪=浅蓝、夜=深蓝）。
@@ -68,7 +69,7 @@ SlideWindow {
     readonly property real _tileRadius: _gu * 0.55
     readonly property real _cardPad: _gu * 0.7
     readonly property real _tilePad: _gu * 0.55
-    // 温度区间条两端的固定色调（冷 / 暖）
+    // 折线图的固定色调：高温线橙、低温线蓝（高温线下的阴影跟暖色走）
     readonly property color _cold: "#56B4E9"
     readonly property color _warm: "#F0903C"
 
@@ -195,7 +196,7 @@ SlideWindow {
         return "#4A90D9";
     }
 
-    // 逐日温度条的归一化范围：取本周最低 / 最高
+    // 趋势图折线的归一化范围：取本周最低 / 最高
     readonly property real _weekLo: {
         let m = Infinity;
         for (const d of Weather.days)
@@ -216,6 +217,21 @@ SlideWindow {
         if (span <= 0)
             return 0.5;
         return Math.max(0, Math.min(1, (t - root._weekLo) / span));
+    }
+
+    // 趋势图的逐日归一化序列：hi / lo 映射到 0~1（null → 0.5 中间）。
+    // 折线坐标和温度文字定位都读它；days 变了这里整体替换，下游绑定才触发
+    readonly property var _chartHi: {
+        const out = [];
+        for (const d of Weather.days)
+            out.push(d.hi === null ? 0.5 : root._norm(d.hi));
+        return out;
+    }
+    readonly property var _chartLo: {
+        const out = [];
+        for (const d of Weather.days)
+            out.push(d.lo === null ? 0.5 : root._norm(d.lo));
+        return out;
     }
 
     function _shortDate(dateStr: string): string {
@@ -634,7 +650,12 @@ SlideWindow {
             }
         }
 
-        // ---- 7 天预报卡片 ----
+        // ---- 7 天预报：几何天气招牌的横向趋势图 ----
+        // 逐日一列（星期 / 日期 / 白天图标 / 高低温折线段 / 夜间图标），
+        // 高低温两条折线跨列相接：每列只画「前一列中点 → 本列 → 后一列中点」
+        // 的一段（首列从自己起、末列到自己止），照搬 GeometricWeather 的
+        // PolylineAndHistogramView；折线按本周最低 ~ 最高归一化，高温线下方
+        // 压一层从上到下渐淡的暖色阴影，今天列的星期加粗高亮。
         Rectangle {
             Layout.fillWidth: true
             visible: Weather.days.length > 0
@@ -646,128 +667,196 @@ SlideWindow {
                 id: forecastLayout
                 anchors.fill: parent
                 anchors.margins: root._cardPad
-                spacing: 0
+                spacing: Kirigami.Units.smallSpacing
 
                 Label {
                     text: qsTr("7 天预报")
                     font.pixelSize: root._gu * 0.8
                     font.weight: Font.DemiBold
                     color: Kirigami.Theme.textColor
-                    Layout.bottomMargin: Kirigami.Units.smallSpacing
                 }
 
-                Repeater {
-                    model: Weather.days
+                Item {
+                    id: trendRow
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: root._gu * 12.5
 
-                    delegate: ColumnLayout {
-                        Layout.fillWidth: true
-                        spacing: 0
+                    Repeater {
+                        model: Weather.days
 
-                        Rectangle {
-                            Layout.fillWidth: true
-                            implicitHeight: dayRow.implicitHeight + root._gu * 0.3
-                            radius: root._gu * 0.4
-                            // 今天整行淡主色底，比只加粗字更接近几何天气的高亮
-                            color: modelData.week === "今天" ? Qt.alpha(Kirigami.Theme.highlightColor, 0.12) : "transparent"
+                        delegate: Item {
+                            id: dayCol
+                            x: index * width
+                            width: trendRow.width / Math.max(1, Weather.days.length)
+                            height: trendRow.height
 
-                            RowLayout {
-                                id: dayRow
+                            // 本列高 / 低温点在折线区里的 y（文字定位用）
+                            readonly property real _hiY: root._chartHi.length > index
+                                ? chartArea.yForNorm(root._chartHi[index]) : chartArea.height * 0.5
+                            readonly property real _loY: root._chartLo.length > index
+                                ? chartArea.yForNorm(root._chartLo[index]) : chartArea.height * 0.5
+
+                            ColumnLayout {
+                                id: colLayout
                                 anchors.fill: parent
-                                anchors.margins: root._gu * 0.15
-                                spacing: Kirigami.Units.smallSpacing
+                                spacing: 0
 
-                                ColumnLayout {
-                                    Layout.preferredWidth: root._gu * 3.3
-                                    spacing: 0
+                                Label {
+                                    Layout.fillWidth: true
+                                    horizontalAlignment: Text.AlignHCenter
+                                    elide: Text.ElideRight
+                                    text: modelData.week
+                                    font.pixelSize: root._gu * 0.8
+                                    font.weight: modelData.week === "今天" ? Font.DemiBold : Font.Normal
+                                    color: modelData.week === "今天" ? Kirigami.Theme.highlightColor : Kirigami.Theme.textColor
+                                }
 
-                                    Label {
-                                        text: modelData.week
-                                        font.pixelSize: root._gu * 0.85
-                                        font.weight: modelData.week === "今天" ? Font.DemiBold : Font.Normal
-                                        color: modelData.week === "今天" ? Kirigami.Theme.highlightColor : Kirigami.Theme.textColor
-                                        elide: Text.ElideRight
+                                Label {
+                                    Layout.alignment: Qt.AlignHCenter
+                                    Layout.topMargin: 1
+                                    text: root._shortDate(modelData.date)
+                                    font.pixelSize: root._gu * 0.62
+                                    color: Kirigami.Theme.disabledTextColor
+                                }
+
+                                Kirigami.Icon {
+                                    Layout.alignment: Qt.AlignHCenter
+                                    Layout.topMargin: root._gu * 0.2
+                                    source: modelData.dayIcon
+                                    implicitWidth: Kirigami.Units.iconSizes.smallMedium
+                                    implicitHeight: Kirigami.Units.iconSizes.smallMedium
+                                }
+
+                                // 折线区：上留白容纳高温文字，下留白容纳低温文字
+                                Item {
+                                    id: chartArea
+                                    Layout.fillWidth: true
+                                    Layout.fillHeight: true
+                                    Layout.topMargin: root._gu * 0.1
+
+                                    readonly property real mt: root._gu * 1.05
+                                    readonly property real mb: root._gu * 1.5
+
+                                    function yForNorm(v: real): real {
+                                        return mt + (height - mt - mb) * (1 - v);
+                                    }
+
+                                    Canvas {
+                                        id: segCanvas
+                                        anchors.fill: parent
+
+                                        // var 数组只有整体替换才触发 changed，
+                                        // 挂成属性再 requestPaint，数据 / 配色 / 尺寸变化都会重画
+                                        property var hiData: root._chartHi
+                                        property var loData: root._chartLo
+                                        property color axisColor: Kirigami.Theme.textColor
+                                        onHiDataChanged: requestPaint()
+                                        onLoDataChanged: requestPaint()
+                                        onAxisColorChanged: requestPaint()
+                                        onWidthChanged: requestPaint()
+                                        onHeightChanged: requestPaint()
+
+                                        onPaint: {
+                                            const ctx = getContext("2d");
+                                            ctx.reset();
+                                            const w = width, h = height;
+                                            if (w <= 0 || h <= 0)
+                                                return;
+                                            const mt = chartArea.mt, mb = chartArea.mb;
+                                            const ch = h - mt - mb;
+                                            if (ch <= 0)
+                                                return;
+                                            const hi = hiData, lo = loData;
+                                            if (!hi || !lo || index >= hi.length)
+                                                return;
+                                            const yT = (v) => mt + ch * (1 - v);
+                                            const rgba = (c, a) => "rgba(" + Math.round(c.r * 255) + ","
+                                                + Math.round(c.g * 255) + "," + Math.round(c.b * 255) + "," + a + ")";
+
+                                            // 中轴：每列一根淡色竖轴（几何天气的时间线）
+                                            ctx.strokeStyle = rgba(axisColor, 0.12);
+                                            ctx.lineWidth = 1;
+                                            ctx.beginPath();
+                                            ctx.moveTo(w / 2, mt);
+                                            ctx.lineTo(w / 2, h - mb);
+                                            ctx.stroke();
+
+                                            // 画一段折线（跨列相接）；shadow = 高温线下方的渐淡填充
+                                            const drawSeg = (arr, color, shadow) => {
+                                                const yC = yT(arr[index]);
+                                                const yL = index > 0 ? yT((arr[index - 1] + arr[index]) / 2) : null;
+                                                const yR = index < arr.length - 1 ? yT((arr[index] + arr[index + 1]) / 2) : null;
+
+                                                if (shadow) {
+                                                    const g = ctx.createLinearGradient(0, mt, 0, h - mb);
+                                                    g.addColorStop(0, rgba(color, 0.22));
+                                                    g.addColorStop(1, "rgba(0,0,0,0)");
+                                                    ctx.fillStyle = g;
+                                                    ctx.beginPath();
+                                                    if (yL !== null) {
+                                                        ctx.moveTo(0, yL);
+                                                        ctx.lineTo(w / 2, yC);
+                                                    } else {
+                                                        ctx.moveTo(w / 2, yC);
+                                                    }
+                                                    if (yR !== null)
+                                                        ctx.lineTo(w, yR);
+                                                    ctx.lineTo(w, h - mb);
+                                                    ctx.lineTo(0, h - mb);
+                                                    ctx.closePath();
+                                                    ctx.fill();
+                                                }
+
+                                                ctx.strokeStyle = rgba(color, 1);
+                                                ctx.lineWidth = 3;
+                                                ctx.lineCap = "round";
+                                                ctx.lineJoin = "round";
+                                                ctx.beginPath();
+                                                if (yL !== null) {
+                                                    ctx.moveTo(0, yL);
+                                                    ctx.lineTo(w / 2, yC);
+                                                } else {
+                                                    ctx.moveTo(w / 2, yC);
+                                                }
+                                                if (yR !== null)
+                                                    ctx.lineTo(w, yR);
+                                                ctx.stroke();
+                                            };
+
+                                            drawSeg(hi, root._warm, true);
+                                            drawSeg(lo, root._cold, false);
+                                        }
                                     }
 
                                     Label {
-                                        text: root._shortDate(modelData.date)
-                                        font.pixelSize: root._gu * 0.65
-                                        color: Kirigami.Theme.disabledTextColor
+                                        id: hiLabel
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                        text: modelData.hi === null ? "--" : (modelData.hi + "°")
+                                        color: root._warm
+                                        font.pixelSize: root._gu * 0.72
+                                        font.weight: Font.DemiBold
+                                        y: Math.max(0, dayCol._hiY - height - root._gu * 0.1)
+                                    }
+
+                                    Label {
+                                        id: loLabel
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                        text: modelData.lo === null ? "--" : (modelData.lo + "°")
+                                        color: root._cold
+                                        font.pixelSize: root._gu * 0.72
+                                        y: Math.min(chartArea.height - height, dayCol._loY + root._gu * 0.1)
                                     }
                                 }
 
                                 Kirigami.Icon {
-                                    source: modelData.dayIcon
-                                    implicitWidth: Kirigami.Units.iconSizes.smallMedium
-                                    implicitHeight: Kirigami.Units.iconSizes.smallMedium
-                                    Layout.alignment: Qt.AlignVCenter
-                                }
-
-                                Label {
-                                    Layout.preferredWidth: root._gu * 2.6
-                                    text: modelData.day
-                                    font.pixelSize: root._gu * 0.75
-                                    color: Kirigami.Theme.textColor
-                                    elide: Text.ElideRight
-                                    Layout.alignment: Qt.AlignVCenter
-                                }
-
-                                Label {
-                                    Layout.preferredWidth: root._gu * 1.35
-                                    text: modelData.lo === null ? "--" : (modelData.lo + "°")
-                                    color: Kirigami.Theme.disabledTextColor
-                                    horizontalAlignment: Text.AlignRight
-                                    Layout.alignment: Qt.AlignVCenter
-                                }
-
-                                // 温度区间条：本周最低 ~ 最高归一化后的一段
-                                Item {
-                                    Layout.fillWidth: true
-                                    Layout.preferredHeight: 6
-                                    Layout.alignment: Qt.AlignVCenter
-
-                                    Rectangle {
-                                        anchors.fill: parent
-                                        radius: 3
-                                        color: Qt.alpha(Kirigami.Theme.textColor, 0.12)
-                                    }
-
-                                    Rectangle {
-                                        readonly property real fromPos: modelData.lo === null ? 0 : root._norm(modelData.lo)
-                                        readonly property real toPos: modelData.hi === null ? 1 : root._norm(modelData.hi)
-                                        y: (parent.height - height) / 2
-                                        x: parent.width * fromPos
-                                        width: Math.max(6, parent.width * (toPos - fromPos))
-                                        height: 6
-                                        radius: 3
-
-                                        gradient: Gradient {
-                                            orientation: Gradient.Horizontal
-                                            GradientStop {
-                                                position: 0.0
-                                                color: root._cold
-                                            }
-                                            GradientStop {
-                                                position: 1.0
-                                                color: root._warm
-                                            }
-                                        }
-                                    }
-                                }
-
-                                Label {
-                                    Layout.preferredWidth: root._gu * 1.35
-                                    text: modelData.hi === null ? "--" : (modelData.hi + "°")
-                                    font.weight: Font.DemiBold
-                                    color: Kirigami.Theme.textColor
-                                    horizontalAlignment: Text.AlignRight
-                                    Layout.alignment: Qt.AlignVCenter
+                                    Layout.alignment: Qt.AlignHCenter
+                                    Layout.topMargin: root._gu * 0.1
+                                    source: modelData.nightIcon
+                                    implicitWidth: Kirigami.Units.iconSizes.small
+                                    implicitHeight: Kirigami.Units.iconSizes.small
+                                    opacity: 0.85
                                 }
                             }
-                        }
-
-                        Kirigami.Separator {
-                            Layout.fillWidth: true
-                            visible: index < Weather.days.length - 1
                         }
                     }
                 }
