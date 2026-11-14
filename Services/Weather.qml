@@ -253,7 +253,16 @@ Singleton {
     }
 
     function _num(v: var, fallback: real): real {
-        return root._ok(v) ? (parseFloat(v) || fallback) : fallback;
+        if (!root._ok(v))
+            return fallback;
+        const n = parseFloat(v);
+        // 注意不能写 parseFloat(v) || fallback：0 是合法值（0℃ / 0mm / 0 湿度差）
+        return isNaN(n) ? fallback : n;
+    }
+
+    // 文本字段：除了 "9999" / 空串，nmc 还会用 "-" 表示没有现象（深夜实况常见）
+    function _text(v: var): string {
+        return (root._ok(v) && String(v) !== "-") ? String(v) : "";
     }
 
     // "2026-11-13 06:30" → Date（本地时区，用来判断现在是不是夜间）
@@ -276,7 +285,7 @@ Singleton {
         // 数据里 predict.detail[0] 的夜间段是有效的。拿当前时段的预报段兜底，
         // 免得半夜bar里显示一个「weather-none-available」
         let img = root._ok(w.img) ? w.img : null;
-        let condition = root._ok(w.info) ? w.info : null;
+        let condition = root._text(w.info) || null;
         // 夜间判定按日出日落算，比「发布时间 > 18:00」准：
         // 冬天 16 点天就黑了，夏天 19 点还亮着（plasma nmccn ion 的做法）
         const sr = root._hmToDate(ss.sunrise), sn = root._hmToDate(ss.sunset);
@@ -294,8 +303,8 @@ Singleton {
                 const segW = (details[0][night ? "night" : "day"] || {}).weather || {};
                 if (!img && root._ok(segW.img))
                     img = segW.img;
-                if (!condition && root._ok(segW.info))
-                    condition = segW.info;
+                if (!condition)
+                    condition = root._text(segW.info) || null;
             }
         }
 
@@ -325,6 +334,21 @@ Singleton {
             pressure = parseFloat(passed[0].pressure);
         }
 
+        // 空气质量（data.air）：aqi 数值 / text 等级文字（优/良/…）/ aq 1~6 级
+        // 和实况同一次请求带回，不用额外打接口
+        const air = data.air || {};
+        let airQuality = null;
+        if (root._ok(air.aqi) && !isNaN(parseInt(air.aqi)))
+            airQuality = {
+                "aqi": parseInt(air.aqi),
+                "text": root._ok(air.text) ? String(air.text) : "",
+                "level": root._ok(air.aq) ? parseInt(air.aq) : 0,   // 1 优 … 6 严重
+                "time": root._shortTime(air.forecasttime)
+            };
+
+        // 最近 1 小时降水（passedchart 首条 rain1h），预报里拿不到实测量
+        const precip1h = passed.length > 0 ? root._num(passed[0].rain1h, NaN) : NaN;
+
         // 预警信号（real.warn）：alert 标题 / signallevel 颜色等级 / url 详情页
         const warn = real.warn || {};
         let alert = null;
@@ -352,6 +376,8 @@ Singleton {
             "sunrise": root._clock(ss.sunrise),
             "sunset": root._clock(ss.sunset),
             "pressure": pressure,                         // hPa（passedchart 首条）
+            "precip1h": precip1h,                         // 最近 1 小时降水 mm
+            "air": airQuality,                            // 空气质量，没有为 null
             "normalHi": normalHi,                         // 今日实测最高 ℃
             "normalLo": normalLo,                         // 今日实测最低 ℃
             "alert": alert                                // 预警信号，没有为 null
@@ -370,7 +396,7 @@ Singleton {
             const day = d.day || {}, night = d.night || {};
             const dw = day.weather || {}, nw = night.weather || {};
             // 白天段优先，缺了用夜间段（晚间发布的 detail[0] 就是只有夜间）
-            const seg = root._ok(dw.info) ? day : (root._ok(nw.info) ? night : null);
+            const seg = root._text(dw.info) ? day : (root._text(nw.info) ? night : null);
             if (!seg)
                 continue;
             const segW = seg.weather || {}, segWind = seg.wind || {};
@@ -385,10 +411,10 @@ Singleton {
             out.push({
                 "date": d.date,
                 "week": root._weekText(d.date, i),
-                "day": segW.info,
+                "day": root._text(segW.info) || "—",
                 "dayIcon": root._nmcIcon(segW.img, seg === night),
                 "hi": Math.round(Math.max.apply(null, temps)),
-                "night": root._ok(nw.info) ? nw.info : segW.info,
+                "night": root._text(nw.info) || root._text(segW.info) || "—",
                 "nightIcon": root._nmcIcon(nw.img, true),
                 "lo": Math.round(Math.min.apply(null, temps))
             });
@@ -520,6 +546,10 @@ Singleton {
                 return;
             if (Location.status === "error" || Location.status === "degraded")
                 root.refresh();
+            else if (Location.status === "ok")
+                // 定位先于天气就绪（组件先实例化、定位后成功）：Component.onCompleted
+                // 那次 refresh 走的是「等着」分支，这里补一次，否则要干等一个轮询周期
+                root.refresh();
             else if (Location.status === "locating") {
                 root.status = "idle";
                 root.message = "";
@@ -530,8 +560,13 @@ Singleton {
         // 注意必须换一个新对象再赋给 current —— 原地改字段引用没变，
         // displayName 这类绑定不会重新求值。
         function onCityChanged() {
-            if ((Settings.weather.city || "").trim() || !root.current || !Location.city)
+            if ((Settings.weather.city || "").trim() || !Location.city)
                 return;
+            // 天气还空着（定位名比坐标晚到，坐标那条路只把状态停在 idle）→ 直接取数
+            if (!root.current) {
+                root.refresh();
+                return;
+            }
             if (root.current.city === Location.city)
                 return;
             root.current = Object.assign({}, root.current, {"city": Location.city});

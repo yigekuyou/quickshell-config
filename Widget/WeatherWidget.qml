@@ -10,22 +10,25 @@ import org.kde.kirigami as Kirigami
 // ============================================================================
 // 天气面板：几何天气（Geometric Weather）风格。
 //
-// 布局照着 Geometric Weather 的主屏抄：
-//   * 顶部实况区：大图标 + 大温度，天气现象与「体感 · 湿度」元信息一行带过
-//   * 「详情」卡片：图标 + 标题 + 右对齐数值的列表行（体感 / 湿度 / 风 / 日出日落）
-//   * 「7 天预报」卡片：日期 / 图标 / 低温 / 温度区间条 / 高温
-//     区间条按本周最低 ~ 最高归一化，蓝（冷）→ 橙（暖）渐变上色
+// 版式照 Geometric Weather 的主屏：
+//   1. 实况头图：整块淡色天空渐变 + 超大温度 + 天气现象 + 「最高 / 最低」
+//   2. 空气质量：AQI 数字 + 等级文字 + 六段色带 + 指针
+//   3. 详情：两列磁贴（图标 / 标题 / 大字数值 / 副行），不是竖排列表
+//   4. 7 天预报：日期 / 图标 / 天气文字 / 低温 / 温度区间条 / 高温
+//      区间条按本周最低 ~ 最高归一化，蓝（冷）→ 橙（暖）渐变上色，今天整行淡底高亮
 //
-// 卡片只画圆角 + 一层很淡的底色 + 分隔线，不画描边阴影，保持扁平透气。
-// 数据全部来自 qs.Services.Weather（nmc.cn 中央气象台，由 Location 定位驱动），本文件只管展示。
+// 卡片只画圆角 + 一层很淡的底色，不画描边阴影；头图是唯一的彩色块，
+// 色调跟着实况图标走（晴=蓝、阴=灰蓝、雨=青灰、雪=浅蓝、夜=深蓝）。
+// 数据全部来自 qs.Services.Weather（nmc.cn 中央气象台，由 Location 定位驱动），
+// 本文件只管展示。
 // ============================================================================
 SlideWindow {
     id: root
 
     title: Weather.displayName
     icon: Weather.icon
-    implicitWidth: 380
-    windowHeight: Math.round(Math.max(320, Math.min(560, contentHeight + Kirigami.Units.largeSpacing)))
+    implicitWidth: 400
+    windowHeight: Math.round(Math.max(360, Math.min(580, contentHeight + Kirigami.Units.largeSpacing)))
 
     // 打开时数据还是空的（启动失败 / ipc 手动关了很久）就顺手拉一次
     onVisibleChanged: {
@@ -59,72 +62,109 @@ SlideWindow {
         }
     }
 
-    // ==================== 卡片公共尺寸 ====================
-    readonly property real _cardRadius: Kirigami.Units.gridUnit * 0.7
-    readonly property real _cardPad: Kirigami.Units.gridUnit * 0.75
-    // 温度区间条两端的固定色调（冷 / 暖），详情图标也复用这两个色，整块面板颜色才成套
+    // ==================== 设计令牌 ====================
+    readonly property real _gu: Kirigami.Units.gridUnit
+    readonly property real _cardRadius: _gu * 0.7
+    readonly property real _tileRadius: _gu * 0.55
+    readonly property real _cardPad: _gu * 0.7
+    readonly property real _tilePad: _gu * 0.55
+    // 温度区间条两端的固定色调（冷 / 暖）
     readonly property color _cold: "#56B4E9"
     readonly property color _warm: "#F0903C"
 
     // ==================== 派生展示数据 ====================
-    readonly property var details: {
-        if (!Weather.current)
-            return [];
+    readonly property var air: Weather.current ? Weather.current.air : null
+    readonly property var today: Weather.days && Weather.days.length > 0 ? Weather.days[0] : null
+
+    // 详情磁贴：两列网格，字段不全的直接不出现（nmc 常给 "9999"）
+    readonly property var tiles: {
         const c = Weather.current;
-        // nmc 缺字段时给 NaN，面板要显示成「--」而不是「NaN°」
-        const safe = (v, unit) => isNaN(v) ? "--" : (Math.round(v) + unit);
-        const t = safe(c.feels, "°");
-        const rows = [
-            {
-                // 体感按温度换冷 / 常 / 暖三个温度计图标
-                "icon": t < 0 ? "temperature-cold-symbolic" : t < 18 ? "temperature-normal-symbolic" : "temperature-warm-symbolic",
-                "iconColor": Qt.rgba(0, 0, 0, 0),
+        if (!c)
+            return [];
+        const out = [];
+
+        if (!isNaN(c.feels)) {
+            const diff = isNaN(c.temp) ? 0 : Math.round(c.feels - c.temp);
+            out.push({
+                "icon": c.feels < 0 ? "temperature-cold-symbolic" : c.feels < 18 ? "temperature-normal-symbolic" : "temperature-warm-symbolic",
+                "tint": Qt.rgba(0, 0, 0, 0),
                 "caption": qsTr("体感温度"),
-                "value": t + "°"
-            },
-            {
+                "value": Math.round(c.feels) + "°",
+                "sub": diff === 0 ? qsTr("与实际温度相当")
+                    : diff > 0 ? qsTr("比实际高 %1°").arg(diff)
+                    : qsTr("比实际低 %1°").arg(-diff)
+            });
+        }
+
+        if (!isNaN(c.humidity))
+            out.push({
                 "icon": "raindrop-symbolic",
-                "iconColor": root._cold,
+                "tint": root._cold,
                 "caption": qsTr("湿度"),
-                "value": safe(c.humidity, "%")
-            },
-            {
+                "value": Math.round(c.humidity) + "%",
+                "sub": c.humidity < 30 ? qsTr("干燥") : c.humidity < 65 ? qsTr("体感舒适") : qsTr("潮湿")
+            });
+
+        // 实况有 m/s，预报只有「3~4级」；有速度就显示速度，方向 / 等级进副行
+        if (!isNaN(c.windSpeed) || c.windPower) {
+            const pieces = [];
+            if (c.windDir)
+                pieces.push(c.windDir);
+            if (c.windPower)
+                pieces.push(c.windPower);
+            out.push({
                 "icon": "weather-clear-wind-symbolic",
-                "iconColor": Qt.rgba(0, 0, 0, 0),
+                "tint": Qt.rgba(0, 0, 0, 0),
                 "caption": qsTr("风"),
-                // 预报没有 m/s 只有「3~4级」文本；实况有 speed 优先显示
-                "value": !isNaN(c.windSpeed) && c.windDir
-                    ? qsTr("%1 %2 m/s").arg(c.windDir).arg(Math.round(c.windSpeed))
-                    : (c.windPower ? (c.windDir + " " + c.windPower)
-                                   : (!isNaN(c.windSpeed) ? (Math.round(c.windSpeed) + " m/s") : "--"))
-            },
-            {
-                "icon": "daytime-sunrise-symbolic",
-                "iconColor": root._warm,
-                "caption": qsTr("日出 · 日落"),
-                "value": c.sunrise && c.sunset ? (c.sunrise + " / " + c.sunset) : "--"
-            }
-        ];
-        // 气压（passedchart 首条，hPa）：夜里 / 清晨可能还没有
+                "value": !isNaN(c.windSpeed) ? (c.windSpeed.toFixed(1) + " m/s") : (c.windPower || "--"),
+                "sub": pieces.join(" · ")
+            });
+        }
+
         if (!isNaN(c.pressure))
-            rows.push({
+            out.push({
                 "icon": "speedometer-symbolic",
-                "iconColor": Qt.rgba(0, 0, 0, 0),
+                "tint": Qt.rgba(0, 0, 0, 0),
                 "caption": qsTr("气压"),
-                "value": Math.round(c.pressure) + " hPa"
+                "value": Math.round(c.pressure) + " hPa",
+                "sub": qsTr("最近一次观测")
             });
-        // 今日实测高低温（passedchart 今天已过小时序列的极值）
-        if (!isNaN(c.normalHi) && !isNaN(c.normalLo))
-            rows.push({
-                "icon": "temperature-normal-symbolic",
-                "iconColor": Qt.rgba(0, 0, 0, 0),
-                "caption": qsTr("今日实测"),
-                "value": Math.round(c.normalLo) + "° / " + Math.round(c.normalHi) + "°"
+
+        if (!isNaN(c.precip1h))
+            out.push({
+                "icon": "weather-showers-scattered",
+                "tint": root._cold,
+                "caption": qsTr("降水"),
+                "value": (c.precip1h > 0 ? c.precip1h.toFixed(1) : "0.0") + " mm",
+                "sub": qsTr("最近 1 小时")
             });
-        return rows;
+
+        if (c.sunrise && c.sunset)
+            out.push({
+                "icon": "daytime-sunrise-symbolic",
+                "tint": root._warm,
+                "caption": qsTr("日出 · 日落"),
+                "value": c.sunrise,
+                "sub": qsTr("日落 %1").arg(c.sunset)
+            });
+
+        return out;
     }
 
-    // 逐日温度条的归一化范围：取本周最低 / 最高
+    // 空气质量等级配色（国标 6 级；在深色底上往中间调压了一点，纯色太刺眼）
+    function _aqiColor(level: int): color {
+        return ({
+            1: "#4CAF50",   // 优
+            2: "#F9A825",   // 良
+            3: "#FB8C00",   // 轻度污染
+            4: "#E53935",   // 中度污染
+            5: "#8E24AA",   // 重度污染
+            6: "#6D4C41"    // 严重污染
+        })[level] || Kirigami.Theme.disabledTextColor;
+    }
+
+    readonly property color _aqiTint: root._aqiColor(root.air ? root.air.level : 0)
+
     // 预警等级 → 颜色（中国气象局信号色：蓝 < 黄 < 橙 < 红）
     function _alertColor(level: string): color {
         return ({
@@ -135,6 +175,27 @@ SlideWindow {
         })[level] || Kirigami.Theme.textColor;
     }
 
+    // 实况头图的天空底色：跟着图标挑一个，夜/雨/雪各走一套
+    readonly property color _sky: {
+        if (!Weather.current)
+            return Kirigami.Theme.highlightColor;
+        const n = Weather.current.icon || "";
+        if (n.indexOf("snow") >= 0)
+            return "#7FA8C9";
+        if (n.indexOf("storm") >= 0)
+            return "#4C5A78";
+        if (n.indexOf("shower") >= 0)
+            return "#3F6E8C";
+        if (n.indexOf("fog") >= 0)
+            return "#8A8F98";
+        if (n.indexOf("clouds") >= 0 || n.indexOf("overcast") >= 0)
+            return "#5D7186";
+        if (n.indexOf("night") >= 0)
+            return "#33406B";
+        return "#4A90D9";
+    }
+
+    // 逐日温度条的归一化范围：取本周最低 / 最高
     readonly property real _weekLo: {
         let m = Infinity;
         for (const d of Weather.days)
@@ -296,131 +357,277 @@ SlideWindow {
             }
         }
 
-        // ---- 实况：大图标 + 大温度 ----
-        ColumnLayout {
+        // ---- 实况头图：天空渐变 + 超大温度 + 天气现象 ----
+        Rectangle {
+            id: hero
             Layout.fillWidth: true
             visible: !!Weather.current
-            spacing: 2
-
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: Kirigami.Units.largeSpacing
-
-                Kirigami.Icon {
-                    source: Weather.icon
-                    implicitWidth: Kirigami.Units.iconSizes.huge
-                    implicitHeight: Kirigami.Units.iconSizes.huge
-                    Layout.alignment: Qt.AlignVCenter
+            radius: root._cardRadius
+            implicitHeight: heroLayout.implicitHeight + root._cardPad * 1.6
+            gradient: Gradient {
+                orientation: Gradient.Vertical
+                GradientStop {
+                    position: 0.0
+                    color: Qt.alpha(root._sky, 0.36)
                 }
-
-                ColumnLayout {
-                    Layout.fillWidth: true
-                    Layout.alignment: Qt.AlignVCenter
-                    spacing: 0
-
-                    Label {
-                        text: Weather.tempText
-                        font.pixelSize: Kirigami.Units.gridUnit * 4.0
-                        font.weight: Font.Light
-                        color: Kirigami.Theme.textColor
-                    }
-
-                    Label {
-                        text: (Weather.current ? Weather.current.condition : "") || qsTr("暂无实况")
-                        font.pixelSize: Kirigami.Units.gridUnit * 1.15
-                        color: Kirigami.Theme.textColor
-                    }
-
-                    // 元信息一行：体感 + 湿度（跟着实况走，比四格里重复一遍更紧凑）
-                    Label {
-                        visible: !!Weather.current
-                        text: Weather.current ? (qsTr("体感 %1° · 湿度 %2%")
-                            .arg(Math.round(Weather.current.feels))
-                            .arg(Math.round(Weather.current.humidity))) : ""
-                        font.pixelSize: Kirigami.Units.gridUnit * 0.85
-                        color: Kirigami.Theme.disabledTextColor
-                        Layout.topMargin: Kirigami.Units.smallSpacing
-                    }
+                GradientStop {
+                    position: 1.0
+                    color: Qt.alpha(root._sky, 0.04)
                 }
             }
 
-            Label {
-                Layout.fillWidth: true
-                text: Weather.current ? (Weather.current.publishTime + qsTr(" 发布")) : ""
-                font.pixelSize: Kirigami.Units.gridUnit * 0.75
-                color: Kirigami.Theme.disabledTextColor
+            ColumnLayout {
+                id: heroLayout
+                anchors.fill: parent
+                anchors.margins: root._cardPad * 1.15
+                spacing: 0
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: root._gu * 0.5
+
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        // preferredWidth 归零：让这一列吃掉 RowLayout 的剩余宽度，
+                        // 右侧图标才会被顶到卡片右边（只写 fillWidth 时列宽停在隐式宽度）
+                        Layout.preferredWidth: 0
+                        spacing: 0
+
+                        Label {
+                            // 大温度：几何天气的视觉主角，细字重撑开
+                            text: Weather.tempText
+                            font.pixelSize: root._gu * 4.0
+                            font.weight: Font.Light
+                            color: Kirigami.Theme.textColor
+                            Layout.topMargin: -root._gu * 0.55
+                            Layout.bottomMargin: -root._gu * 0.35
+                        }
+
+                        Label {
+                            text: (Weather.current ? Weather.current.condition : "") || qsTr("暂无实况")
+                            font.pixelSize: root._gu * 1.1
+                            color: Kirigami.Theme.textColor
+                            elide: Text.ElideRight
+                            Layout.fillWidth: true
+                        }
+
+                        Label {
+                            visible: !!root.today && root.today.hi !== null && root.today.lo !== null
+                            text: root.today ? qsTr("最高 %1° · 最低 %2°").arg(root.today.hi).arg(root.today.lo) : ""
+                            font.pixelSize: root._gu * 0.8
+                            color: Kirigami.Theme.disabledTextColor
+                            Layout.topMargin: root._gu * 0.25
+                        }
+                    }
+
+                    Kirigami.Icon {
+                        source: Weather.icon
+                        implicitWidth: root._gu * 3.2
+                        implicitHeight: root._gu * 3.2
+                        // 顶到右上角，和超大温度同一行对视（几何天气的摆法）
+                        Layout.alignment: Qt.AlignTop | Qt.AlignRight
+                        Layout.topMargin: root._gu * 0.1
+                    }
+                }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    Layout.topMargin: root._gu * 0.55
+
+                    Label {
+                        text: Weather.current ? qsTr("更新于 %1").arg(Weather.current.publishTime) : ""
+                        font.pixelSize: root._gu * 0.7
+                        color: Kirigami.Theme.disabledTextColor
+                    }
+
+                    Item {
+                        Layout.fillWidth: true
+                    }
+
+                    Label {
+                        // 省份只在有值时出现，避免空的分隔点
+                        visible: !!Weather.current && !!Weather.current.province
+                        text: Weather.current ? Weather.current.province : ""
+                        font.pixelSize: root._gu * 0.7
+                        color: Kirigami.Theme.disabledTextColor
+                        elide: Text.ElideRight
+                        Layout.maximumWidth: root._gu * 8
+                    }
+                }
             }
         }
 
-        // ---- 详情卡片：图标 + 标题 + 右对齐数值 ----
+        // ---- 空气质量：AQI + 六段色带 ----
         Rectangle {
             Layout.fillWidth: true
-            visible: details.length > 0
+            visible: !!root.air
             radius: root._cardRadius
             color: Qt.alpha(Kirigami.Theme.textColor, 0.05)
-            implicitHeight: detailLayout.implicitHeight + root._cardPad * 2
+            implicitHeight: airLayout.implicitHeight + root._cardPad * 2
 
             ColumnLayout {
-                id: detailLayout
+                id: airLayout
                 anchors.fill: parent
                 anchors.margins: root._cardPad
-                spacing: 0
+                spacing: root._gu * 0.3
 
-                Label {
-                    text: qsTr("详情")
-                    font.pixelSize: Kirigami.Units.gridUnit * 0.8
-                    font.weight: Font.DemiBold
-                    color: Kirigami.Theme.textColor
-                    Layout.bottomMargin: Kirigami.Units.smallSpacing
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: root._gu * 0.35
+
+                    Kirigami.Icon {
+                        source: "weather-fog"
+                        color: root._aqiTint
+                        implicitWidth: Kirigami.Units.iconSizes.small
+                        implicitHeight: Kirigami.Units.iconSizes.small
+                    }
+
+                    Label {
+                        text: qsTr("空气质量")
+                        font.pixelSize: root._gu * 0.8
+                        font.weight: Font.DemiBold
+                        color: Kirigami.Theme.textColor
+                        Layout.fillWidth: true
+                    }
+
+                    Label {
+                        text: root.air && root.air.time ? root.air.time : ""
+                        font.pixelSize: root._gu * 0.7
+                        color: Kirigami.Theme.disabledTextColor
+                    }
                 }
 
-                Repeater {
-                    model: root.details
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: root._gu * 0.4
 
-                    delegate: ColumnLayout {
+                    Label {
+                        text: root.air ? String(root.air.aqi) : "--"
+                        font.pixelSize: root._gu * 1.9
+                        font.weight: Font.DemiBold
+                        color: root._aqiTint
+                    }
+
+                    Label {
+                        text: root.air && root.air.text ? root.air.text : ""
+                        font.pixelSize: root._gu * 0.95
+                        color: root._aqiTint
+                        Layout.alignment: Qt.AlignBottom
+                        Layout.bottomMargin: root._gu * 0.25
+                    }
+
+                    Item {
                         Layout.fillWidth: true
-                        spacing: 0
+                    }
+
+                    Label {
+                        text: "AQI"
+                        font.pixelSize: root._gu * 0.7
+                        color: Kirigami.Theme.disabledTextColor
+                        Layout.alignment: Qt.AlignBottom
+                        Layout.bottomMargin: root._gu * 0.25
+                    }
+                }
+
+                // 六段国标色带 + 当前 AQI 指针（0~300 线性）
+                Item {
+                    id: aqiBar
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 8
+                    Layout.topMargin: root._gu * 0.15
+
+                    Row {
+                        anchors.fill: parent
+                        spacing: 2
+
+                        Repeater {
+                            model: [1, 2, 3, 4, 5, 6]
+
+                            delegate: Rectangle {
+                                width: (aqiBar.width - 10) / 6
+                                height: aqiBar.height
+                                radius: 2
+                                color: Qt.alpha(root._aqiColor(modelData), 0.6)
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        readonly property real frac: Math.max(0, Math.min(1, (root.air ? root.air.aqi : 0) / 300))
+                        width: 2
+                        height: aqiBar.height + 4
+                        y: -2
+                        x: Math.max(0, Math.min(aqiBar.width - width, aqiBar.width * frac - width / 2))
+                        radius: 1
+                        color: Kirigami.Theme.textColor
+                    }
+                }
+            }
+        }
+
+        // ---- 详情：两列磁贴（几何天气的招牌排版）----
+        GridLayout {
+            Layout.fillWidth: true
+            visible: root.tiles.length > 0
+            columns: 2
+            columnSpacing: Kirigami.Units.smallSpacing * 1.5
+            rowSpacing: Kirigami.Units.smallSpacing * 1.5
+
+            Repeater {
+                model: root.tiles
+
+                delegate: Rectangle {
+                    Layout.fillWidth: true
+                    implicitHeight: tileLayout.implicitHeight + root._tilePad * 2
+                    radius: root._tileRadius
+                    color: Qt.alpha(Kirigami.Theme.textColor, 0.05)
+
+                    ColumnLayout {
+                        id: tileLayout
+                        anchors.fill: parent
+                        anchors.margins: root._tilePad
+                        spacing: 1
 
                         RowLayout {
                             Layout.fillWidth: true
-                            spacing: Kirigami.Units.smallSpacing
+                            spacing: root._gu * 0.25
 
                             Kirigami.Icon {
                                 source: modelData.icon
-                                // iconColor 带透明度 = 指定色（蓝/橙）；否则压暗用文字色
-                                color: modelData.iconColor.a > 0 ? modelData.iconColor : Kirigami.Theme.textColor
+                                // tint 透明 = 用文字色（压暗），否则用指定色
+                                color: modelData.tint.a > 0 ? modelData.tint : Kirigami.Theme.textColor
+                                opacity: modelData.tint.a > 0 ? 1 : 0.7
                                 implicitWidth: Kirigami.Units.iconSizes.small
                                 implicitHeight: Kirigami.Units.iconSizes.small
                                 Layout.alignment: Qt.AlignVCenter
-                                opacity: modelData.iconColor.a > 0 ? 1 : 0.75
                             }
 
                             Label {
-                                text: modelData.caption
-                                font.pixelSize: Kirigami.Units.gridUnit * 0.9
-                                color: Kirigami.Theme.textColor
-                                Layout.alignment: Qt.AlignVCenter
-                            }
-
-                            Item {
                                 Layout.fillWidth: true
-                            }
-
-                            Label {
-                                text: modelData.value
-                                font.pixelSize: Kirigami.Units.gridUnit * 0.9
-                                font.weight: Font.DemiBold
-                                color: Kirigami.Theme.textColor
+                                text: modelData.caption
+                                font.pixelSize: root._gu * 0.72
+                                color: Kirigami.Theme.disabledTextColor
+                                elide: Text.ElideRight
                                 Layout.alignment: Qt.AlignVCenter
                             }
-
-                            Layout.topMargin: index === 0 ? 0 : Kirigami.Units.gridUnit * 0.55
-                            Layout.bottomMargin: index === root.details.length - 1 ? 0 : Kirigami.Units.gridUnit * 0.55
                         }
 
-                        Kirigami.Separator {
+                        Label {
                             Layout.fillWidth: true
-                            visible: index < root.details.length - 1
+                            text: modelData.value
+                            font.pixelSize: root._gu * 1.15
+                            font.weight: Font.DemiBold
+                            color: Kirigami.Theme.textColor
+                            elide: Text.ElideRight
+                            Layout.topMargin: root._gu * 0.15
+                        }
+
+                        Label {
+                            Layout.fillWidth: true
+                            text: modelData.sub
+                            font.pixelSize: root._gu * 0.68
+                            color: Kirigami.Theme.disabledTextColor
+                            elide: Text.ElideRight
                         }
                     }
                 }
@@ -443,7 +650,7 @@ SlideWindow {
 
                 Label {
                     text: qsTr("7 天预报")
-                    font.pixelSize: Kirigami.Units.gridUnit * 0.8
+                    font.pixelSize: root._gu * 0.8
                     font.weight: Font.DemiBold
                     color: Kirigami.Theme.textColor
                     Layout.bottomMargin: Kirigami.Units.smallSpacing
@@ -456,85 +663,105 @@ SlideWindow {
                         Layout.fillWidth: true
                         spacing: 0
 
-                        RowLayout {
+                        Rectangle {
                             Layout.fillWidth: true
-                            spacing: Kirigami.Units.smallSpacing
-                            Layout.topMargin: index === 0 ? 0 : Kirigami.Units.gridUnit * 0.5
-                            Layout.bottomMargin: index === Weather.days.length - 1 ? 0 : Kirigami.Units.gridUnit * 0.5
+                            implicitHeight: dayRow.implicitHeight + root._gu * 0.3
+                            radius: root._gu * 0.4
+                            // 今天整行淡主色底，比只加粗字更接近几何天气的高亮
+                            color: modelData.week === "今天" ? Qt.alpha(Kirigami.Theme.highlightColor, 0.12) : "transparent"
 
-                            ColumnLayout {
-                                Layout.preferredWidth: Kirigami.Units.gridUnit * 3.6
-                                spacing: 0
+                            RowLayout {
+                                id: dayRow
+                                anchors.fill: parent
+                                anchors.margins: root._gu * 0.15
+                                spacing: Kirigami.Units.smallSpacing
+
+                                ColumnLayout {
+                                    Layout.preferredWidth: root._gu * 3.3
+                                    spacing: 0
+
+                                    Label {
+                                        text: modelData.week
+                                        font.pixelSize: root._gu * 0.85
+                                        font.weight: modelData.week === "今天" ? Font.DemiBold : Font.Normal
+                                        color: modelData.week === "今天" ? Kirigami.Theme.highlightColor : Kirigami.Theme.textColor
+                                        elide: Text.ElideRight
+                                    }
+
+                                    Label {
+                                        text: root._shortDate(modelData.date)
+                                        font.pixelSize: root._gu * 0.65
+                                        color: Kirigami.Theme.disabledTextColor
+                                    }
+                                }
+
+                                Kirigami.Icon {
+                                    source: modelData.dayIcon
+                                    implicitWidth: Kirigami.Units.iconSizes.smallMedium
+                                    implicitHeight: Kirigami.Units.iconSizes.smallMedium
+                                    Layout.alignment: Qt.AlignVCenter
+                                }
 
                                 Label {
-                                    text: modelData.week
-                                    font.pixelSize: Kirigami.Units.gridUnit * 0.9
-                                    // 今天高亮：主色 + 半粗
-                                    font.weight: modelData.week === "今天" ? Font.DemiBold : Font.Normal
-                                    color: modelData.week === "今天" ? Kirigami.Theme.highlightColor : Kirigami.Theme.textColor
+                                    Layout.preferredWidth: root._gu * 2.6
+                                    text: modelData.day
+                                    font.pixelSize: root._gu * 0.75
+                                    color: Kirigami.Theme.textColor
                                     elide: Text.ElideRight
+                                    Layout.alignment: Qt.AlignVCenter
                                 }
 
                                 Label {
-                                    text: root._shortDate(modelData.date)
-                                    font.pixelSize: Kirigami.Units.gridUnit * 0.7
+                                    Layout.preferredWidth: root._gu * 1.35
+                                    text: modelData.lo === null ? "--" : (modelData.lo + "°")
                                     color: Kirigami.Theme.disabledTextColor
-                                }
-                            }
-
-                            Kirigami.Icon {
-                                source: modelData.dayIcon
-                                implicitWidth: Kirigami.Units.iconSizes.smallMedium
-                                implicitHeight: Kirigami.Units.iconSizes.smallMedium
-                                Layout.alignment: Qt.AlignVCenter
-                            }
-
-                            Label {
-                                text: modelData.lo === null ? "--" : (modelData.lo + "°")
-                                color: Kirigami.Theme.disabledTextColor
-                                Layout.alignment: Qt.AlignVCenter
-                            }
-
-                            // 温度区间条：本周最低 ~ 最高归一化后的一段
-                            Item {
-                                Layout.fillWidth: true
-                                Layout.preferredHeight: 6
-                                Layout.alignment: Qt.AlignVCenter
-
-                                Rectangle {
-                                    anchors.fill: parent
-                                    radius: 3
-                                    color: Qt.alpha(Kirigami.Theme.textColor, 0.12)
+                                    horizontalAlignment: Text.AlignRight
+                                    Layout.alignment: Qt.AlignVCenter
                                 }
 
-                                Rectangle {
-                                    readonly property real fromPos: modelData.lo === null ? 0 : root._norm(modelData.lo)
-                                    readonly property real toPos: modelData.hi === null ? 1 : root._norm(modelData.hi)
-                                    y: (parent.height - height) / 2
-                                    x: parent.width * fromPos
-                                    width: Math.max(6, parent.width * (toPos - fromPos))
-                                    height: 6
-                                    radius: 3
+                                // 温度区间条：本周最低 ~ 最高归一化后的一段
+                                Item {
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: 6
+                                    Layout.alignment: Qt.AlignVCenter
 
-                                    gradient: Gradient {
-                                        orientation: Gradient.Horizontal
-                                        GradientStop {
-                                            position: 0.0
-                                            color: root._cold
-                                        }
-                                        GradientStop {
-                                            position: 1.0
-                                            color: root._warm
+                                    Rectangle {
+                                        anchors.fill: parent
+                                        radius: 3
+                                        color: Qt.alpha(Kirigami.Theme.textColor, 0.12)
+                                    }
+
+                                    Rectangle {
+                                        readonly property real fromPos: modelData.lo === null ? 0 : root._norm(modelData.lo)
+                                        readonly property real toPos: modelData.hi === null ? 1 : root._norm(modelData.hi)
+                                        y: (parent.height - height) / 2
+                                        x: parent.width * fromPos
+                                        width: Math.max(6, parent.width * (toPos - fromPos))
+                                        height: 6
+                                        radius: 3
+
+                                        gradient: Gradient {
+                                            orientation: Gradient.Horizontal
+                                            GradientStop {
+                                                position: 0.0
+                                                color: root._cold
+                                            }
+                                            GradientStop {
+                                                position: 1.0
+                                                color: root._warm
+                                            }
                                         }
                                     }
                                 }
-                            }
 
-                            Label {
-                                text: modelData.hi === null ? "--" : (modelData.hi + "°")
-                                font.weight: Font.DemiBold
-                                color: Kirigami.Theme.textColor
-                                Layout.alignment: Qt.AlignVCenter
+                                Label {
+                                    Layout.preferredWidth: root._gu * 1.35
+                                    text: modelData.hi === null ? "--" : (modelData.hi + "°")
+                                    font.weight: Font.DemiBold
+                                    color: Kirigami.Theme.textColor
+                                    horizontalAlignment: Text.AlignRight
+                                    Layout.alignment: Qt.AlignVCenter
+                                }
                             }
                         }
 
